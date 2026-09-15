@@ -14,9 +14,9 @@ TICKET_PRICE = 100
 BANK_INFO = "🏦 **የባንክ አካውንት መረጃ**\nአካውንት ቁጥር: `1000324406461`\nስም: Birhanu"
 
 round_participants = {}  # {user_id: [num1, num2, num3]}
-taken_numbers = {}       # {num: user_id}
-all_users = set()        # ቦቱን ያነጋገሩ ተጠቃሚዎች መታወቂያ
-pending_payments = {}    # { (user_id, num): True }
+taken_numbers = {}        # {num: user_id}
+all_users = set()         # ቦቱን ያነጋገሩ ተጠቃሚዎች መታወቂያ
+pending_payments = {}     # { (user_id, num): True }
 
 PRIZES = {
     1: "🔥 400 ብር (1ኛ ደረጃ)",
@@ -29,6 +29,7 @@ def home():
     if request.method == 'POST':
         return "OK", 200
     return "🔥 Enhanced Animated Lottery Bot is running successfully!", 200
+
 @app.route(f'/{TOKEN}', methods=['POST'])
 def webhook():
     try:
