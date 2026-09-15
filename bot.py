@@ -8,7 +8,7 @@ from flask import Flask, request, jsonify
 app = Flask(__name__)
 
 TOKEN = '8656307750:AAHb9DD6G_Q60GVEAw-8k6hM9SgPSQWNKlY'
-TELEGRAM_API_URL = f"https://api.telegram.org/bot{TOKEN}"
+TELEGRAM_API_URL = f"https://api.telegram.org/bot{'8656307750:AAHb9DD6G_Q60GVEAw-8k6hM9SgPSQWNKlY'}"
 ADMIN_ID = 1088785278
 
 TICKET_PRICE = 100
