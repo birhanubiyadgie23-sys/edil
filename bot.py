@@ -15,7 +15,7 @@ TICKET_PRICE = 100
 BANK_INFO = "🏦 **የባንክ አካውንት መረጃ**\nአካውንት ቁጥር: `1000324406461`\nስም: Birhanu"
 
 round_participants = {}  # {user_id: [num1, num2, num3]}
-taken_numbers = {}       # {num: user_id} (የትኛው ቁጥር ማኑዋል በማን እንደተያዘ ለመቆጣጠር)
+taken_numbers = {}       # {num: user_id}
 all_users = set()
 
 PRIZES = {
@@ -26,7 +26,7 @@ PRIZES = {
 
 @app.route('/')
 def home():
-    return "🔥 Interactive Button Lottery Bot is running!", 200
+    return "🔥 Interactive Button Lottery Bot is running perfectly!", 200
 
 @app.route(f"/{TOKEN}", methods=["POST"])
 def webhook():
@@ -59,7 +59,7 @@ def webhook():
                 num = int(callback_data.split("_")[1])
 
                 if num in taken_numbers:
-                    answer_callback(callback["id"], "❌ ይህ ቁጥር უკვე ተይዟል!")
+                    answer_callback(callback["id"], "❌ ይህ ቁጥር უკვე ተይዟል!", show_alert=True)
                     return
 
                 user_nums = round_participants.get(user_id, [])
@@ -67,7 +67,6 @@ def webhook():
                     answer_callback(callback["id"], "⚠️ ከፍተኛው የ 3 ቲኬት ገደብዎ ደርሰዋል!", show_alert=True)
                     return
 
-                # താቆታሚ ክፍያ መጠየቂያ
                 reply_text = (
                     f"✨ የመረጡት ዕድለኛ ቁጥር: **{num}** 🎟\n"
                     f"💵 መክፈል የሚኖርብዎት: **{TICKET_PRICE} ብር**\n\n"
@@ -105,12 +104,11 @@ def webhook():
                         [{"text": f"✅ ቁጥር {p_num} አጽድቅ", "callback_data": f"approve_{p_user_id}_{p_num}"}]
                     ]
                 }
-                # እዚህ ጋር የነበረው ስህተት ተስተካክሏል (send_keyboard ፋንክሽን ትክክለኛ ስም ተሰጥቶታል)
                 send_keyboard_inline(ADMIN_ID, admin_text, admin_keyboard)
 
             elif callback_data.startswith("approve_"):
                 if user_id != ADMIN_ID:
-                    answer_callback(callback["id"], "❌ አድሚን ብቻ ናቸው ማጽደቅ የሚችሉት!")
+                    answer_callback(callback["id"], "❌ አድሚን ብቻ ናቸው ማጽደቅ የሚችሉት!", show_alert=True)
                     return
 
                 parts = callback_data.split("_")
@@ -118,7 +116,7 @@ def webhook():
                 approved_num = int(parts[2])
 
                 if approved_num in taken_numbers:
-                    answer_callback(callback["id"], "❌ ይህ ቁጥር ቀድሞ ተይዟል!")
+                    answer_callback(callback["id"], "❌ ይህ ቁጥር ቀድሞ ተይዟል!", show_alert=True)
                     return
 
                 taken_numbers[approved_num] = target_user_id
@@ -139,8 +137,8 @@ def webhook():
         return jsonify({"status": "success"}), 200
         
     except Exception as e:
-        print(f"Error: {e}")
-        return jsonify({"status": "error"}), 500
+        print(f"Error in webhook: {e}")
+        return jsonify({"status": "error", "message": str(e)}), 500
 
 def send_main_menu(chat_id, first_name):
     reply_text = (
@@ -221,21 +219,28 @@ def trigger_automatic_draw():
         for n in nums:
             all_tickets_flat.append((u_id, n))
 
-    winning_tickets = random.sample(all_tickets_flat, min(3, len(all_tickets_flat)))
+    if not all_tickets_flat:
+        return
+
+    sample_size = min(3, len(all_tickets_flat))
+    winning_tickets = random.sample(all_tickets_flat, sample_size)
 
     winners_text = "👑🥁 **ታላቁ የዕድል ማዕበል ሎተሪ አሸናፊዎች ይፋ ሆነዋል!** 🥳🎉\n\n"
     
     for idx, (w_id, w_num) in enumerate(winning_tickets, start=1):
-        prize = PRIZES[idx]
+        prize = PRIZES.get(idx, "🎁 ልዩ ሽልማት")
         winners_text += f"🏆 **{idx}ኛ ዕጣ (ቁጥር {w_num}):** — {prize}\n"
-        send_message(w_id, f"🎊 **ልዩ ሽልማት! በያዙት ቁጥር ({w_num}) {idx}ኛውን ደረጃ ({prize}) አሸንፈዋል!** 🌟🔥")
+        try:
+            send_message(w_id, f"🎊 **እንኳን ደስ አላችሁ! በያዙት ቁጥር ({w_num}) {idx}ኛውን ደረጃ ({prize}) አሸንፈዋል!** 🌟🔥")
+        except:
+            pass
 
     winners_text += (
         "\n👏 **ለአሸናፊዎቻችን ትልቅ ደስታን እንመኛለን!** 🥂\n"
         "🚀 **አዲሱ የ 10 ሰዎች ዙር በይፋ ተከፍቷል!**"
     )
 
-    for chat_id in all_users:
+    for chat_id in list(all_users):
         try:
             send_message(chat_id, winners_text)
         except:
