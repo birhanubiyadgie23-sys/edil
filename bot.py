@@ -29,7 +29,7 @@ PRIZES = {
 
 @app.route('/')
 def home():
-    return "🔥 Interactive Button Lottery Bot is running perfectly with security fixes!", 200
+    return "🔥 Interactive Button Lottery Bot is running perfectly!", 200
 
 @app.route(f"/{TOKEN}", methods=["POST"])
 def webhook():
@@ -103,12 +103,10 @@ def webhook():
                 p_user_id = int(parts[1])
                 p_num = int(parts[2])
 
-                # ተጠቃሚው የሌላ ሰውን ቁጥር እንዳይልክ ማረጋገጥ
                 if user_id != p_user_id:
                     answer_callback(callback["id"], "❌ ይህ ድርጊት የተከለከለ ነው!", show_alert=True)
                     return
 
-                # ክፍያ መጠየቁን በሰርቨር መመዝገብ (ደህንነትን ለመጠበቅ)
                 pending_payments[(p_user_id, p_num)] = True
 
                 answer_callback(callback["id"], "ክፍያዎ ለአድሚን ተልኳል!")
@@ -137,7 +135,6 @@ def webhook():
                 target_user_id = int(parts[1])
                 approved_num = int(parts[2])
 
-                # የደህንነት ማረጋገጫ፡ ክፍያው በእርግጥ ተጠይቆ እንደነበር ማረጋገጥ (Spoofing መከላከል)
                 if not pending_payments.pop((target_user_id, approved_num), None):
                     answer_callback(callback["id"], "❌ ይህ ክፍያ ትክክለኛ አይደለም ወይም ቀድሞ ተሰርዟል!", show_alert=True)
                     return
@@ -258,7 +255,6 @@ def get_numbers_keyboard():
     return {"inline_keyboard": keyboard_buttons}
 
 def safe_send_keyboard(chat_id, text, markup):
-    """ተጠቃሚው ቦቱን ብሎክ አድርጎ ከሆነ ከ ዝርዝር ውስጥ በራስ ሰር የሚለይ አስተማማኝ ፋንክሽን"""
     url = f"{TELEGRAM_API_URL}/sendMessage"
     payload = {"chat_id": chat_id, "text": text, "reply_markup": markup, "parse_mode": "Markdown"}
     response = requests.post(url, json=payload)
