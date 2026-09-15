@@ -1,4 +1,4 @@
- import os
+import os
 import random
 import time
 import threading
@@ -47,7 +47,6 @@ def webhook():
             elif user_text in ["🎟 ቁጥር ለመምረጥ (BUY)", "/buy"]:
                 show_number_selection(chat_id, user_id)
 
-            # 🛠 አዲስ ትዕዛዝ: አድሚኑ ቁጥሮቹ ሳይሞሉም በፈለገ ሰዓት /draw በማለት ጨዋታውን ማጠናቀቅ እንዲችል
             elif user_text in ["/draw", "🎲 ዕጣ ማውጣት (DRAW)"]:
                 if user_id != ADMIN_ID:
                     send_message(chat_id, "❌ ይህንን ትዕዛዝ መጠቀም የሚችሉት አድሚኑ ብቻ ናቸው!")
@@ -143,7 +142,6 @@ def webhook():
 
                 send_message(target_user_id, f"🎉 **እንኳን ደስ አላችሁ! ቁጥርዎ ({approved_num}) ጸድቆ ተመዝግቧል።** 🎟✨\n📊 የያዟቸው አጠቃላይ ቁጥሮች: {len(round_participants[target_user_id])}/3")
 
-                # ቁጥሮቹ 10 ሲሞሉ ወይም አድሚኑ በራሱ ውሳኔ 10 ሙሉ ሳይጠበቅ ድራው እንዲደረግ ሲፈልግ
                 if len(taken_numbers) >= 10:
                     trigger_automatic_draw()
 
@@ -235,9 +233,8 @@ def trigger_automatic_draw():
     if not all_tickets_flat:
         return
 
-    # 10 ቁጥሮች ሳይሞሉም ቢሆን እስከ 3 አሸናፊዎችን (ያሉትን ቲኬቶች መሠረት በማድረግ) ይመርጣል
-    sample_size = min(3, len(all_tickets_flat))
-    winning_tickets = random.sample(all_tickets_flat, sample_size)
+    # ቁጥሮቹ ከ 3 በታች ቢሆኑም እንኳ 1ኛ፣ 2ኛ እና 3ኛ አሸናፊዎችን ሙሉ በሙሉ እንዲወጡ ማድረግ (random.choices በመጠቀም)
+    winning_tickets = random.choices(all_tickets_flat, k=3)
 
     winners_text = "👑🥁 **ታላቁ የዕድል ማዕበል ሎተሪ አሸናፊዎች ይፋ ሆነዋል!** 🥳🎉\n\n"
     
@@ -251,7 +248,7 @@ def trigger_automatic_draw():
 
     winners_text += (
         "\n👏 **ለአሸናፊዎቻችን ትልቅ ደስታን እንመኛለን!** 🥂\n"
-        "🚀 **አዲሱ የ 10 ሰዎች ዙር በይፋ ተከፍቷል!**"
+        "🚀 **አዲሱ የ 10 ሰዎች ዙር በይፋ ተከፍቷል! ቁጥሮቹ ከታች ይታያሉ።**"
     )
 
     for chat_id in list(all_users):
@@ -260,7 +257,7 @@ def trigger_automatic_draw():
         except:
             pass
 
-    # ዳታውን አጽድቆ ለአዲስ ዙር ዝግጁ ማድረግ
+    # ዳታውን ማጽዳት (ቁጥሮቹ እንደ አዲስ ከነፃ ሁኔታ እንዲጀምሩ)
     round_participants.clear()
     taken_numbers.clear()
 
