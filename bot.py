@@ -171,10 +171,9 @@ def send_main_menu(chat_id, first_name):
     send_reply_keyboard(chat_id, reply_text, keyboard)
 
 def show_number_selection(chat_id, user_id):
-    user_nums = round_participants.get(user_id, [])
     keyboard_buttons = []
     row = []
-    
+    user_nums = round_participants.get(user_id, [])
     for i in range(1, 11):
         if i in taken_numbers:
             btn_text = f"❌ {i} (ተያዟል)"
@@ -199,10 +198,9 @@ def show_number_selection(chat_id, user_id):
     send_keyboard_inline(chat_id, text, {"inline_keyboard": keyboard_buttons})
 
 def show_number_selection_inline(chat_id, message_id, user_id):
-    user_nums = round_participants.get(user_id, [])
     keyboard_buttons = []
     row = []
-    
+    user_nums = round_participants.get(user_id, [])
     for i in range(1, 11):
         if i in taken_numbers:
             btn_text = f"❌ {i} (ተያዟል)"
@@ -226,6 +224,26 @@ def show_number_selection_inline(chat_id, message_id, user_id):
     )
     edit_message_keyboard(chat_id, message_id, text, {"inline_keyboard": keyboard_buttons})
 
+# የቁጥሮች በተኖችን የሚያመነጭ አጋዥ ፋንክሽን
+def get_numbers_keyboard():
+    keyboard_buttons = []
+    row = []
+    for i in range(1, 11):
+        if i in taken_numbers:
+            btn_text = f"❌ {i} (ተያዟል)"
+            callback_val = f"taken_{i}"
+        else:
+            btn_text = f"🟢 ነፃ ({i})"
+            callback_val = f"select_{i}"
+            
+        row.append({"text": btn_text, "callback_data": callback_val})
+        if len(row) == 2:
+            keyboard_buttons.append(row)
+            row = []
+    if row:
+        keyboard_buttons.append(row)
+    return {"inline_keyboard": keyboard_buttons}
+
 # 10 ቁጥሮች ሙሉ ሲሞሉ (1ኛ፣ 2ኛ እና 3ኛ አሸናፊዎች)
 def trigger_full_draw():
     all_tickets_flat = []
@@ -236,7 +254,6 @@ def trigger_full_draw():
     if not all_tickets_flat:
         return
 
-    # የእጣ ማውጣት ሂደት (Animation simulation) ለተጠቃሚዎች ማሳየት
     for chat_id in list(all_users):
         try:
             send_message(chat_id, "🎲 **10 ቁጥሮች ሙሉ በሙሉ ተይዘዋል! ዕጣው በመሾር ላይ ነው...** ⏳ ውጤቱ በሰከንዶች ውስጥ ይፋ ይሆናል!")
@@ -258,17 +275,20 @@ def trigger_full_draw():
 
     winners_text += (
         "\n👏 **ለአሸናፊዎቻችን ትልቅ ደስታን እንመኛለን!** 🥂\n"
-        "🚀 **አዲሱ የ 10 ሰዎች ዙር በይፋ ተከፍቷል!**"
+        "🚀 **አዲሱ የ 10 ቁጥሮች ዙር በይፋ ተከፍቷል! ከታች የሚፈልጉትን ቁጥር ይምረጡ።** 👇"
     )
+
+    # ዳታውን ማጽዳት (ከማጽዳት በፊት በተኖቹን መላክ እንዲቻል ከዚህ በታች ተካቷል)
+    numbers_markup = get_numbers_keyboard()
+    
+    round_participants.clear()
+    taken_numbers.clear()
 
     for chat_id in list(all_users):
         try:
-            send_message(chat_id, winners_text)
+            send_keyboard_inline(chat_id, winners_text, numbers_markup)
         except:
             pass
-
-    round_participants.clear()
-    taken_numbers.clear()
 
 # አድሚኑ /draw ሲል (ቁጥሮች ሳይሞሉ ሲቀር) -> 3ኛ ደረጃን (አንድ አሸናፊ) ብቻ ማውጣት
 def trigger_manual_draw(admin_chat_id):
@@ -280,7 +300,6 @@ def trigger_manual_draw(admin_chat_id):
     if not all_tickets_flat:
         return
 
-    # የእጣ ማውጣት ሂደት (Animation simulation) ማሳየት
     for chat_id in list(all_users):
         try:
             send_message(chat_id, "🎲 **የዕጣ ማውጣት ሂደት ተጀምሯል! ዕጣው በመሾር ላይ ነው...** ⏳ እባክዎ ይጠብቁ!")
@@ -288,7 +307,6 @@ def trigger_manual_draw(admin_chat_id):
             pass
     time.sleep(3)
 
-    # 3ኛ ደረጃን (አንድ አሸናፊ) ብቻ መምረጥ
     w_id, w_num = random.choice(all_tickets_flat)
     prize = PRIZES[3]
 
@@ -296,7 +314,7 @@ def trigger_manual_draw(admin_chat_id):
         "👑🥁 **የዕድል ማዕበል ሎተሪ (የ 3ኛ ደረጃ አሸናፊ) ይፋ ሆነዋል!** 🥳🎉\n\n"
         f"🎖 **3ኛ ዕጣ (ቁጥር {w_num}):** — {prize}\n\n"
         "👏 **ለአሸናፊያችን ትልቅ ደስታን እንመኛለን!** 🥂\n"
-        "🚀 **አዲሱ ዙር በይፋ ተከፍቷል!**"
+        "🚀 **አዲሱ ዙር በይፋ ተከፍቷል! ከታች የሚፈልጉትን ቁጥር ይምረጡ።** 👇"
     )
 
     try:
@@ -304,14 +322,16 @@ def trigger_manual_draw(admin_chat_id):
     except:
         pass
 
-    for chat_id in list(all_users):
-        try:
-            send_message(chat_id, winners_text)
-        except:
-            pass
+    numbers_markup = get_numbers_keyboard()
 
     round_participants.clear()
     taken_numbers.clear()
+
+    for chat_id in list(all_users):
+        try:
+            send_keyboard_inline(chat_id, winners_text, numbers_markup)
+        except:
+            pass
 
 def background_reminder_loop():
     while True:
@@ -328,11 +348,12 @@ def background_reminder_loop():
                 f"📊 ሁኔታ: **{len(taken_numbers)}/10** ቁጥሮች ተይዘዋል!\n\n"
                 f"🔴 **የተያዙ:** `{taken_str}`\n"
                 f"🟢 **ነፃ ቁጥሮች:** `{available_str}`\n\n"
-                "🔥 ቁልፉን በመጫን አሁኑኑ ዕድልዎን ይሞክሩ! 💰✨"
+                "🔥 ከታች ያሉትን በተኖች በመጫን አሁኑኑ ዕድልዎን ይሞክሩ! 💰✨"
             )
+            numbers_markup = get_numbers_keyboard()
             for chat_id in list(all_users):
                 try:
-                    send_message(chat_id, reminder_text)
+                    send_keyboard_inline(chat_id, reminder_text, numbers_markup)
                 except:
                     pass
 
