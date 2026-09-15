@@ -90,7 +90,7 @@ def webhook():
                     f"✨ የመረጡት ዕድለኛ ቁጥር: **{num}** 🎟\n"
                     f"💵 መክፈል የሚኖርብዎት: **{TICKET_PRICE} ብር**\n\n"
                     f"{BANK_INFO}\n\n"
-                    "👇 ክፍያውን ከፈጸሙ በኋላ ከታች ያለውን ቁልፍ በመጫን ማረጋገጫ ይላኩ!"
+                    f"👇 ክፍያውን ከፈጸሙ በኋላ ከታች ያለውን ቁልፍ በመጫን ማረጋገጫ ይላኩ!"
                 )
                 confirm_keyboard = {
                     "inline_keyboard": [
@@ -122,7 +122,7 @@ def webhook():
                     f"👤 ተሳታፊ: {first_name} (ID: `{p_user_id}`)\n"
                     f"🔢 የጠየቀው ቁጥር: **{p_num}**\n"
                     f"💵 የሚጠበቀው ብር: **{TICKET_PRICE} ብር**\n\n"
-                    "እባክዎ የባንክ ገቢዎን በማየት ከታች ያለውን ይጫኑ፡"
+                    f"እባክዎ የባንክ ገቢዎን በማየት ከታች ያለውን ይጫኑ፡"
                 )
                 admin_keyboard = {
                     "inline_keyboard": [
@@ -209,7 +209,7 @@ def show_number_selection(chat_id, user_id):
         f"🎯 **ከ 1 እስከ 10 ያሉ ዕድለኛ ቁጥሮች**\n\n"
         f"📊 የተያዙ: **{len(taken_numbers)}/10**\n"
         f"👤 የእርስዎ የያዟቸው ቁጥሮች: `{len(user_nums)}/3`\n\n"
-        "👇 ከታች ከሚታዩት **🟢 ነፃ** በተኖች ውስጥ የሚፈልጉትን ይጫኑ!"
+        f"👇 ከታች ከሚታዩት **🟢 ነፃ** በተኖች ውስጥ የሚፈልጉትን ይጫኑ!"
     )
     send_keyboard_inline(chat_id, text, {"inline_keyboard": keyboard_buttons})
 
@@ -236,7 +236,7 @@ def show_number_selection_inline(chat_id, message_id, user_id):
         f"🎯 **ከ 1 እስከ 10 ያሉ ዕድለኛ ቁጥሮች**\n\n"
         f"📊 የተያዙ: **{len(taken_numbers)}/10**\n"
         f"👤 የእርስዎ የያዟቸው ቁጥሮች: `{len(user_nums)}/3`\n\n"
-        "👇 ከታች ከሚታዩት **🟢 ነፃ** በተኖች ውስጥ የሚፈልጉትን ይጫኑ!"
+        f"👇 ከታች ከሚታዩት **🟢 ነፃ** በተኖች ውስጥ የሚፈልጉትን ይጫኑ!"
     )
     edit_message_keyboard(chat_id, message_id, text, {"inline_keyboard": keyboard_buttons})
 
