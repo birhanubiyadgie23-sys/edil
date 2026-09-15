@@ -56,7 +56,7 @@ def webhook():
                     send_message(chat_id, "⚠️ እስካሁን የተያዘ አንድም ቁጥር የለም!")
                     return
                 
-                # 10 ሙሉ ሳይሆን በአድሚን ትዕዛዝ ሲጠራ -> 3ኛ ደረጃን (አንድ አሸናፊ) ብቻ ማውጣት
+                # 3ኛ ደረጃን (አንድ አሸናፊ) ብቻ ማውጣት
                 threading.Thread(target=trigger_manual_draw, args=(chat_id,)).start()
 
         elif "callback_query" in data:
@@ -224,7 +224,6 @@ def show_number_selection_inline(chat_id, message_id, user_id):
     )
     edit_message_keyboard(chat_id, message_id, text, {"inline_keyboard": keyboard_buttons})
 
-# የቁጥሮች በተኖችን የሚያመነጭ አጋዥ ፋንክሽን
 def get_numbers_keyboard():
     keyboard_buttons = []
     row = []
@@ -244,7 +243,6 @@ def get_numbers_keyboard():
         keyboard_buttons.append(row)
     return {"inline_keyboard": keyboard_buttons}
 
-# 10 ቁጥሮች ሙሉ ሲሞሉ (1ኛ፣ 2ኛ እና 3ኛ አሸናፊዎች)
 def trigger_full_draw():
     all_tickets_flat = []
     for u_id, nums in round_participants.items():
@@ -253,13 +251,6 @@ def trigger_full_draw():
 
     if not all_tickets_flat:
         return
-
-    for chat_id in list(all_users):
-        try:
-            send_message(chat_id, "🎲 **10 ቁጥሮች ሙሉ በሙሉ ተይዘዋል! ዕጣው በመሾር ላይ ነው...** ⏳ ውጤቱ በሰከንዶች ውስጥ ይፋ ይሆናል!")
-        except:
-            pass
-    time.sleep(3)
 
     winning_tickets = random.sample(all_tickets_flat, min(3, len(all_tickets_flat)))
 
@@ -278,11 +269,9 @@ def trigger_full_draw():
         "🚀 **አዲሱ የ 10 ቁጥሮች ዙር በይፋ ተከፍቷል! ከታች የሚፈልጉትን ቁጥር ይምረጡ።** 👇"
     )
 
-    # ዳታውን ማጽዳት (ከማጽዳት በፊት በተኖቹን መላክ እንዲቻል ከዚህ በታች ተካቷል)
-    numbers_markup = get_numbers_keyboard()
-    
     round_participants.clear()
     taken_numbers.clear()
+    numbers_markup = get_numbers_keyboard()
 
     for chat_id in list(all_users):
         try:
@@ -290,7 +279,6 @@ def trigger_full_draw():
         except:
             pass
 
-# አድሚኑ /draw ሲል (ቁጥሮች ሳይሞሉ ሲቀር) -> 3ኛ ደረጃን (አንድ አሸናፊ) ብቻ ማውጣት
 def trigger_manual_draw(admin_chat_id):
     all_tickets_flat = []
     for u_id, nums in round_participants.items():
@@ -299,13 +287,6 @@ def trigger_manual_draw(admin_chat_id):
 
     if not all_tickets_flat:
         return
-
-    for chat_id in list(all_users):
-        try:
-            send_message(chat_id, "🎲 **የዕጣ ማውጣት ሂደት ተጀምሯል! ዕጣው በመሾር ላይ ነው...** ⏳ እባክዎ ይጠብቁ!")
-        except:
-            pass
-    time.sleep(3)
 
     w_id, w_num = random.choice(all_tickets_flat)
     prize = PRIZES[3]
@@ -322,10 +303,9 @@ def trigger_manual_draw(admin_chat_id):
     except:
         pass
 
-    numbers_markup = get_numbers_keyboard()
-
     round_participants.clear()
     taken_numbers.clear()
+    numbers_markup = get_numbers_keyboard()
 
     for chat_id in list(all_users):
         try:
