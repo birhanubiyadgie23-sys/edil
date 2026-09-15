@@ -18,18 +18,18 @@ round_participants = {}  # {user_id: [num1, num2, num3]}
 taken_numbers = {}       # {num: user_id}
 all_users = set()        # ቦቱን ያነጋገሩ ተጠቃሚዎች መታወቂያ
 
-# የክፍያ ማረጋገጫዎችን በአስተማማኝ ሁኔታ ለመያዝ (Pending Approvals)
+# የክፍያ ማረጋገጫዎች (Pending Approvals)
 pending_payments = {}    # { (user_id, num): True }
 
 PRIZES = {
-    1: "🔥 400 ብር (አንደኛ ደረጃ)",
-    2: "⭐ 200 ብር (ሁለተኛ ደረጃ)",
-    3: "🎖 100 ብር (ሶስተኛ ደረጃ)",
+    1: "🔥 400 ብር (1ኛ ደረጃ)",
+    2: "⭐ 250 ብር (2ኛ ደረጃ)",
+    3: "🎖 150 ብር (3ኛ ደረጃ)",
 }
 
 @app.route('/')
 def home():
-    return "🔥 Interactive Button Lottery Bot is running perfectly!", 200
+    return "🔥 Enhanced Animated Lottery Bot is running successfully!", 200
 
 @app.route(f"/{TOKEN}", methods=["POST"])
 def webhook():
@@ -75,13 +75,17 @@ def webhook():
                 num = int(callback_data.split("_")[1])
 
                 if num in taken_numbers:
-                    answer_callback(callback["id"], "❌ ይህ ቁጥር უკვე ተይዟል!", show_alert=True)
+                    answer_callback(callback["id"], "❌ ይህ ቁጥር ቀድሞ ተይዟል!", show_alert=True)
                     return
 
                 user_nums = round_participants.get(user_id, [])
                 if len(user_nums) >= 3:
                     answer_callback(callback["id"], "⚠️ ከፍተኛው የ 3 ቲኬት ገደብዎ ደርሰዋል!", show_alert=True)
                     return
+
+                # አኒሜሽን የማሳየት ሂደት
+                edit_message_keyboard(chat_id, message_id, "⏳ ቁጥሩ በመረጣ ላይ ነው... 🔄", {"inline_keyboard": []})
+                time.sleep(0.5)
 
                 reply_text = (
                     f"✨ የመረጡት ዕድለኛ ቁጥር: **{num}** 🎟\n"
@@ -157,6 +161,7 @@ def webhook():
 
                 send_message(target_user_id, f"🎉 **እንኳን ደስ አላችሁ! ቁጥርዎ ({approved_num}) ጸድቆ ተመዝግቧል።** 🎟✨\n📊 የያዟቸው አጠቃላይ ቁጥሮች: {len(round_participants[target_user_id])}/3")
 
+                # 10 ቁጥሮች ሲሞሉ በራስሰር ዕጣ ማውጣት
                 if len(taken_numbers) >= 10:
                     threading.Thread(target=trigger_full_draw).start()
 
@@ -168,10 +173,10 @@ def webhook():
 
 def send_main_menu(chat_id, first_name):
     reply_text = (
-        f"✨ ሰላም **{first_name}**! ወደ **የዕድል ማዕበል ሎተሪ** በደህና መጡ! 🎟🔥\n\n"
+        f"✨ ሰላም **{first_name}**! ወደ **ዕድል ማዕበል ሎተሪ** በደህና መጡ! 🎟🔥\n\n"
         f"🥇 1ኛ አሸናፊ: **400 ብር**\n"
-        f"🥈 2ኛ አሸናፊ: **200 ብር**\n"
-        f"🥉 3ኛ አሸናፊ: **100 ብር**\n\n"
+        f"🥈 2ኛ አሸናፊ: **250 ብር**\n"
+        f"🥉 3ኛ አሸናፊ: **150 ብር**\n\n"
         "👇 ቁጥር ለመምረጥ ከታች ያለውን በተን ይጫኑ፦"
     )
     keyboard = {
@@ -265,6 +270,7 @@ def safe_send_keyboard(chat_id, text, markup):
             all_users.remove(chat_id)
 
 def trigger_full_draw():
+    # ዕጣ ከመውጣቱ በፊት የአኒሜሽን ስሜት ለመፍጠር ለሁሉም ተጠቃሚዎች ማሳወቂያ መላክ ይቻላል
     all_tickets_flat = []
     for u_id, nums in round_participants.items():
         for n in nums:
@@ -273,19 +279,29 @@ def trigger_full_draw():
     if not all_tickets_flat:
         return
 
+    # 3 ልዩ አሸናፊዎችን መምረጥ (1ኛ፣ 2ኛ፣ 3ኛ)
     winning_tickets = random.sample(all_tickets_flat, min(3, len(all_tickets_flat)))
 
-    winners_text = "👑🥁 **ታላቁ የዕድል ማዕበል ሎተሪ 1ኛ፣ 2ኛ እና 3ኛ አሸናፊዎች ይፋ ሆነዋል!** 🥳🎉\n\n"
+    winners_text = "🎲 **ዕጣው በመሰንጠቅ ላይ ነው... ⏳**\n\n"
+    for chat_id in list(all_users):
+        try:
+            msg_res = requests.post(f"{TELEGRAM_API_URL}/sendMessage", json={"chat_id": chat_id, "text": winners_text})
+            # ትንሽ አኒሜሽን የማሳያ ቆይታ
+            time.sleep(0.3)
+        except:
+            pass
+
+    final_winners_text = "👑🥁 **ታላቁ የዕድል ማዕበል ሎተሪ 1ኛ፣ 2ኛ እና 3ኛ አሸናፊዎች ይፋ ሆነዋል!** 🥳🎉\n\n"
     
     for idx, (w_id, w_num) in enumerate(winning_tickets, start=1):
-        prize = PRIZES.get(idx, "🎁 ልዩ ሽልማት")
-        winners_text += f"🏆 **{idx}ኛ ዕጣ (ቁጥር {w_num}):** — {prize}\n"
+        prize = PRIZES.get(idx, "🎁 ሽልማት")
+        final_winners_text += f"🏆 **{idx}ኛ ዕጣ (ቁጥር {w_num}):** — {prize}\n"
         try:
             send_message(w_id, f"🎊 **እንኳን ደስ አላችሁ! በያዙት ቁጥር ({w_num}) {idx}ኛውን ደረጃ ({prize}) አሸንፈዋል!** 🌟🔥")
         except:
             pass
 
-    winners_text += (
+    final_winners_text += (
         "\n👏 **ለአሸናፊዎቻችን ትልቅ ደስታን እንመኛለን!** 🥂\n"
         "🚀 **አዲሱ የ 10 ቁጥሮች ዙር በይፋ ተከፍቷል! ከታች የሚፈልጉትን ቁጥር ይምረጡ።** 👇"
     )
@@ -296,7 +312,7 @@ def trigger_full_draw():
     numbers_markup = get_numbers_keyboard()
 
     for chat_id in list(all_users):
-        safe_send_keyboard(chat_id, winners_text, numbers_markup)
+        safe_send_keyboard(chat_id, final_winners_text, numbers_markup)
 
 def trigger_manual_draw(admin_chat_id):
     all_tickets_flat = []
@@ -311,14 +327,14 @@ def trigger_manual_draw(admin_chat_id):
     prize = PRIZES[3]
 
     winners_text = (
-        "👑🥁 **የዕድል ማዕበል ሎተሪ (የ 3ኛ ደረጃ አሸናፊ) ይፋ ሆነዋል!** 🥳🎉\n\n"
-        f"🎖 **3ኛ ዕጣ (ቁጥር {w_num}):** — {prize}\n\n"
+        "👑🥁 **የዕጣ ማውጫ ማሽን ተሽከረከረ... አሸናፊ ይፋ ሆነዋል!** 🥳🎉\n\n"
+        f"🎖 **ዕጣ (ቁጥር {w_num}):** — {prize}\n\n"
         "👏 **ለአሸናፊያችን ትልቅ ደስታን እንመኛለን!** 🥂\n"
         "🚀 **አዲሱ ዙር በይፋ ተከፍቷል! ከታች የሚፈልጉትን ቁጥር ይምረጡ።** 👇"
     )
 
     try:
-        send_message(w_id, f"🎊 **እንኳን ደስ አላችሁ! በያዙት ቁጥር ({w_num}) 3ኛውን ደረጃ ({prize}) አሸንፈዋል!** 🌟🔥")
+        send_message(w_id, f"🎊 **እንኳን ደስ አላችሁ! በያዙት ቁጥር ({w_num}) የተገኘውን ሽልማት ({prize}) አሸንፈዋል!** 🌟🔥")
     except:
         pass
 
