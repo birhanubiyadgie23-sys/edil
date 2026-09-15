@@ -30,13 +30,17 @@ def home():
 
 @app.route(f'/{TOKEN}', methods=['POST'])
 def webhook():
-    if request.headers.get('content-type') == 'application/json':
-        json_string = request.get_data().decode('utf-8')
-        update = telebot.types.Update.de_json(json_string)
-        bot.process_new_updates([update])
-        return "OK", 200
-    else:
-        return "Forbidden", 403
+    try:
+        if request.headers.get('content-type') == 'application/json':
+            json_string = request.get_data().decode('utf-8')
+            update = telebot.types.Update.de_json(json_string)
+            bot.process_new_updates([update])
+            return "OK", 200
+        else:
+            return jsonify({"status": "error", "message": "Invalid content-type"}), 403
+    except Exception as e:
+        print(f"Webhook Error: {e}")
+        return jsonify({"status": "error", "message": str(e)}), 500
 
 @bot.message_handler(commands=['start'])
 def send_start(message):
