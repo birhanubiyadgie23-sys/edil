@@ -24,10 +24,11 @@ PRIZES = {
     3: "🎖 150 ብር (3ኛ ደረጃ)",
 }
 
-@app.route('/')
+@app.route('/', methods=['GET', 'POST'])
 def home():
+    if request.method == 'POST':
+        return "OK", 200
     return "🔥 Enhanced Animated Lottery Bot is running successfully!", 200
-
 @app.route(f'/{TOKEN}', methods=['POST'])
 def webhook():
     try:
