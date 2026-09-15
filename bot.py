@@ -56,7 +56,8 @@ def webhook():
                     send_message(chat_id, "⚠️ እስካሁን የተያዘ አንድም ቁጥር የለም!")
                     return
                 
-                trigger_automatic_draw()
+                # 10 ሙሉ ሳይሆን በአድሚን ትዕዛዝ ሲጠራ -> 3ኛ ደረጃን (አንድ አሸናፊ) ብቻ ማውጣት
+                threading.Thread(target=trigger_manual_draw, args=(chat_id,)).start()
 
         elif "callback_query" in data:
             callback = data["callback_query"]
@@ -142,8 +143,9 @@ def webhook():
 
                 send_message(target_user_id, f"🎉 **እንኳን ደስ አላችሁ! ቁጥርዎ ({approved_num}) ጸድቆ ተመዝግቧል።** 🎟✨\n📊 የያዟቸው አጠቃላይ ቁጥሮች: {len(round_participants[target_user_id])}/3")
 
+                # 10 ቁጥሮች ሙሉ ሲሞሉ -> 1ኛ፣ 2ኛ እና 3ኛ አሸናፊዎችን በሙሉ ማውጣት
                 if len(taken_numbers) >= 10:
-                    trigger_automatic_draw()
+                    threading.Thread(target=trigger_full_draw).start()
 
         return jsonify({"status": "success"}), 200
         
@@ -224,7 +226,8 @@ def show_number_selection_inline(chat_id, message_id, user_id):
     )
     edit_message_keyboard(chat_id, message_id, text, {"inline_keyboard": keyboard_buttons})
 
-def trigger_automatic_draw():
+# 10 ቁጥሮች ሙሉ ሲሞሉ (1ኛ፣ 2ኛ እና 3ኛ አሸናፊዎች)
+def trigger_full_draw():
     all_tickets_flat = []
     for u_id, nums in round_participants.items():
         for n in nums:
@@ -233,10 +236,17 @@ def trigger_automatic_draw():
     if not all_tickets_flat:
         return
 
-    # ቁጥሮቹ ከ 3 በታች ቢሆኑም እንኳ 1ኛ፣ 2ኛ እና 3ኛ አሸናፊዎችን ሙሉ በሙሉ እንዲወጡ ማድረግ (random.choices በመጠቀም)
-    winning_tickets = random.choices(all_tickets_flat, k=3)
+    # የእጣ ማውጣት ሂደት (Animation simulation) ለተጠቃሚዎች ማሳየት
+    for chat_id in list(all_users):
+        try:
+            send_message(chat_id, "🎲 **10 ቁጥሮች ሙሉ በሙሉ ተይዘዋል! ዕጣው በመሾር ላይ ነው...** ⏳ ውጤቱ በሰከንዶች ውስጥ ይፋ ይሆናል!")
+        except:
+            pass
+    time.sleep(3)
 
-    winners_text = "👑🥁 **ታላቁ የዕድል ማዕበል ሎተሪ አሸናፊዎች ይፋ ሆነዋል!** 🥳🎉\n\n"
+    winning_tickets = random.sample(all_tickets_flat, min(3, len(all_tickets_flat)))
+
+    winners_text = "👑🥁 **ታላቁ የዕድል ማዕበል ሎተሪ 1ኛ፣ 2ኛ እና 3ኛ አሸናፊዎች ይፋ ሆነዋል!** 🥳🎉\n\n"
     
     for idx, (w_id, w_num) in enumerate(winning_tickets, start=1):
         prize = PRIZES.get(idx, "🎁 ልዩ ሽልማት")
@@ -248,7 +258,7 @@ def trigger_automatic_draw():
 
     winners_text += (
         "\n👏 **ለአሸናፊዎቻችን ትልቅ ደስታን እንመኛለን!** 🥂\n"
-        "🚀 **አዲሱ የ 10 ሰዎች ዙር በይፋ ተከፍቷል! ቁጥሮቹ ከታች ይታያሉ።**"
+        "🚀 **አዲሱ የ 10 ሰዎች ዙር በይፋ ተከፍቷል!**"
     )
 
     for chat_id in list(all_users):
@@ -257,7 +267,49 @@ def trigger_automatic_draw():
         except:
             pass
 
-    # ዳታውን ማጽዳት (ቁጥሮቹ እንደ አዲስ ከነፃ ሁኔታ እንዲጀምሩ)
+    round_participants.clear()
+    taken_numbers.clear()
+
+# አድሚኑ /draw ሲል (ቁጥሮች ሳይሞሉ ሲቀር) -> 3ኛ ደረጃን (አንድ አሸናፊ) ብቻ ማውጣት
+def trigger_manual_draw(admin_chat_id):
+    all_tickets_flat = []
+    for u_id, nums in round_participants.items():
+        for n in nums:
+            all_tickets_flat.append((u_id, n))
+
+    if not all_tickets_flat:
+        return
+
+    # የእጣ ማውጣት ሂደት (Animation simulation) ማሳየት
+    for chat_id in list(all_users):
+        try:
+            send_message(chat_id, "🎲 **የዕጣ ማውጣት ሂደት ተጀምሯል! ዕጣው በመሾር ላይ ነው...** ⏳ እባክዎ ይጠብቁ!")
+        except:
+            pass
+    time.sleep(3)
+
+    # 3ኛ ደረጃን (አንድ አሸናፊ) ብቻ መምረጥ
+    w_id, w_num = random.choice(all_tickets_flat)
+    prize = PRIZES[3]
+
+    winners_text = (
+        "👑🥁 **የዕድል ማዕበል ሎተሪ (የ 3ኛ ደረጃ አሸናፊ) ይፋ ሆነዋል!** 🥳🎉\n\n"
+        f"🎖 **3ኛ ዕጣ (ቁጥር {w_num}):** — {prize}\n\n"
+        "👏 **ለአሸናፊያችን ትልቅ ደስታን እንመኛለን!** 🥂\n"
+        "🚀 **አዲሱ ዙር በይፋ ተከፍቷል!**"
+    )
+
+    try:
+        send_message(w_id, f"🎊 **እንኳን ደስ አላችሁ! በያዙት ቁጥር ({w_num}) 3ኛውን ደረጃ ({prize}) አሸንፈዋል!** 🌟🔥")
+    except:
+        pass
+
+    for chat_id in list(all_users):
+        try:
+            send_message(chat_id, winners_text)
+        except:
+            pass
+
     round_participants.clear()
     taken_numbers.clear()
 
