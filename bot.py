@@ -67,7 +67,7 @@ def webhook():
                     answer_callback(callback["id"], "⚠️ ከፍተኛው የ 3 ቲኬት ገደብዎ ደርሰዋል!", show_alert=True)
                     return
 
-                # ತಾቆታሚ ክፍያ መጠየቂያ
+                # താቆታሚ ክፍያ መጠየቂያ
                 reply_text = (
                     f"✨ የመረጡት ዕድለኛ ቁጥር: **{num}** 🎟\n"
                     f"💵 መክፈል የሚኖርብዎት: **{TICKET_PRICE} ብር**\n\n"
@@ -105,7 +105,8 @@ def webhook():
                         [{"text": f"✅ ቁጥር {p_num} አጽድቅ", "callback_data": f"approve_{p_user_id}_{p_num}"}]
                     ]
                 }
-                send_keyboard(ADMIN_ID, admin_text, admin_keyboard)
+                # እዚህ ጋር የነበረው ስህተት ተስተካክሏል (send_keyboard ፋንክሽን ትክክለኛ ስም ተሰጥቶታል)
+                send_keyboard_inline(ADMIN_ID, admin_text, admin_keyboard)
 
             elif callback_data.startswith("approve_"):
                 if user_id != ADMIN_ID:
@@ -144,12 +145,11 @@ def webhook():
 def send_main_menu(chat_id, first_name):
     reply_text = (
         f"✨ ሰላም **{first_name}**! ወደ **የዕድል ማዕበል ሎተሪ** በደህና መጡ! 🎟🔥\n\n"
-        f"🥇 1ኛ አሸናፊ: **1,000 ብር**\n"
-        f"🥈 2ኛ አሸናፊ: **500 ብር**\n"
-        f"🥉 እስከ 5ኛ ደረጃ ያሉ አጓጊ ሽልማቶች!\n\n"
+        f"🥇 1ኛ አሸናፊ: **400 ብር**\n"
+        f"🥈 2ኛ አሸናፊ: **200 ብር**\n"
+        f"🥉 3ኛ አሸናፊ: **100 ብር**\n\n"
         "👇 ቁጥር ለመምረጥ ከታች ያለውን በተን ይጫኑ፦"
     )
-    # ከታች በቻቱ ውስጥ ቋሚ በተኖች (Reply Keyboard) እንዲኖሩ
     keyboard = {
         "keyboard": [
             [{"text": "🎟 ቁጥር ለመምረጥ (BUY)"}],
@@ -173,7 +173,7 @@ def show_number_selection(chat_id, user_id):
             callback_val = f"select_{i}"
             
         row.append({"text": btn_text, "callback_data": callback_val})
-        if len(row) == 2:  # በየሁለቱ ቁጥሮች አዲስ መስመር
+        if len(row) == 2:
             keyboard_buttons.append(row)
             row = []
     if row:
@@ -221,7 +221,7 @@ def trigger_automatic_draw():
         for n in nums:
             all_tickets_flat.append((u_id, n))
 
-    winning_tickets = random.sample(all_tickets_flat, min(5, len(all_tickets_flat)))
+    winning_tickets = random.sample(all_tickets_flat, min(3, len(all_tickets_flat)))
 
     winners_text = "👑🥁 **ታላቁ የዕድል ማዕበል ሎተሪ አሸናፊዎች ይፋ ሆነዋል!** 🥳🎉\n\n"
     
@@ -246,7 +246,7 @@ def trigger_automatic_draw():
 
 def background_reminder_loop():
     while True:
-        time.sleep(840)  # 10 ደቂቃ
+        time.sleep(840)  # 14 ደቂቃ
         if all_users:
             taken_list = sorted(list(taken_numbers.keys()))
             available_list = sorted([i for i in range(1, 11) if i not in taken_numbers])
