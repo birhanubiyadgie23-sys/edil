@@ -19,7 +19,8 @@ TICKET_PRICE = 300
 BANK_INFO = "🏦 **የባንክ አካውንት መረጃ**\nአካውንት ቁጥር: `1000324406461`\nስም: Birhanu"
 
 # የዙር መረጃ ማከማቻ (In-memory)
-round_participants = {}  # {user_id: {"name": name, "number": chosen_number}}
+# round_participants structure: {user_id: [num1, num2, num3]} (አንድ ተጠቃሚ እስከ 3 ቁጥር መያዝ ስለሚችል በሊስት ተይዟል)
+round_participants = {}  
 taken_numbers = set()    # የተያዙ ቁጥሮች (ከ 1 እስከ 10)
 user_states = {}         # የተጠቃሚ ስቴት
 all_users = set()        # መልእክት የሚላክላቸው ተጠቃሚዎች ሁሉ (ለማስታወሻ)
@@ -34,7 +35,7 @@ PRIZES = {
 
 @app.route('/')
 def home():
-    return "10-Person Lottery Bot with Auto-Reminder is running!", 200
+    return "10-Person Lottery Bot (Max 3 tickets per user) is running!", 200
 
 @app.route(f"/{TOKEN}", methods=["POST"])
 def webhook():
@@ -47,30 +48,33 @@ def webhook():
             user_id = data["message"]["from"]["id"]
             first_name = data["message"]["from"].get("first_name", "ተጠቃሚ")
 
-            # ተጠቃሚውን መዝገብ ላይ መያዝ (ለማስታወሻ እንዲመች)
             all_users.add(chat_id)
 
             if user_text == "/start":
                 if user_id in user_states:
                     del user_states[user_id]
                     
+                total_taken_count = len(taken_numbers)
                 reply_text = (
                     f"ሰላም {first_name}! 🎟 ወደ 10 ሰዎች የዕድል ሎተሪ ፕሮግራም እንኳን ደህና መጡ።\n\n"
-                    f"• የሚመረጥ ቁጥር: **ከ 1 እስከ 10** (አንድ ቁጥር ለአንድ ሰው)\n"
-                    f"• የቲኬት ዋጋ: **{TICKET_PRICE} ብር**\n"
-                    f"• አሁን ያሉት ተሳታፊዎች: **{len(round_participants)}/10**\n\n"
+                    f"• የሚመረጥ ቁጥር: **ከ 1 እስከ 10**\n"
+                    f"• የክፍያ ዋጋ በአንድ ቁጥር: **{TICKET_PRICE} ብር**\n"
+                    f"• **ማስታወሻ:** አንድ ተጠቃሚ **እስከ 3 ቲኬት (ቁጥር)** መግዛት ይችላል!\n"
+                    f"• አሁን የተያዙ ቲኬቶች: **{total_taken_count}/10**\n\n"
                     "**ትዕዛዝ:**\n"
                     "/buy - ቁጥር ለመምረጥ እና ለመሳተፍ"
                 )
                 send_message(chat_id, reply_text)
 
             elif user_text == "/buy":
-                if len(round_participants) >= 10:
-                    send_message(chat_id, "❌ ይቅርታ! የአሁን ዙር 10 ተሳታፊዎች ሞልተዋል። እጣው እስኪወጣ ይጠብቁ።")
+                if len(taken_numbers) >= 10:
+                    send_message(chat_id, "❌ ይቅርታ! አጠቃላይ 10ቱንም ቁጥሮች ተይዘዋል። እጣው እስኪወጣ ይጠብቁ።")
                     return
 
-                if user_id in round_participants:
-                    send_message(chat_id, f"⚠️ እርስዎ ఇప్పటికే ቁጥር ({round_participants[user_id]['number']}) ይዘዋል! የክፍያ ማረጋገጫ ይጠብቁ።")
+                # ተጠቃሚው የያዛቸውን ቁጥሮች ብዛት ማረጋገጥ (እስከ 3)
+                user_nums = round_participants.get(user_id, [])
+                if len(user_nums) >= 3:
+                    send_message(chat_id, f"⚠️ እርስዎ ఇప్పటికే ከፍተኛውን የቁጥር ገደብ (**3 ቁጥሮች**) ይዘዋል! የያዟቸው ቁጥሮች: {', '.join(map(str, user_nums))}")
                     return
 
                 user_states[user_id] = "waiting_for_number"
@@ -90,6 +94,12 @@ def webhook():
 
                 if num in taken_numbers:
                     send_message(chat_id, "❌ ይህ ቁጥር በሌላ ተሳታፊ ተይዟል! ሌላ ቁጥር ይምረጡ።")
+                    return
+
+                # ድጋሚ እሱ ራሱ የያዘውን ቁጥር እንዳይመርጥ ማረጋገጥ
+                user_nums = round_participants.get(user_id, [])
+                if num in user_nums:
+                    send_message(chat_id, "❌ ይህንን ቁጥር እርስዎ አስቀድመው ይዘውታል! ሌላ ቁጥር ይምረጡ።")
                     return
 
                 del user_states[user_id]
@@ -146,18 +156,23 @@ def webhook():
                 approved_num = int(parts[2])
 
                 if approved_num in taken_numbers:
-                    answer_callback(callback["id"], "❌ ይህ ቁጥር უკვე ተይዟል!")
+                    answer_callback(callback["id"], "❌ ይህ ቁጥር አሁንም ተይዟል!")
                     return
 
                 taken_numbers.add(approved_num)
-                round_participants[target_user_id] = {"name": "ተሳታፊ", "number": approved_num}
+                
+                if target_user_id not in round_participants:
+                    round_participants[target_user_id] = []
+                if approved_num not in round_participants[target_user_id]:
+                    round_participants[target_user_id].append(approved_num)
 
                 answer_callback(callback["id"], "ቁጥሩ ጸድቋል!")
-                edit_message(chat_id, callback["message"]["message_id"], f"✅ **ቁጥር {approved_num} ጸድቋል! (አሁን ያሉት: {len(round_participants)}/10)**")
+                edit_message(chat_id, callback["message"]["message_id"], f"✅ **ቁጥር {approved_num} ጸድቋል! (አሁን የተያዙ: {len(taken_numbers)}/10)**")
 
-                send_message(target_user_id, f"🎉 **እንኳን ደስ አላችሁ! ቁጥርዎ ({approved_num}) በድል አድራጊነት ጸድቋል።**\n📊 አጠቃላይ ተሳታፊዎች: {len(round_participants)}/10")
+                send_message(target_user_id, f"🎉 **እንኳን ደስ አላችሁ! ቁጥርዎ ({approved_num}) በድል አድራጊነት ጸድቋል።**\n📊 የያዟቸው አጠቃላይ ቁጥሮች: {len(round_participants[target_user_id])}/3")
 
-                if len(round_participants) == 10:
+                # አጠቃላይ 10 ቁጥሮች ሲሞሉ እጣ ማውጣት
+                if len(taken_numbers) >= 10:
                     trigger_automatic_draw()
 
         return jsonify({"status": "success"}), 200
@@ -167,36 +182,52 @@ def webhook():
         return jsonify({"status": "error"}), 500
 
 def trigger_automatic_draw():
-    participants_list = list(round_participants.items())
-    winning_participants = random.sample(participants_list, 5)
+    # እያንዳንዱን የተረጋገጠ ቁጥር እንደየባለቤቱ ለድል ማዘጋጀት
+    all_tickets_flat = []
+    for u_id, nums in round_participants.items():
+        for n in nums:
+            all_tickets_flat.append((u_id, n))
+
+    winning_tickets = random.sample(all_tickets_flat, min(5, len(all_tickets_flat)))
 
     winners_text = "🎉 **የ 10 ሰዎች ዕድል ሎተሪ አሸናፊዎች ይፋ ሆነዋል!** 🎉\n\n"
     
-    for idx, (w_id, data) in enumerate(winning_participants, start=1):
+    for idx, (w_id, w_num) in enumerate(winning_tickets, start=1):
         prize = PRIZES[idx]
-        winners_text += f"🏆 **{idx}ኛ እጣ (ቁጥር {data['number']}):** — **{prize}**\n"
-        send_message(w_id, f"🎊 **እንኳን ደስ አላችሁ! በያዙት ቁጥር ({data['number']}) {idx}ኛውን እጣ ({prize}) አሸንፈዋል!** 🥳")
+        winners_text += f"🏆 **{idx}ኛ እጣ (ቁጥር {w_num}):** — **{prize}**\n"
+        send_message(w_id, f"🎊 **እንኳን ደስ አላችሁ! በያዙት ቁጥር ({w_num}) {idx}ኛውን እጣ ({prize}) አሸንፈዋል!** 🥳")
 
     winners_text += (
         "\n👏 **ለአሸናፊዎቹ ሁሉ እንኳን ደስ አላችሁ!** 🎊\n"
         "🔄 **አዲሱ የ 10 ሰዎች ዙር በይፋ ተጀምሯል! ቁጥር ለመምረጥ ይጫኑ፦** /buy 🎟"
     )
 
-    for w_id in round_participants.keys():
-        send_message(w_id, winners_text)
+    for chat_id in all_users:
+        try:
+            send_message(chat_id, winners_text)
+        except:
+            pass
 
     round_participants.clear()
     taken_numbers.clear()
 
-# 🔄 ሰርቨሩ እንዳይተኛ እና ተሳታፊዎች እንዲነቃቁ በጀርባ የሚሰራ (Background Reminder Thread)
+# 🔄 ሰርቨሩ እንዳይተኛ እና የተያዙ/የቀሩ ቁጥሮችን በሪማይንደር የሚልክ ሎጂክ
 def background_reminder_loop():
     while True:
-        time.sleep(600)  # በየ 10 ደቂቃው (600 ሰከንድ) አንዴ ይጠራል።
+        time.sleep(600)  # በየ 10 ደቂቃው
         if all_users:
+            taken_list = sorted(list(taken_numbers))
+            available_list = sorted([i for i in range(1, 11) if i not in taken_numbers])
+            
+            taken_str = ", ".join(map(str, taken_list)) if taken_list else "የለም"
+            available_str = ", ".join(map(str, available_list)) if available_list else "የለም"
+
             reminder_text = (
                 "📢 **ማስታወሻ ከዕድል ሎተሪ ቦት!**\n\n"
-                f"አሁን ያሉት ተሳታፊዎች: **{len(round_participants)}/10**\n"
-                "ቦታዎች ከመሞላታቸው በፊት አሁኑኑ /buy በመጫን የሚፈልጉትን ቁጥር ይምረጡ እና ዕድልዎን ይሞክሩ! 🎟✨"
+                f"📊 ሁኔታ: **{len(taken_numbers)}/10** ቁጥሮች ተይዘዋል\n\n"
+                f"🔴 **የተያዙ ቁጥሮች:** `{taken_str}`\n"
+                f"🟢 **ቀሩ (ነፃ) ቁጥሮች:** `{available_str}`\n\n"
+                "ቦታዎች ከመሞላታቸው በፊት አሁኑኑ /buy በመጫን እስከ 3 ቁጥሮች ይምረጡና ዕድልዎን ይሞክሩ! 🎟✨"
             )
             for chat_id in list(all_users):
                 try:
@@ -204,7 +235,6 @@ def background_reminder_loop():
                 except Exception as e:
                     print(f"Reminder error for {chat_id}: {e}")
 
-# የባክግራውንድ ቲሬድ ማስጀመር
 threading.Thread(target=background_reminder_loop, daemon=True).start()
 
 def send_message(chat_id, text):
