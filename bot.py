@@ -16,7 +16,10 @@ BANK_INFO = "🏦 **የባንክ አካውንት መረጃ**\nአካውንት �
 
 round_participants = {}  # {user_id: [num1, num2, num3]}
 taken_numbers = {}       # {num: user_id}
-all_users = set()
+all_users = set()        # ቦቱን ያነጋገሩ ተጠቃሚዎች መታወቂያ
+
+# የክፍያ ማረጋገጫዎችን በአስተማማኝ ሁኔታ ለመያዝ (Pending Approvals)
+pending_payments = {}    # { (user_id, num): True }
 
 PRIZES = {
     1: "🔥 400 ብር (አንደኛ ደረጃ)",
@@ -26,7 +29,7 @@ PRIZES = {
 
 @app.route('/')
 def home():
-    return "🔥 Interactive Button Lottery Bot is running perfectly!", 200
+    return "🔥 Interactive Button Lottery Bot is running perfectly with security fixes!", 200
 
 @app.route(f"/{TOKEN}", methods=["POST"])
 def webhook():
@@ -56,7 +59,6 @@ def webhook():
                     send_message(chat_id, "⚠️ እስካሁን የተያዘ አንድም ቁጥር የለም!")
                     return
                 
-                # 3ኛ ደረጃን (አንድ አሸናፊ) ብቻ ማውጣት
                 threading.Thread(target=trigger_manual_draw, args=(chat_id,)).start()
 
         elif "callback_query" in data:
@@ -101,6 +103,14 @@ def webhook():
                 p_user_id = int(parts[1])
                 p_num = int(parts[2])
 
+                # ተጠቃሚው የሌላ ሰውን ቁጥር እንዳይልክ ማረጋገጥ
+                if user_id != p_user_id:
+                    answer_callback(callback["id"], "❌ ይህ ድርጊት የተከለከለ ነው!", show_alert=True)
+                    return
+
+                # ክፍያ መጠየቁን በሰርቨር መመዝገብ (ደህንነትን ለመጠበቅ)
+                pending_payments[(p_user_id, p_num)] = True
+
                 answer_callback(callback["id"], "ክፍያዎ ለአድሚን ተልኳል!")
                 edit_message_keyboard(chat_id, message_id, "⏳ **ክፍያዎ በማጣራት ላይ ይገኛል!** አድሚኑ ሲያረጋግጠው ማሳወቂያ ይደርሰዎታል። 🚀", {"inline_keyboard": []})
 
@@ -127,6 +137,11 @@ def webhook():
                 target_user_id = int(parts[1])
                 approved_num = int(parts[2])
 
+                # የደህንነት ማረጋገጫ፡ ክፍያው በእርግጥ ተጠይቆ እንደነበር ማረጋገጥ (Spoofing መከላከል)
+                if not pending_payments.pop((target_user_id, approved_num), None):
+                    answer_callback(callback["id"], "❌ ይህ ክፍያ ትክክለኛ አይደለም ወይም ቀድሞ ተሰርዟል!", show_alert=True)
+                    return
+
                 if approved_num in taken_numbers:
                     answer_callback(callback["id"], "❌ ይህ ቁጥር ቀድሞ ተይዟል!", show_alert=True)
                     return
@@ -143,7 +158,6 @@ def webhook():
 
                 send_message(target_user_id, f"🎉 **እንኳን ደስ አላችሁ! ቁጥርዎ ({approved_num}) ጸድቆ ተመዝግቧል።** 🎟✨\n📊 የያዟቸው አጠቃላይ ቁጥሮች: {len(round_participants[target_user_id])}/3")
 
-                # 10 ቁጥሮች ሙሉ ሲሞሉ -> 1ኛ፣ 2ኛ እና 3ኛ አሸናፊዎችን በሙሉ ማውጣት
                 if len(taken_numbers) >= 10:
                     threading.Thread(target=trigger_full_draw).start()
 
@@ -243,6 +257,15 @@ def get_numbers_keyboard():
         keyboard_buttons.append(row)
     return {"inline_keyboard": keyboard_buttons}
 
+def safe_send_keyboard(chat_id, text, markup):
+    """ተጠቃሚው ቦቱን ብሎክ አድርጎ ከሆነ ከ ዝርዝር ውስጥ በራስ ሰር የሚለይ አስተማማኝ ፋንክሽን"""
+    url = f"{TELEGRAM_API_URL}/sendMessage"
+    payload = {"chat_id": chat_id, "text": text, "reply_markup": markup, "parse_mode": "Markdown"}
+    response = requests.post(url, json=payload)
+    if response.status_code == 403 or "Forbidden" in response.text:
+        if chat_id in all_users:
+            all_users.remove(chat_id)
+
 def trigger_full_draw():
     all_tickets_flat = []
     for u_id, nums in round_participants.items():
@@ -271,13 +294,11 @@ def trigger_full_draw():
 
     round_participants.clear()
     taken_numbers.clear()
+    pending_payments.clear()
     numbers_markup = get_numbers_keyboard()
 
     for chat_id in list(all_users):
-        try:
-            send_keyboard_inline(chat_id, winners_text, numbers_markup)
-        except:
-            pass
+        safe_send_keyboard(chat_id, winners_text, numbers_markup)
 
 def trigger_manual_draw(admin_chat_id):
     all_tickets_flat = []
@@ -305,13 +326,11 @@ def trigger_manual_draw(admin_chat_id):
 
     round_participants.clear()
     taken_numbers.clear()
+    pending_payments.clear()
     numbers_markup = get_numbers_keyboard()
 
     for chat_id in list(all_users):
-        try:
-            send_keyboard_inline(chat_id, winners_text, numbers_markup)
-        except:
-            pass
+        safe_send_keyboard(chat_id, winners_text, numbers_markup)
 
 def background_reminder_loop():
     while True:
@@ -332,10 +351,7 @@ def background_reminder_loop():
             )
             numbers_markup = get_numbers_keyboard()
             for chat_id in list(all_users):
-                try:
-                    send_keyboard_inline(chat_id, reminder_text, numbers_markup)
-                except:
-                    pass
+                safe_send_keyboard(chat_id, reminder_text, numbers_markup)
 
 threading.Thread(target=background_reminder_loop, daemon=True).start()
 
