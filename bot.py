@@ -7,34 +7,26 @@ from flask import Flask, request, jsonify
 
 app = Flask(__name__)
 
-# የቦት ቶከን እና አድሚን ID
 TOKEN = '8656307750:AAHb9DD6G_Q60GVEAw-8k6hM9SgPSQWNKlY'
 TELEGRAM_API_URL = f"https://api.telegram.org/bot{TOKEN}"
-
-# የአድሚን ቴሌግራም ID
 ADMIN_ID = 1088785278
 
-# የቲኬት ዋጋ እና የባንክ መረጃ
-TICKET_PRICE = 300 
+TICKET_PRICE = 100
 BANK_INFO = "🏦 **የባንክ አካውንት መረጃ**\nአካውንት ቁጥር: `1000324406461`\nስም: Birhanu"
 
-# የዙር መረጃ ማከማቻ (In-memory)
 round_participants = {}  # {user_id: [num1, num2, num3]}
-taken_numbers = set()    # የተያዙ ቁጥሮች (ከ 1 እስከ 10)
-user_states = {}         # የተጠቃሚ ስቴት
-all_users = set()        # መልእክት የሚላክላቸው ተጠቃሚዎች ሁሉ
+taken_numbers = {}       # {num: user_id} (የትኛው ቁጥር ማኑዋል በማን እንደተያዘ ለመቆጣጠር)
+all_users = set()
 
 PRIZES = {
-    1: "🔥 1,000 ብር (አንደኛ ደረጃ)",
-    2: "⭐ 500 ብር (ሁለተኛ ደረጃ)",
-    3: "🎖 250 ብር (ሶስተኛ ደረጃ)",
-    4: "🏅 175 ብር (አራተኛ ደረጃ)",
-    5: "🎁 87.5 ብር (አምስተኛ ደረጃ)"
+    1: "🔥 400 ብር (አንደኛ ደረጃ)",
+    2: "⭐ 200 ብር (ሁለተኛ ደረጃ)",
+    3: "🎖 100 ብር (ሶስተኛ ደረጃ)",
 }
 
 @app.route('/')
 def home():
-    return "🔥 Exciting 10-Person Lottery Bot is live and running!", 200
+    return "🔥 Interactive Button Lottery Bot is running!", 200
 
 @app.route(f"/{TOKEN}", methods=["POST"])
 def webhook():
@@ -49,90 +41,57 @@ def webhook():
 
             all_users.add(chat_id)
 
-            if user_text == "/start":
-                if user_id in user_states:
-                    del user_states[user_id]
-                    
-                total_taken_count = len(taken_numbers)
-                reply_text = (
-                    f"✨ ሰላም **{first_name}**! ሉላዊ እና አጓጊ ወደሆነው **የዕድል ማዕበል ሎተሪ** በደህና መጡ! 🎟🔥\n\n"
-                    "🎯 **ምን ያህል ማሸነፍ ይችላሉ?**\n"
-                    f"🥇 1ኛ አሸናፊ: **1,000 ብር**\n"
-                    f"🥈 2ኛ አሸናፊ: **500 ብር**\n"
-                    f"🥉 እስከ 5ኛ ደረጃ ያሉትን አስደናቂ ሽልማቶች ይረከቡ!\n\n"
-                    f"📌 **ህጎቹ ቀላል ናቸው፦**\n"
-                    f"• ቁጥሮች ከ **1 እስከ 10** አሉ።\n"
-                    f"• የአንድ ቲኬት ዋጋ: **{TICKET_PRICE} ብር** ብቻ!\n"
-                    f"• አንድ ሰው **እስከ 3 ቲኬቶች** በመግዛት ዕድሉን ማሳደግ ይችላል!\n"
-                    f"• አሁን የተያዙ ቦታዎች: **{total_taken_count}/10** 🚀\n\n"
-                    "👇 ወዲያውኑ ዕድልዎን ለመሞከር ይህንን ይጫኑ፦\n"
-                    "/buy - 🎟 ቁጥር ይምረጡ"
-                )
-                send_message(chat_id, reply_text)
+            if user_text in ["/start", "🔄 አዲስ ዙር / ጨዋታ"]:
+                send_main_menu(chat_id, first_name)
 
-            elif user_text == "/buy":
-                if len(taken_numbers) >= 10:
-                    send_message(chat_id, "❌ ይቅርታ! የአሁኑ ዙር 10 ቁጥሮች ሙሉ በሙሉ ተይዘዋል። እጣው እስኪወጣ በጉጉት ይጠብቁ! ⏳")
+            elif user_text in ["🎟 ቁጥር ለመምረጥ (BUY)", "/buy"]:
+                show_number_selection(chat_id, user_id)
+
+        elif "callback_query" in data:
+            callback = data["callback_query"]
+            callback_data = callback["data"]
+            chat_id = callback["message"]["chat"]["id"]
+            message_id = callback["message"]["message_id"]
+            user_id = callback["from"]["id"]
+            first_name = callback["from"].get("first_name", "ተሳታፊ")
+
+            if callback_data.startswith("select_"):
+                num = int(callback_data.split("_")[1])
+
+                if num in taken_numbers:
+                    answer_callback(callback["id"], "❌ ይህ ቁጥር უკვე ተይዟል!")
                     return
 
                 user_nums = round_participants.get(user_id, [])
                 if len(user_nums) >= 3:
-                    send_message(chat_id, f"⚠️ ውድ {first_name}, እርስዎ አስቀድመው ከፍተኛውን የ **3 ቲኬቶች** ገደብ ሞልተዋል! የያዟቸው ቁጥሮች: `{', '.join(map(str, user_nums))}` 🍀 መልካም ዕድል!")
+                    answer_callback(callback["id"], "⚠️ ከፍተኛው የ 3 ቲኬት ገደብዎ ደርሰዋል!", show_alert=True)
                     return
 
-                user_states[user_id] = "waiting_for_number"
-                available_nums = [str(i) for i in range(1, 11) if i not in taken_numbers]
-                
-                send_message(chat_id, f"🎯 ዕድለኛ ቁጥርዎትን ይምረጡ!\n\nከዚህ በታች ካሉት **ነፃ ቁጥሮች** ውስጥ የሚፈልጉትን አንድ ቁጥር ብቻ ጽሁፍ በመጻፍ ላኩልኝ፦\n\n🟢 **ነፃ ቁጥሮች:** `{', '.join(available_nums)}`")
-
-            elif user_id in user_states and user_states[user_id] == "waiting_for_number":
-                if not user_text.isdigit():
-                    send_message(chat_id, "❌ እባክዎ ትክክለኛ ቁጥር (ከ 1 እስከ 10 ባለው) ብቻ በቁጥር ይጻፉ!")
-                    return
-
-                num = int(user_text)
-                if num < 1 or num > 10:
-                    send_message(chat_id, "❌ ቁጥሩ ከ 1 እስከ 10 ብቻ መሆን አለበት!")
-                    return
-
-                if num in taken_numbers:
-                    send_message(chat_id, "❌ oops! ይህ ቁጥር በሌላ ተሳታፊ ተይዟል። እባክዎ ሌላ ነፃ ቁጥር ይምረጡ። ⚡️")
-                    return
-
-                user_nums = round_participants.get(user_id, [])
-                if num in user_nums:
-                    send_message(chat_id, "❌ ይህንን ቁጥር እርስዎ አስቀድመው ይዘውታል! ሌላ አዲስ ቁጥር ይምረጡ።")
-                    return
-
-                del user_states[user_id]
-                
+                # ತಾቆታሚ ክፍያ መጠየቂያ
                 reply_text = (
-                    f"✨ ድንቅ መረጣ! የመረጡት ዕድለኛ ቁጥር: **{num}** 🎟\n"
+                    f"✨ የመረጡት ዕድለኛ ቁጥር: **{num}** 🎟\n"
                     f"💵 መክፈል የሚኖርብዎት: **{TICKET_PRICE} ብር**\n\n"
                     f"{BANK_INFO}\n\n"
                     "👇 ክፍያውን ከፈጸሙ በኋላ ከታች ያለውን ቁልፍ በመጫን ማረጋገጫ ይላኩ!"
                 )
                 confirm_keyboard = {
                     "inline_keyboard": [
-                        [{"text": "✅ ክፍያ ፈጽሜአለሁ (አረጋግጥ)", "callback_data": f"paid_{user_id}_{num}"}]
+                        [{"text": "✅ ክፍያ ፈጽሜአለሁ (አረጋግጥ)", "callback_data": f"paid_{user_id}_{num}"}],
+                        [{"text": "🔙 ወደ ቁጥሮች ዝርዝር ተመለስ", "callback_data": "back_to_numbers"}]
                     ]
                 }
-                send_keyboard(chat_id, reply_text, confirm_keyboard)
+                edit_message_keyboard(chat_id, message_id, reply_text, confirm_keyboard)
 
-        elif "callback_query" in data:
-            callback = data["callback_query"]
-            callback_data = callback["data"]
-            chat_id = callback["message"]["chat"]["id"]
-            user_id = callback["from"]["id"]
-            first_name = callback["from"].get("first_name", "ተሳታፊ")
+            elif callback_data == "back_to_numbers":
+                show_number_selection_inline(chat_id, message_id, user_id)
 
-            if callback_data.startswith("paid_"):
+            elif callback_data.startswith("paid_"):
                 parts = callback_data.split("_")
                 p_user_id = int(parts[1])
                 p_num = int(parts[2])
 
                 answer_callback(callback["id"], "ክፍያዎ ለአድሚን ተልኳል!")
-                send_message(chat_id, "⏳ **ክፍያዎ በማጣራት ላይ ይገኛል!** አድሚኑ ወዲያውኑ አረጋግጦ ቁጥርዎን ያጸድቅለታል። ትንሽ ይቆዩ 🚀")
+                edit_message_keyboard(chat_id, message_id, "⏳ **ክፍያዎ በማጣራት ላይ ይገኛል!** አድሚኑ ሲያረጋግጠው ማሳወቂያ ይደርሰዎታል። 🚀", {"inline_keyboard": []})
 
                 admin_text = (
                     f"🔔 **አዲስ የክፍያ ማረጋገጫ ጥያቄ!** 💸\n\n"
@@ -150,7 +109,7 @@ def webhook():
 
             elif callback_data.startswith("approve_"):
                 if user_id != ADMIN_ID:
-                    answer_callback(callback["id"], "❌ ይህንን ማድረግ የሚችሉት አድሚን ብቻ ናቸው!")
+                    answer_callback(callback["id"], "❌ አድሚን ብቻ ናቸው ማጽደቅ የሚችሉት!")
                     return
 
                 parts = callback_data.split("_")
@@ -158,20 +117,20 @@ def webhook():
                 approved_num = int(parts[2])
 
                 if approved_num in taken_numbers:
-                    answer_callback(callback["id"], "❌ ይህ ቁጥር უკვე ተይዟል!")
+                    answer_callback(callback["id"], "❌ ይህ ቁጥር ቀድሞ ተይዟል!")
                     return
 
-                taken_numbers.add(approved_num)
+                taken_numbers[approved_num] = target_user_id
                 
                 if target_user_id not in round_participants:
                     round_participants[target_user_id] = []
                 if approved_num not in round_participants[target_user_id]:
                     round_participants[target_user_id].append(approved_num)
 
-                answer_callback(callback["id"], "ቁጥሩ በተሳካ ሁኔታ ጸድቋል!")
-                edit_message(chat_id, callback["message"]["message_id"], f"✅ **ቁጥር {approved_num} ጸድቋል! (አሁን የተያዙ: {len(taken_numbers)}/10)** 🎉")
+                answer_callback(callback["id"], "ቁጥሩ ጸድቋል!")
+                edit_message_keyboard(chat_id, message_id, f"✅ **ቁጥር {approved_num} በአድሚን ጸድቋል!** 🎉", {"inline_keyboard": []})
 
-                send_message(target_user_id, f"🎉 **እንኳን ደስ አላችሁ! ቁጥርዎ ({approved_num}) በአድሚን ጸድቆ ተመዝግቧል።** 🎟✨\n📊 የያዟቸው አጠቃላይ ቁጥሮች: {len(round_participants[target_user_id])}/3")
+                send_message(target_user_id, f"🎉 **እንኳን ደስ አላችሁ! ቁጥርዎ ({approved_num}) ጸድቆ ተመዝግቧል።** 🎟✨\n📊 የያዟቸው አጠቃላይ ቁጥሮች: {len(round_participants[target_user_id])}/3")
 
                 if len(taken_numbers) >= 10:
                     trigger_automatic_draw()
@@ -181,6 +140,80 @@ def webhook():
     except Exception as e:
         print(f"Error: {e}")
         return jsonify({"status": "error"}), 500
+
+def send_main_menu(chat_id, first_name):
+    reply_text = (
+        f"✨ ሰላም **{first_name}**! ወደ **የዕድል ማዕበል ሎተሪ** በደህና መጡ! 🎟🔥\n\n"
+        f"🥇 1ኛ አሸናፊ: **1,000 ብር**\n"
+        f"🥈 2ኛ አሸናፊ: **500 ብር**\n"
+        f"🥉 እስከ 5ኛ ደረጃ ያሉ አጓጊ ሽልማቶች!\n\n"
+        "👇 ቁጥር ለመምረጥ ከታች ያለውን በተን ይጫኑ፦"
+    )
+    # ከታች በቻቱ ውስጥ ቋሚ በተኖች (Reply Keyboard) እንዲኖሩ
+    keyboard = {
+        "keyboard": [
+            [{"text": "🎟 ቁጥር ለመምረጥ (BUY)"}],
+            [{"text": "🔄 አዲስ ዙር / ጨዋታ"}]
+        ],
+        "resize_keyboard": True
+    }
+    send_reply_keyboard(chat_id, reply_text, keyboard)
+
+def show_number_selection(chat_id, user_id):
+    user_nums = round_participants.get(user_id, [])
+    keyboard_buttons = []
+    row = []
+    
+    for i in range(1, 11):
+        if i in taken_numbers:
+            btn_text = f"❌ {i} (ተያዟል)"
+            callback_val = f"taken_{i}"
+        else:
+            btn_text = f"🟢 ነፃ ({i})"
+            callback_val = f"select_{i}"
+            
+        row.append({"text": btn_text, "callback_data": callback_val})
+        if len(row) == 2:  # በየሁለቱ ቁጥሮች አዲስ መስመር
+            keyboard_buttons.append(row)
+            row = []
+    if row:
+        keyboard_buttons.append(row)
+
+    text = (
+        f"🎯 **ከ 1 እስከ 10 ያሉ ዕድለኛ ቁጥሮች**\n\n"
+        f"📊 የተያዙ: **{len(taken_numbers)}/10**\n"
+        f"👤 የእርስዎ የያዟቸው ቁጥሮች: `{len(user_nums)}/3`\n\n"
+        "👇 ከታች ከሚታዩት **🟢 ነፃ** በተኖች ውስጥ የሚፈልጉትን ይጫኑ!"
+    )
+    send_keyboard_inline(chat_id, text, {"inline_keyboard": keyboard_buttons})
+
+def show_number_selection_inline(chat_id, message_id, user_id):
+    user_nums = round_participants.get(user_id, [])
+    keyboard_buttons = []
+    row = []
+    
+    for i in range(1, 11):
+        if i in taken_numbers:
+            btn_text = f"❌ {i} (ተያዟል)"
+            callback_val = f"taken_{i}"
+        else:
+            btn_text = f"🟢 ነፃ ({i})"
+            callback_val = f"select_{i}"
+            
+        row.append({"text": btn_text, "callback_data": callback_val})
+        if len(row) == 2:
+            keyboard_buttons.append(row)
+            row = []
+    if row:
+        keyboard_buttons.append(row)
+
+    text = (
+        f"🎯 **ከ 1 እስከ 10 ያሉ ዕድለኛ ቁጥሮች**\n\n"
+        f"📊 የተያዙ: **{len(taken_numbers)}/10**\n"
+        f"👤 የእርስዎ የያዟቸው ቁጥሮች: `{len(user_nums)}/3`\n\n"
+        "👇 ከታች ከሚታዩት **🟢 ነፃ** በተኖች ውስጥ የሚፈልጉትን ይጫኑ!"
+    )
+    edit_message_keyboard(chat_id, message_id, text, {"inline_keyboard": keyboard_buttons})
 
 def trigger_automatic_draw():
     all_tickets_flat = []
@@ -199,7 +232,7 @@ def trigger_automatic_draw():
 
     winners_text += (
         "\n👏 **ለአሸናፊዎቻችን ትልቅ ደስታን እንመኛለን!** 🥂\n"
-        "🚀 **አዲሱ የ 10 ሰዎች ዙር በይፋ ተከፍቷል! አሁኑኑ ቁጥር ለመያዝ ይጫኑ፦** /buy 🎟"
+        "🚀 **አዲሱ የ 10 ሰዎች ዙር በይፋ ተከፍቷል!**"
     )
 
     for chat_id in all_users:
@@ -211,12 +244,11 @@ def trigger_automatic_draw():
     round_participants.clear()
     taken_numbers.clear()
 
-# 🔄 ሰርቨሩ እንዳይተኛ እና የተያዙ/የቀሩ ቁጥሮችን በሪማይንደር የሚልክ ሎጂክ (በየ 14 ደቂቃው)
 def background_reminder_loop():
     while True:
-        time.sleep(840)  # 14 ደቂቃ (ሰርቨሩ ከመተኛቱ በፊት)
+        time.sleep(840)  # 10 ደቂቃ
         if all_users:
-            taken_list = sorted(list(taken_numbers))
+            taken_list = sorted(list(taken_numbers.keys()))
             available_list = sorted([i for i in range(1, 11) if i not in taken_numbers])
             
             taken_str = ", ".join(map(str, taken_list)) if taken_list else "የለም"
@@ -224,16 +256,16 @@ def background_reminder_loop():
 
             reminder_text = (
                 "🚨 **የዕድል ማዕበል ፈጣን ማስታወሻ!** ⚡️🎟\n\n"
-                f"📊 የአሁኑ ሁኔታ: **{len(taken_numbers)}/10** ቁጥሮች ተይዘዋል!\n\n"
-                f"🔴 **የተያዙ ቁጥሮች:** `{taken_str}`\n"
-                f"🟢 **የቀሩ ነፃ ቁጥሮች:** `{available_str}`\n\n"
-                "🔥 ቦታዎች ከማለቃቸው በፊት አሁኑኑ /buy በመጫን እስከ 3 ቁጥሮች ይምረጡና ዕድልዎን ያረጋግጡ! 💰✨"
+                f"📊 ሁኔታ: **{len(taken_numbers)}/10** ቁጥሮች ተይዘዋል!\n\n"
+                f"🔴 **የተያዙ:** `{taken_str}`\n"
+                f"🟢 **ነፃ ቁጥሮች:** `{available_str}`\n\n"
+                "🔥 ቁልፉን በመጫን አሁኑኑ ዕድልዎን ይሞክሩ! 💰✨"
             )
             for chat_id in list(all_users):
                 try:
                     send_message(chat_id, reminder_text)
-                except Exception as e:
-                    print(f"Reminder error for {chat_id}: {e}")
+                except:
+                    pass
 
 threading.Thread(target=background_reminder_loop, daemon=True).start()
 
@@ -242,19 +274,24 @@ def send_message(chat_id, text):
     payload = {"chat_id": chat_id, "text": text, "parse_mode": "Markdown"}
     requests.post(url, json=payload)
 
-def send_keyboard(chat_id, text, reply_markup):
+def send_reply_keyboard(chat_id, text, reply_markup):
     url = f"{TELEGRAM_API_URL}/sendMessage"
     payload = {"chat_id": chat_id, "text": text, "reply_markup": reply_markup, "parse_mode": "Markdown"}
     requests.post(url, json=payload)
 
-def edit_message(chat_id, message_id, text):
-    url = f"{TELEGRAM_API_URL}/editMessageText"
-    payload = {"chat_id": chat_id, "message_id": message_id, "text": text, "parse_mode": "Markdown"}
+def send_keyboard_inline(chat_id, text, reply_markup):
+    url = f"{TELEGRAM_API_URL}/sendMessage"
+    payload = {"chat_id": chat_id, "text": text, "reply_markup": reply_markup, "parse_mode": "Markdown"}
     requests.post(url, json=payload)
 
-def answer_callback(callback_query_id, text):
+def edit_message_keyboard(chat_id, message_id, text, reply_markup):
+    url = f"{TELEGRAM_API_URL}/editMessageText"
+    payload = {"chat_id": chat_id, "message_id": message_id, "text": text, "reply_markup": reply_markup, "parse_mode": "Markdown"}
+    requests.post(url, json=payload)
+
+def answer_callback(callback_query_id, text, show_alert=False):
     url = f"{TELEGRAM_API_URL}/answerCallbackQuery"
-    payload = {"callback_query_id": callback_query_id, "text": text, "show_alert": True}
+    payload = {"callback_query_id": callback_query_id, "text": text, "show_alert": show_alert}
     requests.post(url, json=payload)
 
 if __name__ == "__main__":
