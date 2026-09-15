@@ -15,7 +15,7 @@ TICKET_PRICE = 100
 BANK_INFO = "🏦 **የባንክ አካውንት መረጃ**\nአካውንት ቁጥር: `1000324406461`\nስም: Birhanu"
 
 round_participants = {}  # {user_id: [num1, num2, num3]}
-taken_numbers = {}       # {num: user_id}
+taken_numbers = {}        # {num: user_id}
 all_users = set()        # ቦቱን ያነጋገሩ ተጠቃሚዎች መታወቂያ
 
 # የክፍያ ማረጋገጫዎች (Pending Approvals)
@@ -55,11 +55,11 @@ def webhook():
             elif user_text in ["/draw", "🎲 ዕጣ ማውጣት (DRAW)"]:
                 if user_id != ADMIN_ID:
                     send_message(chat_id, "❌ ይህንን ትዕዛዝ መጠቀም የሚችሉት አድሚኑ ብቻ ናቸው!")
-                    return
+                    return jsonify({"status": "unauthorized"}), 403
                 
                 if not taken_numbers:
                     send_message(chat_id, "⚠️ እስካሁን የተያዘ አንድም ቁጥር የለም!")
-                    return
+                    return jsonify({"status": "no_numbers"}), 200
                 
                 threading.Thread(target=trigger_manual_draw, args=(chat_id,)).start()
 
@@ -76,14 +76,13 @@ def webhook():
 
                 if num in taken_numbers:
                     answer_callback(callback["id"], "❌ ይህ ቁጥር ቀድሞ ተይዟል!", show_alert=True)
-                    return
+                    return jsonify({"status": "taken"}), 200
 
                 user_nums = round_participants.get(user_id, [])
                 if len(user_nums) >= 3:
                     answer_callback(callback["id"], "⚠️ ከፍተኛው የ 3 ቲኬት ገደብዎ ደርሰዋል!", show_alert=True)
-                    return
+                    return jsonify({"status": "limit"}), 200
 
-                # አኒሜሽን የማሳየት ሂደት
                 edit_message_keyboard(chat_id, message_id, "⏳ ቁጥሩ በመረጣ ላይ ነው... 🔄", {"inline_keyboard": []})
                 time.sleep(0.5)
 
@@ -111,7 +110,7 @@ def webhook():
 
                 if user_id != p_user_id:
                     answer_callback(callback["id"], "❌ ይህ ድርጊት የተከለከለ ነው!", show_alert=True)
-                    return
+                    return jsonify({"status": "forbidden"}), 200
 
                 pending_payments[(p_user_id, p_num)] = True
 
@@ -135,7 +134,7 @@ def webhook():
             elif callback_data.startswith("approve_"):
                 if user_id != ADMIN_ID:
                     answer_callback(callback["id"], "❌ አድሚን ብቻ ናቸው ማጽደቅ የሚችሉት!", show_alert=True)
-                    return
+                    return jsonify({"status": "unauthorized"}), 200
 
                 parts = callback_data.split("_")
                 target_user_id = int(parts[1])
@@ -143,11 +142,11 @@ def webhook():
 
                 if not pending_payments.pop((target_user_id, approved_num), None):
                     answer_callback(callback["id"], "❌ ይህ ክፍያ ትክክለኛ አይደለም ወይም ቀድሞ ተሰርዟል!", show_alert=True)
-                    return
+                    return jsonify({"status": "invalid"}), 200
 
                 if approved_num in taken_numbers:
                     answer_callback(callback["id"], "❌ ይህ ቁጥር ቀድሞ ተይዟል!", show_alert=True)
-                    return
+                    return jsonify({"status": "taken"}), 200
 
                 taken_numbers[approved_num] = target_user_id
                 
@@ -161,7 +160,6 @@ def webhook():
 
                 send_message(target_user_id, f"🎉 **እንኳን ደስ አላችሁ! ቁጥርዎ ({approved_num}) ጸድቆ ተመዝግቧል።** 🎟✨\n📊 የያዟቸው አጠቃላይ ቁጥሮች: {len(round_participants[target_user_id])}/3")
 
-                # 10 ቁጥሮች ሲሞሉ በራስሰር ዕጣ ማውጣት
                 if len(taken_numbers) >= 10:
                     threading.Thread(target=trigger_full_draw).start()
 
@@ -177,7 +175,7 @@ def send_main_menu(chat_id, first_name):
         f"🥇 1ኛ አሸናፊ: **400 ብር**\n"
         f"🥈 2ኛ አሸናፊ: **250 ብር**\n"
         f"🥉 3ኛ አሸናፊ: **150 ብር**\n\n"
-        "👇 ቁጥር ለመምረጥ ከታች ያለውን በተን ይጫኑ፦"
+        f"👇 ቁጥር ለመምረጥ ከታች ያለውን በተን ይጫኑ፦"
     )
     keyboard = {
         "keyboard": [
@@ -270,7 +268,6 @@ def safe_send_keyboard(chat_id, text, markup):
             all_users.remove(chat_id)
 
 def trigger_full_draw():
-    # ዕጣ ከመውጣቱ በፊት የአኒሜሽን ስሜት ለመፍጠር ለሁሉም ተጠቃሚዎች ማሳወቂያ መላክ ይቻላል
     all_tickets_flat = []
     for u_id, nums in round_participants.items():
         for n in nums:
@@ -279,14 +276,12 @@ def trigger_full_draw():
     if not all_tickets_flat:
         return
 
-    # 3 ልዩ አሸናፊዎችን መምረጥ (1ኛ፣ 2ኛ፣ 3ኛ)
     winning_tickets = random.sample(all_tickets_flat, min(3, len(all_tickets_flat)))
 
     winners_text = "🎲 **ዕጣው በመሰንጠቅ ላይ ነው... ⏳**\n\n"
     for chat_id in list(all_users):
         try:
-            msg_res = requests.post(f"{TELEGRAM_API_URL}/sendMessage", json={"chat_id": chat_id, "text": winners_text})
-            # ትንሽ አኒሜሽን የማሳያ ቆይታ
+            requests.post(f"{TELEGRAM_API_URL}/sendMessage", json={"chat_id": chat_id, "text": winners_text})
             time.sleep(0.3)
         except:
             pass
