@@ -1,4 +1,4 @@
-import os
+ import os
 import random
 import time
 import threading
@@ -46,6 +46,18 @@ def webhook():
 
             elif user_text in ["🎟 ቁጥር ለመምረጥ (BUY)", "/buy"]:
                 show_number_selection(chat_id, user_id)
+
+            # 🛠 አዲስ ትዕዛዝ: አድሚኑ ቁጥሮቹ ሳይሞሉም በፈለገ ሰዓት /draw በማለት ጨዋታውን ማጠናቀቅ እንዲችል
+            elif user_text in ["/draw", "🎲 ዕጣ ማውጣት (DRAW)"]:
+                if user_id != ADMIN_ID:
+                    send_message(chat_id, "❌ ይህንን ትዕዛዝ መጠቀም የሚችሉት አድሚኑ ብቻ ናቸው!")
+                    return
+                
+                if not taken_numbers:
+                    send_message(chat_id, "⚠️ እስካሁን የተያዘ አንድም ቁጥር የለም!")
+                    return
+                
+                trigger_automatic_draw()
 
         elif "callback_query" in data:
             callback = data["callback_query"]
@@ -131,6 +143,7 @@ def webhook():
 
                 send_message(target_user_id, f"🎉 **እንኳን ደስ አላችሁ! ቁጥርዎ ({approved_num}) ጸድቆ ተመዝግቧል።** 🎟✨\n📊 የያዟቸው አጠቃላይ ቁጥሮች: {len(round_participants[target_user_id])}/3")
 
+                # ቁጥሮቹ 10 ሲሞሉ ወይም አድሚኑ በራሱ ውሳኔ 10 ሙሉ ሳይጠበቅ ድራው እንዲደረግ ሲፈልግ
                 if len(taken_numbers) >= 10:
                     trigger_automatic_draw()
 
@@ -151,7 +164,7 @@ def send_main_menu(chat_id, first_name):
     keyboard = {
         "keyboard": [
             [{"text": "🎟 ቁጥር ለመምረጥ (BUY)"}],
-            [{"text": "🔄 አዲስ ዙር / ጨዋታ"}]
+            [{"text": "🎲 ዕጣ ማውጣት (DRAW)"}, {"text": "🔄 አዲስ ዙር / ጨዋታ"}]
         ],
         "resize_keyboard": True
     }
@@ -222,6 +235,7 @@ def trigger_automatic_draw():
     if not all_tickets_flat:
         return
 
+    # 10 ቁጥሮች ሳይሞሉም ቢሆን እስከ 3 አሸናፊዎችን (ያሉትን ቲኬቶች መሠረት በማድረግ) ይመርጣል
     sample_size = min(3, len(all_tickets_flat))
     winning_tickets = random.sample(all_tickets_flat, sample_size)
 
@@ -246,6 +260,7 @@ def trigger_automatic_draw():
         except:
             pass
 
+    # ዳታውን አጽድቆ ለአዲስ ዙር ዝግጁ ማድረግ
     round_participants.clear()
     taken_numbers.clear()
 
