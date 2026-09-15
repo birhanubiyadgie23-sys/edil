@@ -33,12 +33,19 @@ def home():
 @app.route(f'/{TOKEN}', methods=['POST'])
 def webhook():
     try:
-        if request.headers.get('content-type') == 'application/json':
+        # content-type ኬን 'application/json' መያዙን ብቻ ማረጋገጥ (charset ቢኖርም እንዲቀበል)
+        if request.headers.get('content-type') and 'application/json' in request.headers.get('content-type'):
             json_string = request.get_data().decode('utf-8')
             update = telebot.types.Update.de_json(json_string)
             bot.process_new_updates([update])
             return "OK", 200
         else:
+            # ለፈተና ያህል ጥያቄውን በባዶም ቢሆን መቀበል እንዲችል (Debugging)
+            json_string = request.get_data().decode('utf-8')
+            if json_string:
+                update = telebot.types.Update.de_json(json_string)
+                bot.process_new_updates([update])
+                return "OK", 200
             return jsonify({"status": "error", "message": "Invalid content-type"}), 403
     except Exception as e:
         print(f"Webhook Error: {e}")
