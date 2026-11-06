@@ -1,0 +1,999 @@
+import React, { useState, useEffect, useRef } from 'react';
+import { 
+  Trophy, 
+  Ticket, 
+  Search, 
+  PlusCircle, 
+  Sparkles, 
+  CheckCircle2, 
+  Clock, 
+  Gift, 
+  UserCheck, 
+  ShieldCheck, 
+  RefreshCw, 
+  Phone, 
+  ShoppingCart, 
+  Award,
+  ChevronRight,
+  Flame,
+  CreditCard,
+  X,
+  Sliders,
+  Bell
+} from 'lucide-react';
+
+// Sample Initial Raffles Data
+const INITIAL_RAFFLES = [
+  {
+    id: 'rf-101',
+    title: 'አዲስ የቅርብ ጊዜ iPhone 15 Pro Max',
+    category: 'ኤሌክትሮኒክስ',
+    image: '📱',
+    price: 100, // In ETB
+    totalTickets: 500,
+    soldTickets: 342,
+    drawDate: '2025-04-15',
+    status: 'ACTIVE', // ACTIVE, COMPLETED
+    description: '256GB፣ Titanium Gray፣ ባለአንድ ዓመት ዋስትና ያለው አዲስ ስልክ።'
+  },
+  {
+    id: 'rf-102',
+    title: 'የዘመኑ ቪትዝ (Toyota Vitz 2018)',
+    category: 'መኪና',
+    image: '🚗',
+    price: 500,
+    totalTickets: 3000,
+    soldTickets: 2150,
+    drawDate: '2025-05-01',
+    status: 'ACTIVE',
+    description: 'አነስተኛ የነዳጅ ፍጆታ፣ አውቶማቲክ፣ በምርጥ ሁኔታ ላይ የሚገኝ።'
+  },
+  {
+    id: 'rf-103',
+    title: 'ባለ 65 ኢንች 4K Smart TV',
+    category: 'የቤት እቃዎች',
+    image: '📺',
+    price: 50,
+    totalTickets: 600,
+    soldTickets: 589,
+    drawDate: '2025-03-30',
+    status: 'ACTIVE',
+    description: 'የሳምሰንግ 65 ኢንች UHD Smart TV ከነሙሉ አክሰሰሪው ጋር።'
+  },
+  {
+    id: 'rf-104',
+    title: 'የሳሎን ሶፋ አብስብ (L-Shape Sofa Set)',
+    category: 'የቤት እቃዎች',
+    image: '🛋️',
+    price: 150,
+    totalTickets: 400,
+    soldTickets: 400,
+    drawDate: '2025-03-20',
+    status: 'COMPLETED',
+    description: 'በጥራት የተሰራ የቱርክ ሌዘር ሶፋ ስብስብ።'
+  }
+];
+
+// Sample Initial Winners
+const INITIAL_WINNERS = [
+  {
+    id: 'w-1',
+    raffleTitle: 'የሳሎን ሶፋ አብስብ (L-Shape Sofa Set)',
+    ticketNumber: 'ET-84920',
+    winnerName: 'አበበ ከበደ',
+    phoneMasked: '0911****89',
+    drawDate: '2025-03-20',
+    prizeImage: '🛋️'
+  },
+  {
+    id: 'w-2',
+    raffleTitle: 'PlayStation 5 Console',
+    ticketNumber: 'ET-11029',
+    winnerName: 'ሰሎሞን ኃይሉ',
+    phoneMasked: '0929****45',
+    drawDate: '2025-03-10',
+    prizeImage: '🎮'
+  }
+];
+
+export default function App() {
+  // App State
+  const [raffles, setRaffles] = useState(INITIAL_RAFFLES);
+  const [userTickets, setUserTickets] = useState([
+    { ticketId: 'ET-84920', raffleId: 'rf-104', title: 'የሳሎን ሶፋ አብስብ', purchaseDate: '2025-03-18' },
+    { ticketId: 'ET-99201', raffleId: 'rf-101', title: 'አዲስ የቅርብ ጊዜ iPhone 15 Pro Max', purchaseDate: '2025-03-22' }
+  ]);
+  const [winners, setWinners] = useState(INITIAL_WINNERS);
+  const [userBalance, setUserBalance] = useState(1500); // ETB
+  
+  // UI State
+  const [activeTab, setActiveTab] = useState('explore'); // explore, my-tickets, lucky-wheel, verify, admin
+  const [selectedRaffle, setSelectedRaffle] = useState(null);
+  const [ticketQuantity, setTicketQuantity] = useState(1);
+  const [buyerPhone, setBuyerPhone] = useState('');
+  const [buyerName, setBuyerName] = useState('');
+  const [toastMessage, setToastMessage] = useState(null);
+
+  // Search & Verification State
+  const [searchTicketId, setSearchTicketId] = useState('');
+  const [searchResult, setSearchResult] = useState(null);
+
+  // Spin Wheel State
+  const [wheelRaffle, setWheelRaffle] = useState(null);
+  const [isSpinning, setIsSpinning] = useState(false);
+  const [wheelWinner, setWheelWinner] = useState(null);
+  const [wheelAngle, setWheelAngle] = useState(0);
+
+  // Admin New Raffle State
+  const [newRaffle, setNewRaffle] = useState({
+    title: '',
+    category: 'ኤሌክትሮኒክስ',
+    image: '🎁',
+    price: 50,
+    totalTickets: 100,
+    description: '',
+    drawDate: ''
+  });
+
+  // Helper for showing Notification Toasts
+  const showToast = (msg, type = 'success') => {
+    setToastMessage({ msg, type });
+    setTimeout(() => {
+      setToastMessage(null);
+    }, 4000);
+  };
+
+  // Ticket Purchasing logic
+  const handleBuyTicket = (e) => {
+    e.preventDefault();
+    if (!selectedRaffle) return;
+
+    const totalCost = selectedRaffle.price * ticketQuantity;
+    if (userBalance < totalCost) {
+      showToast('በቂ የሂሳብ መጠን የሎትም። እባክዎን ሂሳብዎን ይሙሉ!', 'error');
+      return;
+    }
+
+    if (!buyerPhone || buyerPhone.length < 9) {
+      showToast('እባክዎን ትክክለኛ የሞባይል ስልክ ቁጥር ያስገቡ!', 'error');
+      return;
+    }
+
+    // Process purchase
+    const newTickets = [];
+    for (let i = 0; i < ticketQuantity; i++) {
+      const generatedId = `ET-${Math.floor(10000 + Math.random() * 90000)}`;
+      newTickets.push({
+        ticketId: generatedId,
+        raffleId: selectedRaffle.id,
+        title: selectedRaffle.title,
+        purchaseDate: new Date().toISOString().split('T')[0]
+      });
+    }
+
+    setUserTickets([...userTickets, ...newTickets]);
+    setUserBalance(userBalance - totalCost);
+
+    // Update raffle count
+    setRaffles(raffles.map(r => {
+      if (r.id === selectedRaffle.id) {
+        return { ...r, soldTickets: r.soldTickets + ticketQuantity };
+      }
+      return r;
+    }));
+
+    showToast(`እንኳን ደስ አለዎት! ${ticketQuantity} እጣ(ዎች) በስኬት ገዝተዋል።`);
+    setSelectedRaffle(null);
+    setTicketQuantity(1);
+  };
+
+  // Custom Ticket Verification Logic
+  const handleVerifyTicket = (e) => {
+    e.preventDefault();
+    if (!searchTicketId.trim()) return;
+
+    const query = searchTicketId.trim().toUpperCase();
+    
+    // Check in winners
+    const wonItem = winners.find(w => w.ticketNumber.toUpperCase() === query);
+    if (wonItem) {
+      setSearchResult({
+        status: 'WON',
+        ticketId: wonItem.ticketNumber,
+        title: wonItem.raffleTitle,
+        winnerName: wonItem.winnerName,
+        date: wonItem.drawDate,
+        prizeImage: wonItem.prizeImage
+      });
+      return;
+    }
+
+    // Check in active tickets
+    const activeItem = userTickets.find(t => t.ticketId.toUpperCase() === query);
+    if (activeItem) {
+      const raffleInfo = raffles.find(r => r.id === activeItem.raffleId);
+      setSearchResult({
+        status: 'PENDING',
+        ticketId: activeItem.ticketId,
+        title: activeItem.title,
+        drawDate: raffleInfo ? raffleInfo.drawDate : 'በቅርቡ',
+        statusText: raffleInfo?.status === 'COMPLETED' ? 'እጣው ወጥቷል (አላሸነፈም)' : 'እጣው አልወጣም፣ ይጠብቁ'
+      });
+      return;
+    }
+
+    setSearchResult({
+      status: 'NOT_FOUND',
+      ticketId: query
+    });
+  };
+
+  // Lucky Wheel Spin Action
+  const spinWheel = () => {
+    if (!wheelRaffle || isSpinning) return;
+    
+    setIsSpinning(true);
+    setWheelWinner(null);
+
+    // Simulate 4-6 full spins + random offset
+    const randomRotations = 360 * (5 + Math.floor(Math.random() * 3));
+    const randomDegrees = Math.floor(Math.random() * 360);
+    const totalRotation = wheelAngle + randomRotations + randomDegrees;
+
+    setWheelAngle(totalRotation);
+
+    setTimeout(() => {
+      setIsSpinning(false);
+      // Mock Winner creation
+      const generatedWinnerTicket = `ET-${Math.floor(10000 + Math.random() * 90000)}`;
+      const mockWinner = {
+        id: `w-${Date.now()}`,
+        raffleTitle: wheelRaffle.title,
+        ticketNumber: generatedWinnerTicket,
+        winnerName: 'ተፎካካሪ #' + Math.floor(100 + Math.random() * 900),
+        phoneMasked: '09' + Math.floor(10 + Math.random() * 89) + '****' + Math.floor(10 + Math.random() * 89),
+        drawDate: new Date().toISOString().split('T')[0],
+        prizeImage: wheelRaffle.image
+      };
+
+      setWheelWinner(mockWinner);
+      setWinners([mockWinner, ...winners]);
+
+      // Mark raffle as completed
+      setRaffles(raffles.map(r => r.id === wheelRaffle.id ? { ...r, status: 'COMPLETED' } : r));
+
+      showToast(`ዕጣው በስኬት ወጥቷል! አሸናፊ እጣ፡ ${mockWinner.ticketNumber}`);
+    }, 4500);
+  };
+
+  // Handle Admin Add Raffle
+  const handleAddRaffle = (e) => {
+    e.preventDefault();
+    if (!newRaffle.title || !newRaffle.price) return;
+
+    const created = {
+      ...newRaffle,
+      id: `rf-${Date.now()}`,
+      soldTickets: 0,
+      status: 'ACTIVE',
+      price: Number(newRaffle.price),
+      totalTickets: Number(newRaffle.totalTickets)
+    };
+
+    setRaffles([created, ...raffles]);
+    showToast('አዲስ የዕጣ ዓይነት በስኬት ተጨምሯል!');
+    setNewRaffle({
+      title: '',
+      category: 'ኤሌክትሮኒክስ',
+      image: '🎁',
+      price: 50,
+      totalTickets: 100,
+      description: '',
+      drawDate: ''
+    });
+  };
+
+  return (
+    <div className="min-h-screen bg-slate-950 text-slate-100 font-sans antialiased selection:bg-amber-500 selection:text-slate-950">
+      
+      {/* Top Bar / Header */}
+      <header className="sticky top-0 z-40 bg-slate-900/90 backdrop-blur-md border-b border-amber-500/20 shadow-lg shadow-black/40">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+          
+          {/* Logo & Branding */}
+          <div className="flex items-center space-x-3 space-x-reverse">
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-amber-500 via-emerald-600 to-red-600 p-0.5 shadow-md shadow-amber-500/10">
+              <div className="w-full h-full bg-slate-950 rounded-[14px] flex items-center justify-center">
+                <Trophy className="w-6 h-6 text-amber-400 animate-pulse" />
+              </div>
+            </div>
+            <div>
+              <h1 className="text-xl sm:text-2xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-emerald-400 to-amber-200">
+                የእጣ እና የሽልማት ማዕከል
+              </h1>
+              <p className="text-xs text-slate-400 flex items-center gap-1">
+                <ShieldCheck className="w-3.5 h-3.5 text-emerald-400 inline" />
+                ታማኝ እና ፈጣን የኦንላይን እጣ ማውጫ
+              </p>
+            </div>
+          </div>
+
+          {/* User Status / Balance Display */}
+          <div className="flex items-center gap-3 sm:gap-6">
+            <div className="bg-slate-800/80 border border-slate-700/60 rounded-xl px-3 sm:px-4 py-2 flex items-center gap-3">
+              <div className="p-2 bg-emerald-500/10 rounded-lg text-emerald-400">
+                <CreditCard className="w-5 h-5" />
+              </div>
+              <div>
+                <span className="text-[10px] text-slate-400 block uppercase font-medium">የእርስዎ ሂሳብ</span>
+                <span className="text-sm sm:text-base font-extrabold text-emerald-400">
+                  {userBalance.toLocaleString()} <span className="text-xs text-slate-300">ብር</span>
+                </span>
+              </div>
+            </div>
+
+            <button 
+              onClick={() => setUserBalance(userBalance + 500)}
+              className="hidden sm:flex items-center gap-1.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-xs font-bold px-3 py-2.5 rounded-xl transition-all shadow-md shadow-emerald-900/30 active:scale-95"
+            >
+              <PlusCircle className="w-4 h-4" />
+              ሂሳብ ሙላ
+            </button>
+          </div>
+        </div>
+
+        {/* Navigation Tabs */}
+        <div className="bg-slate-900/50 border-t border-slate-800/50 overflow-x-auto scrollbar-none">
+          <div className="max-w-7xl mx-auto px-4 flex gap-2 sm:gap-6">
+            {[
+              { id: 'explore', label: 'የሚገኙ እጣዎች', icon: Gift },
+              { id: 'my-tickets', label: `የእኔ እጣዎች (${userTickets.length})`, icon: Ticket },
+              { id: 'lucky-wheel', label: 'የእጣ ማውጫ መንኮራኩር', icon: Sparkles },
+              { id: 'verify', label: 'እጣ ማረጋገጫ', icon: Search },
+              { id: 'admin', label: 'አስተዳዳሪ (Admin)', icon: Sliders },
+            ].map(tab => {
+              const Icon = tab.icon;
+              const isActive = activeTab === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`flex items-center gap-2 py-3 px-3 sm:px-4 text-xs sm:text-sm font-semibold border-b-2 whitespace-nowrap transition-all ${
+                    isActive
+                      ? 'border-amber-400 text-amber-400 bg-amber-400/5'
+                      : 'border-transparent text-slate-400 hover:text-slate-200 hover:bg-slate-800/30'
+                  }`}
+                >
+                  <Icon className={`w-4 h-4 ${isActive ? 'text-amber-400' : 'text-slate-400'}`} />
+                  {tab.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </header>
+
+      {/* Main Content Area */}
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        
+        {/* Toast Notification */}
+        {toastMessage && (
+          <div className={`fixed bottom-6 right-6 z-50 flex items-center gap-3 px-5 py-4 rounded-2xl shadow-2xl backdrop-blur-md border animate-bounce ${
+            toastMessage.type === 'error'
+              ? 'bg-red-950/90 text-red-200 border-red-500/50'
+              : 'bg-emerald-950/90 text-emerald-200 border-emerald-500/50'
+          }`}>
+            <Bell className="w-5 h-5 text-amber-400" />
+            <span className="text-sm font-medium">{toastMessage.msg}</span>
+          </div>
+        )}
+
+        {/* TAB 1: EXPLORE RAFFLES */}
+        {activeTab === 'explore' && (
+          <div className="space-y-8">
+            
+            {/* Hero Banner */}
+            <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-900 via-emerald-950/40 to-slate-900 border border-emerald-500/30 p-6 sm:p-10 shadow-2xl">
+              <div className="absolute top-0 right-0 -mt-10 -mr-10 w-64 h-64 bg-amber-500/10 rounded-full blur-3xl pointer-events-none"></div>
+              <div className="relative z-10 max-w-2xl space-y-4">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                  <Flame className="w-3.5 h-3.5 text-amber-400" />
+                  የሳምንቱ ታላቅ የሽልማት ዝግጅት
+                </span>
+                <h2 className="text-2xl sm:text-4xl font-extrabold text-white leading-tight">
+                  በትንሽ ብር የእድልዎ ባለቤት ይሁኑ! 
+                </h2>
+                <p className="text-slate-300 text-sm sm:text-base leading-relaxed">
+                  የሚወዱትን የሽልማት አይነት ይምረጡ፣ የእጣ ቁጥርዎን ይግዙ፤ በታማኝነት እና በግልፅነት በሚወጣው የእጣ መርሃ ግብር አሸናፊ ይሁኑ።
+                </p>
+              </div>
+            </div>
+
+            {/* Raffles Grid */}
+            <div>
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-lg font-bold text-slate-100 flex items-center gap-2">
+                  <Gift className="w-5 h-5 text-amber-400" />
+                  የሚገኙ እጣዎች
+                </h3>
+                <span className="text-xs text-slate-400">ጠቅላላ፡ {raffles.length} እጣዎች</span>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                {raffles.map((raffle) => {
+                  const percentSold = Math.round((raffle.soldTickets / raffle.totalTickets) * 100);
+                  const isSoldOut = raffle.soldTickets >= raffle.totalTickets;
+
+                  return (
+                    <div 
+                      key={raffle.id}
+                      className="group bg-slate-900/80 border border-slate-800 rounded-2xl overflow-hidden hover:border-amber-500/40 transition-all duration-300 hover:shadow-xl hover:shadow-amber-500/5 flex flex-col justify-between"
+                    >
+                      <div>
+                        {/* Header Image Area */}
+                        <div className="relative h-44 bg-slate-950 flex items-center justify-center text-7xl border-b border-slate-800/80 group-hover:scale-105 transition-transform duration-500">
+                          <span>{raffle.image}</span>
+                          
+                          {/* Badge Category */}
+                          <span className="absolute top-3 left-3 bg-slate-900/90 text-slate-300 text-[11px] font-medium px-2.5 py-1 rounded-lg border border-slate-700">
+                            {raffle.category}
+                          </span>
+
+                          {/* Status Badge */}
+                          <span className={`absolute top-3 right-3 text-[11px] font-bold px-2.5 py-1 rounded-lg border ${
+                            raffle.status === 'COMPLETED'
+                              ? 'bg-slate-800 text-slate-400 border-slate-700'
+                              : isSoldOut 
+                                ? 'bg-red-950/80 text-red-400 border-red-800'
+                                : 'bg-emerald-950/80 text-emerald-400 border-emerald-800'
+                          }`}>
+                            {raffle.status === 'COMPLETED' ? 'ተጠናቋል' : isSoldOut ? 'ተሸጦ አልቋል' : 'በሽያጭ ላይ'}
+                          </span>
+                        </div>
+
+                        {/* Raffle Content */}
+                        <div className="p-5 space-y-4">
+                          <div>
+                            <h4 className="text-base font-bold text-white group-hover:text-amber-400 transition-colors">
+                              {raffle.title}
+                            </h4>
+                            <p className="text-xs text-slate-400 mt-1 line-clamp-2">
+                              {raffle.description}
+                            </p>
+                          </div>
+
+                          {/* Price & Date */}
+                          <div className="flex items-center justify-between text-xs py-2 px-3 bg-slate-950/60 rounded-xl border border-slate-800/60">
+                            <div>
+                              <span className="text-slate-400 block text-[10px]">የአንዱ እጣ ዋጋ</span>
+                              <span className="text-amber-400 font-extrabold text-sm">{raffle.price} ብር</span>
+                            </div>
+                            <div className="text-left">
+                              <span className="text-slate-400 block text-[10px]">የእጣ ማውጫ ቀን</span>
+                              <span className="text-slate-200 font-semibold">{raffle.drawDate}</span>
+                            </div>
+                          </div>
+
+                          {/* Ticket Sales Progress */}
+                          <div className="space-y-1.5">
+                            <div className="flex justify-between text-xs font-semibold">
+                              <span className="text-slate-400">የተሸጠ እጣ</span>
+                              <span className="text-emerald-400">{raffle.soldTickets} / {raffle.totalTickets} ({percentSold}%)</span>
+                            </div>
+                            <div className="w-full h-2.5 bg-slate-800 rounded-full overflow-hidden p-0.5 border border-slate-700/50">
+                              <div 
+                                className="h-full bg-gradient-to-r from-emerald-500 via-teal-400 to-amber-400 rounded-full transition-all duration-500"
+                                style={{ width: `${percentSold}%` }}
+                              ></div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Action Button */}
+                      <div className="p-5 pt-0">
+                        <button
+                          disabled={raffle.status === 'COMPLETED' || isSoldOut}
+                          onClick={() => setSelectedRaffle(raffle)}
+                          className={`w-full py-3 px-4 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all duration-200 ${
+                            raffle.status === 'COMPLETED' || isSoldOut
+                              ? 'bg-slate-800 text-slate-500 cursor-not-allowed'
+                              : 'bg-gradient-to-r from-amber-500 via-amber-600 to-amber-500 text-slate-950 hover:brightness-110 shadow-lg shadow-amber-500/10 active:scale-95'
+                          }`}
+                        >
+                          <Ticket className="w-4 h-4" />
+                          {raffle.status === 'COMPLETED' ? 'እጣው ተጠናቋል' : isSoldOut ? 'ተሸጦ አልቋል' : 'እጣ ግዛ'}
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Recent Winners Section */}
+            <div className="bg-slate-900/60 border border-slate-800 rounded-3xl p-6 space-y-4">
+              <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                <Trophy className="w-5 h-5 text-amber-400" />
+                የቅርብ ጊዜ አሸናፊዎች
+              </h3>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {winners.map((win) => (
+                  <div key={win.id} className="bg-slate-950 p-4 rounded-2xl border border-slate-800/80 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="text-3xl p-2 bg-slate-900 rounded-xl border border-slate-800">
+                        {win.prizeImage}
+                      </div>
+                      <div>
+                        <h5 className="text-sm font-bold text-white">{win.winnerName}</h5>
+                        <p className="text-xs text-slate-400">{win.raffleTitle}</p>
+                        <span className="text-[11px] text-amber-400 font-mono mt-0.5 block">
+                          እጣ ቁጥር: {win.ticketNumber}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="text-left">
+                      <span className="text-xs text-slate-400 font-mono">{win.phoneMasked}</span>
+                      <span className="text-[10px] text-slate-500 block">{win.drawDate}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+          </div>
+        )}
+
+        {/* TAB 2: MY TICKETS */}
+        {activeTab === 'my-tickets' && (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+              <div>
+                <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                  <Ticket className="w-6 h-6 text-amber-400" />
+                  የእኔ የገዟቸው የእጣ ቁጥሮች
+                </h2>
+                <p className="text-xs text-slate-400">እስካሁን የገዟቸው የዕጣ ቁጥሮች ዝርዝር</p>
+              </div>
+              <span className="bg-amber-500/10 text-amber-400 border border-amber-500/20 text-xs font-bold px-3 py-1.5 rounded-xl">
+                ጠቅላላ እጣዎች፡ {userTickets.length}
+              </span>
+            </div>
+
+            {userTickets.length === 0 ? (
+              <div className="bg-slate-900/50 border border-slate-800 rounded-3xl p-12 text-center space-y-4">
+                <Ticket className="w-16 h-16 text-slate-600 mx-auto" />
+                <h3 className="text-lg font-bold text-slate-300">ምንም የገዙት እጣ የለም</h3>
+                <p className="text-slate-400 text-xs max-w-sm mx-auto">
+                  በሚገኙ እጣዎች ገጽ ላይ በመሄድ የሚወዱትን እጣ መርጠው እድልዎን ይሞክሩ!
+                </p>
+                <button 
+                  onClick={() => setActiveTab('explore')}
+                  className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-5 py-2.5 rounded-xl text-xs transition-all"
+                >
+                  እጣዎችን ተመልከት
+                </button>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {userTickets.map((t, index) => (
+                  <div key={index} className="bg-slate-900 border border-slate-800 rounded-2xl p-5 relative overflow-hidden group">
+                    <div className="absolute top-0 left-0 w-2 h-full bg-gradient-to-b from-amber-400 to-emerald-500"></div>
+                    <div className="flex items-start justify-between mb-3">
+                      <div>
+                        <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400 block">የእጣ ቁጥር</span>
+                        <span className="text-xl font-black text-amber-400 font-mono tracking-wider">{t.ticketId}</span>
+                      </div>
+                      <span className="p-2 bg-slate-800 rounded-xl text-slate-300">
+                        <Award className="w-5 h-5 text-emerald-400" />
+                      </span>
+                    </div>
+
+                    <div className="border-t border-slate-800 pt-3 space-y-1">
+                      <h4 className="text-sm font-semibold text-slate-200">{t.title}</h4>
+                      <p className="text-[11px] text-slate-400">የተገዛበት ቀን፡ {t.purchaseDate}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* TAB 3: LUCKY DRAW WHEEL */}
+        {activeTab === 'lucky-wheel' && (
+          <div className="space-y-8 max-w-4xl mx-auto">
+            <div className="text-center space-y-2">
+              <h2 className="text-2xl sm:text-3xl font-extrabold text-white flex items-center justify-center gap-2">
+                <Sparkles className="w-7 h-7 text-amber-400 animate-spin" />
+                ቀጥታ የእጣ ማውጫ መንኮራኩር
+              </h2>
+              <p className="text-xs sm:text-sm text-slate-400">
+                እጣው የሚወጣበትን ዕቃ ይምረጡ፣ ከዚያም መንኮራኩሩን በማሽከርከር አሸናፊውን እጣ በይፋ ያውጡ!
+              </p>
+            </div>
+
+            {/* Raffle Select Selector */}
+            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 sm:p-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+              <label className="text-sm font-bold text-slate-200 whitespace-nowrap">
+                ለማውጣት የተፈለገው እጣ፡
+              </label>
+              <select
+                value={wheelRaffle ? wheelRaffle.id : ''}
+                onChange={(e) => {
+                  const found = raffles.find(r => r.id === e.target.value);
+                  setWheelRaffle(found || null);
+                  setWheelWinner(null);
+                }}
+                className="w-full sm:w-auto flex-1 bg-slate-950 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-amber-500"
+              >
+                <option value="">-- እጣ ይምረጡ --</option>
+                {raffles.map(r => (
+                  <option key={r.id} value={r.id}>
+                    {r.title} ({r.soldTickets} የተሸጡ እጣዎች) {r.status === 'COMPLETED' ? '[ተጠናቋል]' : ''}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Wheel Container & Canvas Simulation */}
+            {wheelRaffle && (
+              <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 sm:p-10 flex flex-col items-center justify-center space-y-8 shadow-2xl relative overflow-hidden">
+                
+                {/* Pointer / Arrow */}
+                <div className="relative flex justify-center">
+                  <div className="w-0 h-0 border-l-[18px] border-l-transparent border-r-[18px] border-r-transparent border-t-[32px] border-t-amber-400 z-20 -mb-5 drop-shadow-md"></div>
+                </div>
+
+                {/* Simulated Spinning Wheel */}
+                <div className="relative w-64 h-64 sm:w-80 sm:h-80 rounded-full border-8 border-slate-800 shadow-2xl flex items-center justify-center overflow-hidden bg-slate-950">
+                  <div 
+                    className="w-full h-full rounded-full transition-all duration-[4500ms] ease-out flex items-center justify-center relative"
+                    style={{ transform: `rotate(${wheelAngle}deg)` }}
+                  >
+                    {/* Wheel Colorful Slices Pattern */}
+                    <div className="absolute inset-0 rounded-full bg-[conic-gradient(#f59e0b_0deg_60deg,#10b981_60deg_120deg,#ef4444_120deg_180deg,#3b82f6_180deg_240deg,#8b5cf6_240deg_300deg,#ec4899_300deg_360deg)] opacity-80"></div>
+                    
+                    {/* Inner Decorative Hub */}
+                    <div className="absolute w-24 h-24 sm:w-28 sm:h-28 bg-slate-950 rounded-full border-4 border-amber-400/80 z-10 flex flex-col items-center justify-center text-center p-2 shadow-inner">
+                      <span className="text-3xl">{wheelRaffle.image}</span>
+                      <span className="text-[10px] font-bold text-slate-300 truncate w-full px-1">{wheelRaffle.category}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Spin Button */}
+                <button
+                  disabled={isSpinning || wheelRaffle.soldTickets === 0}
+                  onClick={spinWheel}
+                  className={`px-8 py-4 rounded-2xl font-black text-base tracking-wide flex items-center gap-3 transition-all duration-300 shadow-xl ${
+                    isSpinning || wheelRaffle.soldTickets === 0
+                      ? 'bg-slate-800 text-slate-500 cursor-not-allowed'
+                      : 'bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 text-slate-950 hover:brightness-110 shadow-amber-500/20 active:scale-95 animate-pulse'
+                  }`}
+                >
+                  <RefreshCw className={`w-5 h-5 ${isSpinning ? 'animate-spin' : ''}`} />
+                  {isSpinning ? 'እጣው እየወጣ ነው...' : 'መንኮራኩሩን አሽከርክር (እጣ አውጣ)'}
+                </button>
+
+                {/* Winner Display Card Modal */}
+                {wheelWinner && (
+                  <div className="w-full bg-gradient-to-r from-emerald-950/80 via-slate-900 to-emerald-950/80 border-2 border-emerald-500/50 rounded-2xl p-6 text-center space-y-3 animate-fade-in shadow-2xl">
+                    <div className="inline-flex items-center gap-2 bg-emerald-500/20 text-emerald-400 px-3 py-1 rounded-full text-xs font-bold border border-emerald-500/30">
+                      <Trophy className="w-4 h-4" />
+                      አሸናፊው በይፋ ተለይቷል!
+                    </div>
+                    <h4 className="text-xl font-black text-white">{wheelWinner.winnerName}</h4>
+                    <p className="text-sm text-slate-300">ሽልማት፡ <span className="text-amber-400 font-bold">{wheelWinner.raffleTitle}</span></p>
+                    <div className="inline-block bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 font-mono text-amber-400 font-black text-lg">
+                      የአሸናፊ እጣ ቁጥር፡ {wheelWinner.ticketNumber}
+                    </div>
+                  </div>
+                )}
+
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* TAB 4: VERIFY TICKET */}
+        {activeTab === 'verify' && (
+          <div className="max-w-2xl mx-auto space-y-6">
+            <div className="text-center space-y-2">
+              <h2 className="text-xl sm:text-2xl font-bold text-white flex items-center justify-center gap-2">
+                <Search className="w-6 h-6 text-amber-400" />
+                የእጣ ቁጥር ማረጋገጫ
+              </h2>
+              <p className="text-xs sm:text-sm text-slate-400">
+                የገዙትን የዕጣ ቁጥር (ምሳሌ፡ ET-84920) በማስገባት ማሸነፍዎን ያረጋግጡ።
+              </p>
+            </div>
+
+            {/* Search Input Box */}
+            <form onSubmit={handleVerifyTicket} className="flex gap-2">
+              <div className="relative flex-1">
+                <input
+                  type="text"
+                  placeholder="የእጣ ቁጥር ያስገቡ (ምሳሌ፡ ET-84920)..."
+                  value={searchTicketId}
+                  onChange={(e) => setSearchTicketId(e.target.value)}
+                  className="w-full bg-slate-900 border border-slate-800 rounded-2xl px-4 py-3.5 pl-11 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 transition-all font-mono"
+                />
+                <Ticket className="w-5 h-5 text-slate-500 absolute left-3.5 top-4" />
+              </div>
+              <button
+                type="submit"
+                className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-6 py-3.5 rounded-2xl text-sm transition-all shadow-lg shadow-amber-500/10 active:scale-95 flex items-center gap-2"
+              >
+                <Search className="w-4 h-4" />
+                ፈልግ
+              </button>
+            </form>
+
+            {/* Search Result View */}
+            {searchResult && (
+              <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 transition-all">
+                {searchResult.status === 'WON' && (
+                  <div className="text-center space-y-4">
+                    <div className="w-16 h-16 bg-emerald-500/20 text-emerald-400 rounded-full flex items-center justify-center mx-auto border border-emerald-500/30">
+                      <Trophy className="w-8 h-8" />
+                    </div>
+                    <div>
+                      <span className="text-xs font-bold text-emerald-400 uppercase tracking-wider block">እንኳን ደስ አለዎት! ያሸነፈ እጣ ነው</span>
+                      <h3 className="text-xl font-black text-white mt-1">{searchResult.title}</h3>
+                    </div>
+                    <div className="bg-slate-950 p-4 rounded-xl border border-slate-800/80 space-y-2 text-xs">
+                      <div className="flex justify-between text-slate-400">
+                        <span>የእጣ ቁጥር፡</span>
+                        <span className="font-mono text-amber-400 font-bold">{searchResult.ticketId}</span>
+                      </div>
+                      <div className="flex justify-between text-slate-400">
+                        <span>የአሸናፊ ስም፡</span>
+                        <span className="text-slate-200 font-medium">{searchResult.winnerName}</span>
+                      </div>
+                      <div className="flex justify-between text-slate-400">
+                        <span>የወጣበት ቀን፡</span>
+                        <span className="text-slate-200">{searchResult.date}</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {searchResult.status === 'PENDING' && (
+                  <div className="text-center space-y-3">
+                    <div className="w-12 h-12 bg-amber-500/20 text-amber-400 rounded-full flex items-center justify-center mx-auto">
+                      <Clock className="w-6 h-6" />
+                    </div>
+                    <h4 className="text-base font-bold text-white">እጣው በሂደት ላይ ይገኛል</h4>
+                    <p className="text-xs text-slate-400">የእጣ ቁጥር <strong>{searchResult.ticketId}</strong> ትክክለኛ የተመዘገበ እጣ ነው:: {searchResult.statusText}።</p>
+                  </div>
+                )}
+
+                {searchResult.status === 'NOT_FOUND' && (
+                  <div className="text-center space-y-3">
+                    <div className="w-12 h-12 bg-red-500/20 text-red-400 rounded-full flex items-center justify-center mx-auto">
+                      <X className="w-6 h-6" />
+                    </div>
+                    <h4 className="text-base font-bold text-white">ምንም አልተገኘም</h4>
+                    <p className="text-xs text-slate-400">የያስገቡት የእጣ ቁጥር <strong>"{searchResult.ticketId}"</strong> በሲስተሙ ውስጥ አልተገኘም። እባክዎን ቁጥሩን አስተካክለው ይሞክሩ።</p>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* TAB 5: ADMIN DASHBOARD */}
+        {activeTab === 'admin' && (
+          <div className="space-y-8 max-w-4xl mx-auto">
+            <div className="border-b border-slate-800 pb-4">
+              <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                <Sliders className="w-6 h-6 text-amber-400" />
+                የአስተዳዳሪ ማስተካከያ (Admin Dashboard)
+              </h2>
+              <p className="text-xs text-slate-400">አዳዲስ የእጣ ዓይነቶችን እዚህ ጋር መጨመር ይችላሉ።</p>
+            </div>
+
+            {/* Create New Raffle Form */}
+            <form onSubmit={handleAddRaffle} className="bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 space-y-5">
+              <h3 className="text-base font-bold text-white border-b border-slate-800 pb-3 flex items-center gap-2">
+                <PlusCircle className="w-5 h-5 text-emerald-400" />
+                አዲስ የዕጣ ዓይነት መመዝገቢያ
+              </h3>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="text-xs font-semibold text-slate-300 block mb-1.5">የዕጣው ርዕስ/ስም</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="ምሳሌ፡ አዲስ Laptop HP Core i7"
+                    value={newRaffle.title}
+                    onChange={(e) => setNewRaffle({ ...newRaffle, title: e.target.value })}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-amber-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs font-semibold text-slate-300 block mb-1.5">ምድብ (Category)</label>
+                  <select
+                    value={newRaffle.category}
+                    onChange={(e) => setNewRaffle({ ...newRaffle, category: e.target.value })}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-amber-500"
+                  >
+                    <option value="ኤሌክትሮኒክስ">ኤሌክትሮኒክስ</option>
+                    <option value="መኪና">መኪና</option>
+                    <option value="የቤት እቃዎች">የቤት እቃዎች</option>
+                    <option value="ሌሎች">ሌሎች</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="text-xs font-semibold text-slate-300 block mb-1.5">የአንዱ እጣ ዋጋ (በብር)</label>
+                  <input
+                    type="number"
+                    required
+                    min="1"
+                    placeholder="50"
+                    value={newRaffle.price}
+                    onChange={(e) => setNewRaffle({ ...newRaffle, price: e.target.value })}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-amber-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs font-semibold text-slate-300 block mb-1.5">ጠቅላላ የሚሸጡ እጣዎች ብዛት</label>
+                  <input
+                    type="number"
+                    required
+                    min="1"
+                    placeholder="100"
+                    value={newRaffle.totalTickets}
+                    onChange={(e) => setNewRaffle({ ...newRaffle, totalTickets: e.target.value })}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-amber-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs font-semibold text-slate-300 block mb-1.5">ምስል (Emoji Asset)</label>
+                  <input
+                    type="text"
+                    value={newRaffle.image}
+                    onChange={(e) => setNewRaffle({ ...newRaffle, image: e.target.value })}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-amber-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs font-semibold text-slate-300 block mb-1.5">የእጣ ማውጫ ቀን</label>
+                  <input
+                    type="date"
+                    required
+                    value={newRaffle.drawDate}
+                    onChange={(e) => setNewRaffle({ ...newRaffle, drawDate: e.target.value })}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-amber-500"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold text-slate-300 block mb-1.5">ዝርዝር መግለጫ</label>
+                <textarea
+                  rows="3"
+                  placeholder="ስለ ዕቃው አጭር መግለጫ ያስገቡ..."
+                  value={newRaffle.description}
+                  onChange={(e) => setNewRaffle({ ...newRaffle, description: e.target.value })}
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-amber-500"
+                ></textarea>
+              </div>
+
+              <button
+                type="submit"
+                className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold py-3.5 rounded-xl text-sm transition-all shadow-lg active:scale-95"
+              >
+                እጣውን መዝግብ እና ለሽያጭ አቅርብ
+              </button>
+            </form>
+          </div>
+        )}
+
+      </main>
+
+      {/* MODAL: TICKET PURCHASE */}
+      {selectedRaffle && (
+        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-md p-6 space-y-6 shadow-2xl relative animate-scale-up">
+            
+            {/* Modal Close Button */}
+            <button 
+              onClick={() => setSelectedRaffle(null)}
+              className="absolute top-5 right-5 text-slate-400 hover:text-white p-1 rounded-lg bg-slate-800/50"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            {/* Modal Header */}
+            <div className="flex items-center gap-4 border-b border-slate-800 pb-4">
+              <div className="text-4xl p-3 bg-slate-950 rounded-2xl border border-slate-800">
+                {selectedRaffle.image}
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-white">{selectedRaffle.title}</h3>
+                <span className="text-xs text-amber-400 font-semibold">የአንዱ እጣ፡ {selectedRaffle.price} ብር</span>
+              </div>
+            </div>
+
+            {/* Purchase Form */}
+            <form onSubmit={handleBuyTicket} className="space-y-4">
+              <div>
+                <label className="text-xs font-semibold text-slate-300 block mb-1.5">የእጣ ብዛት ይምረጡ</label>
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setTicketQuantity(Math.max(1, ticketQuantity - 1))}
+                    className="w-10 h-10 bg-slate-800 rounded-xl font-bold text-lg hover:bg-slate-700 transition-colors"
+                  >
+                    -
+                  </button>
+                  <span className="flex-1 text-center font-bold text-lg bg-slate-950 border border-slate-800 py-2 rounded-xl text-amber-400 font-mono">
+                    {ticketQuantity}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setTicketQuantity(ticketQuantity + 1)}
+                    className="w-10 h-10 bg-slate-800 rounded-xl font-bold text-lg hover:bg-slate-700 transition-colors"
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold text-slate-300 block mb-1.5">የእርስዎ ሙሉ ስም</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="ምሳሌ፡ አበበ ከበደ"
+                  value={buyerName}
+                  onChange={(e) => setBuyerName(e.target.value)}
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-amber-500"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold text-slate-300 block mb-1.5">የሞባይል ስልክ ቁጥር</label>
+                <input
+                  type="tel"
+                  required
+                  placeholder="0911******"
+                  value={buyerPhone}
+                  onChange={(e) => setBuyerPhone(e.target.value)}
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-amber-500 font-mono"
+                />
+              </div>
+
+              {/* Total Calculation */}
+              <div className="bg-slate-950 p-4 rounded-xl border border-slate-800/80 flex justify-between items-center text-xs">
+                <span className="text-slate-400">ጠቅላላ የሚከፈል፡</span>
+                <span className="text-lg font-black text-emerald-400">
+                  {selectedRaffle.price * ticketQuantity} ብር
+                </span>
+              </div>
+
+              {/* Submit Button */}
+              <button
+                type="submit"
+                className="w-full bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 text-slate-950 font-bold py-3.5 rounded-xl text-sm transition-all shadow-lg shadow-amber-500/10 active:scale-95"
+              >
+                ክፍያውን ፈጽም እና እጣውን ግዛ
+              </button>
+            </form>
+
+          </div>
+        </div>
+      )}
+
+    </div>
+  );
+}
