@@ -12,10 +12,9 @@ export default async function handler(req, res) {
     }
 
     try {
-        // በ Vercel ላይ ከቀመጡት DATABASE_URL ጋር መገናኘት
         const sql = neon(process.env.DATABASE_URL);
 
-        // አድሚኑን በዳታቤዝ ውስጥ መፈልግ
+        // አድሚኑን ከ ሮል (role) ጋር መፈልግ
         const admins = await sql`SELECT * FROM admins WHERE email = ${email}`;
 
         if (admins.length === 0) {
@@ -24,15 +23,15 @@ export default async function handler(req, res) {
 
         const admin = admins[0];
 
-        // የይለፍ ቃሉን ማረጋገጥ
         if (admin.password !== password) {
             return res.status(401).json({ success: false, message: 'የተሳሳተ ኢሜይል ወይም የይለፍ ቃል!' });
         }
 
-        // ማረጋገጫው ትክክል ከሆነ ቶከን (Token) በመመለስ ወደ ፓነሉ እንዲገባ መፍቀድ
+        // ቶከን እና ሮል (Role) አብሮ መመለስ
         return res.status(200).json({
             success: true,
             email: admin.email,
+            role: admin.role || 'admin',
             token: 'neon_db_secure_token_' + admin.id
         });
 
