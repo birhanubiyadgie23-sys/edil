@@ -27,7 +27,6 @@
                 </button>
             </div>
 
-            <!-- Main Nav Links (Exact Smashing Style) -->
             <nav class="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm font-bold">
                 <a href="#articles" class="hover:underline">Articles[cite: 1]</a>
                 <a href="#shop" class="hover:underline">Books[cite: 1]</a>
@@ -36,7 +35,6 @@
                 <a href="#newsletter" class="hover:underline">Newsletter[cite: 1]</a>
             </nav>
 
-            <!-- User Auth Area & Cart -->
             <div class="flex items-center space-x-3">
                 <div id="user-auth-area">
                     <button onclick="openAuthModal('login')" class="bg-white text-[#d9381e] px-3.5 py-1.5 rounded-lg text-xs font-extrabold shadow hover:bg-gray-100 transition">Log In</button>
@@ -71,7 +69,11 @@
     <!-- Main Content -->
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 flex-grow">
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-12">
+            
+            <!-- Left 2 Columns: Articles & Card Components -->
             <div class="lg:col-span-2 space-y-12" id="articles">
+                
+                <!-- Article 1 -->
                 <article class="space-y-4 bg-white p-8 rounded-2xl border border-gray-200 shadow-xs">
                     <div class="flex items-center space-x-3 text-xs text-gray-600 font-medium">
                         <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop" alt="Paul Boag" class="w-12 h-12 rounded-xl object-cover border-2 border-red-500 shadow-sm">
@@ -83,10 +85,73 @@
                     <h2 class="font-serif-custom text-3xl font-bold text-gray-900">A New Community For In-House UX People[cite: 1]</h2>
                     <p class="text-gray-700 text-sm leading-relaxed">We’ve teamed up for a new small community for people doing UX inside organizations with weekly calls and shared frameworks.</p>
                 </article>
+
+                <!-- Article 2 -->
+                <article class="space-y-4 bg-white p-8 rounded-2xl border border-gray-200 shadow-xs">
+                    <div class="flex items-center space-x-3 text-xs text-gray-600 font-medium">
+                        <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop" alt="Eric Bailey" class="w-12 h-12 rounded-xl object-cover border-2 border-red-500 shadow-sm">
+                        <div>
+                            <span class="font-bold text-[#d9381e]">Eric Bailey</span> <span class="text-gray-500">wrote[cite: 1]</span>
+                            <div class="text-[11px] text-gray-400">Nov 5, 2026 in Accessibility, AI, Web Design</div>
+                        </div>
+                    </div>
+                    <h2 class="font-serif-custom text-3xl font-bold text-gray-900">Making Immersive LLM Chat Experiences More Accessible[cite: 1]</h2>
+                    <p class="text-gray-700 text-sm leading-relaxed">AI streaming interfaces present serious accessibility challenges. Let’s break down how to build inclusive windows.</p>
+                </article>
+
+                <!-- SEE MORE LATEST ARTICLES BUTTON -->
+                <div class="text-center py-4">
+                    <button onclick="alert('Loading more latest articles...')" class="inline-block text-xs font-bold text-gray-800 hover:text-[#d9381e] border-b-2 border-gray-300 hover:border-[#d9381e] pb-1 transition">
+                        SEE MORE LATEST ARTICLES ↪
+                    </button>
+                </div>
+
+                <!-- Featured Graphic & Colored Cards Grid (As requested) -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 pt-4">
+                    <!-- Card 1 -->
+                    <div class="bg-emerald-50 border border-emerald-200 rounded-2xl p-6 flex flex-col justify-between shadow-xs">
+                        <div>
+                            <h3 class="font-serif-custom text-lg font-bold text-emerald-900 mb-2">Accessible Front-End Components[cite: 1]</h3>
+                            <p class="text-xs text-gray-600 leading-relaxed mb-4">Reliable accessible UI elements: modals, tables, pickers, and menus[cite: 1].</p>
+                        </div>
+                        <button onclick="alert('Opening components...')" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 rounded-xl text-xs transition">Explore Components</button>
+                    </div>
+
+                    <!-- Card 2 -->
+                    <div class="bg-orange-50 border border-orange-200 rounded-2xl p-6 flex flex-col justify-between shadow-xs">
+                        <div>
+                            <h3 class="font-serif-custom text-lg font-bold text-orange-900 mb-2">CSS Generators & Tools[cite: 1]</h3>
+                            <p class="text-xs text-gray-600 leading-relaxed mb-4">Useful CSS tools for animations, shadows, filters, and layouts[cite: 1].</p>
+                        </div>
+                        <button onclick="alert('Opening generators...')" class="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold py-2 rounded-xl text-xs transition">Explore Tools</button>
+                    </div>
+
+                    <!-- Card 3 -->
+                    <div class="bg-purple-50 border border-purple-200 rounded-2xl p-6 flex flex-col justify-between shadow-xs">
+                        <div>
+                            <h3 class="font-serif-custom text-lg font-bold text-purple-900 mb-2">Front-End Boilerplates</h3>
+                            <p class="text-xs text-gray-600 leading-relaxed mb-4">HTML templates, resets, style guides, and robust starter kits[cite: 1].</p>
+                        </div>
+                        <button onclick="alert('Opening kits...')" class="w-full bg-purple-700 hover:bg-purple-800 text-white font-bold py-2 rounded-xl text-xs transition">Explore Kits</button>
+                    </div>
+                </div>
+
             </div>
 
-            <!-- Sidebar Store Catalog -->
+            <!-- Right Column: Newsletter & Store Catalog -->
             <div class="space-y-8">
+                <!-- Newsletter Box -->
+                <div class="bg-sky-50 border border-sky-200 rounded-2xl p-6 text-center shadow-xs">
+                    <span class="bg-white text-[#d9381e] text-[10px] font-bold px-3 py-1 rounded-full border border-sky-200 uppercase">Email Newsletter</span>
+                    <h3 class="font-serif-custom text-xl font-bold text-gray-900 mt-3 mb-2">Useful front-end & UX tips, weekly.</h3>
+                    <p class="text-xs text-gray-600 mb-4">Subscribe to get Vitaly’s Smart Interface Design Checklists PDF.</p>
+                    <form onsubmit="event.preventDefault(); alert('Subscribed successfully!');" class="space-y-2">
+                        <input type="email" placeholder="Your email" required class="w-full bg-white border border-gray-300 rounded-xl px-3 py-2 text-xs">
+                        <button type="submit" class="w-full bg-sky-600 hover:bg-sky-700 text-white font-bold py-2.5 rounded-xl text-xs transition">Meow!</button>
+                    </form>
+                </div>
+
+                <!-- Store Catalog -->
                 <section id="shop" class="bg-white border border-gray-200 rounded-2xl p-6 shadow-xs">
                     <div class="flex items-center justify-between mb-4 border-b border-gray-200 pb-2">
                         <h3 class="font-black text-xs text-gray-900 uppercase tracking-wider">DEVSTACKREADS STORE</h3>
@@ -95,6 +160,7 @@
                     <div id="product-grid" class="space-y-4"></div>
                 </section>
             </div>
+
         </div>
     </main>
 
@@ -127,7 +193,7 @@
                     <label class="block text-xs font-semibold text-gray-700 mb-1">Password</label>
                     <input type="password" id="auth-password" required class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
                 </div>
-                <button type="submit" id="auth-btn" class="w-full bg-[#d9381e] hover:bg-red-700 text-white font-bold py-2.5 rounded-xl text-xs transition shadow mt-2">Log In</button>
+                <button type="submit" id="auth-btn" class="w-full bg-[#d9381e] text-white font-bold py-2.5 rounded-xl text-xs transition shadow mt-2">Log In</button>
             </form>
         </div>
     </div>
