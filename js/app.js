@@ -27,13 +27,8 @@ function handleAuthSubmit(e) {
     const email = document.getElementById('auth-email').value;
     const name = document.getElementById('auth-name').value || email.split('@')[0];
 
-    if(authMode === 'register') {
-        localStorage.setItem('devstack_user', JSON.stringify({ name, email }));
-        alert('Account created and logged in successfully!');
-    } else {
-        localStorage.setItem('devstack_user', JSON.stringify({ name, email }));
-        alert('Logged in successfully!');
-    }
+    localStorage.setItem('devstack_user', JSON.stringify({ name, email }));
+    alert(authMode === 'register' ? 'Account created successfully!' : 'Logged in successfully!');
     closeAuthModal();
     checkUserSession();
 }
@@ -69,7 +64,7 @@ function openCheckout() {
     const user = JSON.parse(localStorage.getItem('devstack_user'));
     if(!user) {
         alert('Please log in first before checking out.');
-        closeCheckout();
+        toggleCart();
         openAuthModal('login');
         return;
     }
@@ -78,7 +73,5 @@ function openCheckout() {
     toggleCart();
     updateCart();
 }
-
-function closeCheckout() {}
 
 checkUserSession();
