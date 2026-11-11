@@ -65,7 +65,7 @@
             <a href="#articles" class="text-[#d9381e] hover:underline font-bold">Jump to all articles ↪</a>
         </div>
     </div>
-<!-- Three.js Background Script (Fixed with DevStack Books & Tech Posters) -->
+    <!-- Complete 3D Three.js Animation Script -->
     <script>
         let assetGroupY = 0;
         let scrollStatus = false;
@@ -74,13 +74,16 @@
         const scene = new THREE.Scene();
         const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
         const posterShape = new THREE.Shape();
-        const posterSize = { h: 30, w: 20, padding: 2, cols: 8, rows: 6 };
+        const posterSize = { h: 32, w: 22, padding: 2, cols: 9, rows: 6 };
 
-        const canvasSize = { h: 420, w: document.getElementById('canvas-target').clientWidth || 1200 };
+        const containerEl = document.getElementById('canvas-target');
+        const canvasSize = { h: 440, w: containerEl ? containerEl.clientWidth : 1200 };
 
         renderer.setPixelRatio(window.devicePixelRatio);
         renderer.setSize(canvasSize.w, canvasSize.h);
-        document.getElementById('canvas-target').appendChild(renderer.domElement);
+        if (containerEl) {
+            containerEl.appendChild(renderer.domElement);
+        }
 
         function roundedRect(ctx, x, y, width, height, radius) {
             ctx.moveTo(x, y + radius);
@@ -105,19 +108,19 @@
 
         const camera = new THREE.PerspectiveCamera(75, canvasSize.w / canvasSize.h, .01, 1000);
         camera.rotation.x = .4;
-        camera.position.z = 80;
-        camera.position.y = posterSize.h * 1.2;
+        camera.position.z = 85;
+        camera.position.y = posterSize.h * 1.3;
 
-        const spotLight = new THREE.PointLight(0xffffff, 1500, 400);
-        spotLight.position.set(0, posterSize.h * 1.5, 40);
+        const spotLight = new THREE.PointLight(0xffffff, 2000, 500);
+        spotLight.position.set(0, posterSize.h * 1.8, 50);
         scene.add(spotLight);
 
         initThreeJS();
         animateThree();
 
         function animateThree() {
-            if (frameCount % 3 === 0) {
-                if (!scrollStatus) { scrollPosters(.2); }
+            if (frameCount % 2 === 0) {
+                if (!scrollStatus) { scrollPosters(.25); }
                 frameCount = 1;
                 assetGroup.position.y = assetGroupY;
                 renderer.render(scene, camera);
@@ -133,14 +136,16 @@
         function initThreeJS() {
             let x = 0, y = 0, rowGroup;
             
-            // Real Book covers & Tech UI mockups to display in 3D 
-            const bookPosters = [
+            // High quality book covers and UI design mockups for 3D grid
+            const devPosters = [
                 "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=400&auto=format&fit=crop",
                 "https://images.unsplash.com/photo-1512820790803-83ca734da794?w=400&auto=format&fit=crop",
                 "https://images.unsplash.com/photo-1507238691740-187a5b1d37b8?w=400&auto=format&fit=crop",
+                "https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=400&auto=format&fit=crop",
                 "https://images.unsplash.com/photo-1532012197267-da84d127e765?w=400&auto=format&fit=crop",
                 "https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?w=400&auto=format&fit=crop",
-                "https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=400&auto=format&fit=crop"
+                "https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=400&auto=format&fit=crop",
+                "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=400&auto=format&fit=crop"
             ];
 
             let textureLoader = new THREE.TextureLoader();
@@ -156,18 +161,14 @@
                     posterCollection.push(rowGroup);
                 } else { x += posterSize.w + posterSize.padding; }
 
-                let imgUrl = bookPosters[i % bookPosters.length];
-                
-                // Load texture with fallback color if image fails
-                let texture = textureLoader.load(imgUrl, undefined, undefined, function(err) {
-                    console.warn("Texture load failed, using fallback");
-                });
+                let imgUrl = devPosters[i % devPosters.length];
+                let texture = textureLoader.load(imgUrl);
                 texture.colorSpace = THREE.SRGBColorSpace;
 
                 const material = new THREE.MeshStandardMaterial({ 
                     color: 0xffffff, 
                     map: texture, 
-                    roughness: 0.2,
+                    roughness: 0.25,
                     metalness: 0.1
                 });
                 
