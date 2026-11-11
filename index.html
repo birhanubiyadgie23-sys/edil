@@ -140,9 +140,9 @@
             </div>
         </section>
 
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-12">
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-12">
             
-            <!-- Left 2 Columns: Articles & Cards -->
+            <!-- Left 2 Columns: Articles, Cards & See More Button -->
             <div class="lg:col-span-2 space-y-12" id="articles">
                 
                 <!-- Article 1 -->
@@ -171,36 +171,65 @@
                     <p class="text-gray-700 text-sm leading-relaxed">AI streaming interfaces present serious accessibility challenges. Let’s break down how to build inclusive windows.</p>
                 </article>
 
-            </div>
+                <!-- Featured Cards Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 pt-4">
+                    <div class="bg-emerald-50 border border-emerald-200 rounded-2xl p-6 flex flex-col justify-between shadow-xs">
+                        <div>
+                            <h3 class="font-serif-custom text-lg font-bold text-emerald-900 mb-2">Accessible Front-End Components</h3>
+                            <p class="text-xs text-gray-600 leading-relaxed mb-4">Reliable accessible UI elements: modals, tables, pickers, and menus.</p>
+                        </div>
+                        <button onclick="alert('Opening components...')" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 rounded-xl text-xs transition">Explore Components</button>
+                    </div>
 
-    <!-- Right Column: Newsletter & Store Catalog -->
-        <div class="space-y-8">
-            <!-- Newsletter Box -->
-            <div class="bg-sky-50 border border-sky-200 rounded-2xl p-6 text-center shadow-xs">
-                <span class="bg-white text-[#d9381e] text-[10px] font-bold px-3 py-1 rounded-full border border-sky-200 uppercase">Email Newsletter</span>
-                <h3 class="font-serif-custom text-xl font-bold text-gray-900 mt-3 mb-2">Useful front-end & UX tips, weekly.</h3>
-                <p class="text-xs text-gray-600 mb-4">Subscribe to get Vitaly’s Smart Interface Design Checklists PDF.</p>
-                <form onsubmit="event.preventDefault(); alert('Subscribed successfully!');" class="space-y-2">
-                    <input type="email" placeholder="Your email" required class="w-full bg-white border border-gray-300 rounded-xl px-3 py-2 text-xs">
-                    <button type="submit" class="w-full bg-sky-600 hover:bg-sky-700 text-white font-bold py-2.5 rounded-xl text-xs transition">Meow!</button>
-                </form>
-            </div>
+                    <div class="bg-orange-50 border border-orange-200 rounded-2xl p-6 flex flex-col justify-between shadow-xs">
+                        <div>
+                            <h3 class="font-serif-custom text-lg font-bold text-orange-900 mb-2">CSS Generators & Tools</h3>
+                            <p class="text-xs text-gray-600 leading-relaxed mb-4">Useful CSS tools for animations, shadows, filters, and layouts.</p>
+                        </div>
+                        <button onclick="alert('Opening generators...')" class="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold py-2 rounded-xl text-xs transition">Explore Tools</button>
+                    </div>
 
-            <!-- See More Articles Button Section -->
-            <div class="text-center">
-                <a href="#articles" class="inline-block w-full bg-white border-2 border-[#d9381e] text-[#d9381e] hover:bg-[#d9381e] hover:text-white font-extrabold px-6 py-3.5 rounded-xl text-xs uppercase tracking-wider transition shadow-sm text-center">
-                    See More Articles ↪
-                </a>
-            </div>
-
-            <!-- Store Catalog -->
-            <section id="shop" class="bg-white border border-gray-200 rounded-2xl p-6 shadow-xs">
-                <div class="flex items-center justify-between mb-4 border-b border-gray-200 pb-2">
-                    <h3 class="font-black text-xs text-gray-900 uppercase tracking-wider">DEVSTACKREADS STORE</h3>
-                    <span class="text-[11px] text-[#d9381e] font-bold">Books & UI Kits</span>
+                    <div class="bg-purple-50 border border-purple-200 rounded-2xl p-6 flex flex-col justify-between shadow-xs">
+                        <div>
+                            <h3 class="font-serif-custom text-lg font-bold text-purple-900 mb-2">Front-End Boilerplates</h3>
+                            <p class="text-xs text-gray-600 leading-relaxed mb-4">HTML templates, resets, style guides, and robust starter kits.</p>
+                        </div>
+                        <button onclick="alert('Opening kits...')" class="w-full bg-purple-700 hover:bg-purple-800 text-white font-bold py-2 rounded-xl text-xs transition">Explore Kits</button>
+                    </div>
                 </div>
-                <div id="product-grid" class="space-y-4"></div>
-            </section>
+
+                <!-- See More Articles Button Section (Moved to Left Column, above footer) -->
+                <div class="text-center pt-6">
+                    <a href="#articles" class="inline-block bg-white border-2 border-[#d9381e] text-[#d9381e] hover:bg-[#d9381e] hover:text-white font-extrabold px-8 py-3.5 rounded-xl text-xs uppercase tracking-wider transition shadow-sm">
+                        See More Articles ↪
+                    </a>
+                </div>
+
+            </div>
+
+            <!-- Right Column: Newsletter & Store Catalog (Cleaned) -->
+            <div class="space-y-8">
+                <!-- Newsletter Box -->
+                <div class="bg-sky-50 border border-sky-200 rounded-2xl p-6 text-center shadow-xs">
+                    <span class="bg-white text-[#d9381e] text-[10px] font-bold px-3 py-1 rounded-full border border-sky-200 uppercase">Email Newsletter</span>
+                    <h3 class="font-serif-custom text-xl font-bold text-gray-900 mt-3 mb-2">Useful front-end & UX tips, weekly.</h3>
+                    <p class="text-xs text-gray-600 mb-4">Subscribe to get Vitaly’s Smart Interface Design Checklists PDF.</p>
+                    <form onsubmit="event.preventDefault(); alert('Subscribed successfully!');" class="space-y-2">
+                        <input type="email" placeholder="Your email" required class="w-full bg-white border border-gray-300 rounded-xl px-3 py-2 text-xs">
+                        <button type="submit" class="w-full bg-sky-600 hover:bg-sky-700 text-white font-bold py-2.5 rounded-xl text-xs transition">Meow!</button>
+                    </form>
+                </div>
+
+                <!-- Store Catalog -->
+                <section id="shop" class="bg-white border border-gray-200 rounded-2xl p-6 shadow-xs">
+                    <div class="flex items-center justify-between mb-4 border-b border-gray-200 pb-2">
+                        <h3 class="font-black text-xs text-gray-900 uppercase tracking-wider">DEVSTACKREADS STORE</h3>
+                        <span class="text-[11px] text-[#d9381e] font-bold">Books & UI Kits</span>
+                    </div>
+                    <div id="product-grid" class="space-y-4"></div>
+                </section>
+            </div>
+
         </div>
     </main>
 
