@@ -1,158 +1,106 @@
-// store.js - DevStackReads Catalog, Cart & Telegram Integration for @Ychalal2
-
-const TELEGRAM_USERNAME = "Ychalal2"; // ትዕዛዞች የሚላኩበት የቴሌግራም አካውንት
-
-// Neon Auth JWKS Configuration
-const NEON_AUTH_CONFIG = {
-    jwksUrl: "https://ep-aged-pond-bb5q85jq.neonauth.c-15.us-east-1.aws.neon.tech/neondb/auth/.well-known/jwks.json",
-    issuer: "https://ep-aged-pond-bb5q85jq.neonauth.c-15.us-east-1.aws.neon.tech/neondb/auth"
-};
-
-const products = [
-    {
-        id: 1,
-        title: "Full-Stack Architecture",
-        category: "Architecture & Backend",
-        price: 49.99,
-        image: "https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=300&auto=format&fit=crop",
-        description: "Comprehensive guide to designing scalable web architectures using modern full-stack patterns."
-    },
-    {
-        id: 2,
-        title: "React & Tailwind Master",
-        category: "UI Kit & Frontend",
-        price: 39.99,
-        image: "https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=300&auto=format&fit=crop",
-        description: "Build lightning-fast, beautiful user interfaces using React and Tailwind CSS."
-    },
-    {
-        id: 3,
-        title: "Advanced JavaScript Core",
-        category: "JavaScript",
-        price: 29.99,
-        image: "https://images.unsplash.com/photo-1579468118864-1b9ea3c0db4a?w=300&auto=format&fit=crop",
-        description: "Master closures, asynchronous programming, prototypes, and modern ES6+ features."
-    },
-    {
-        id: 4,
-        title: "UI/UX Design Systems",
-        category: "Design",
-        price: 45.00,
-        image: "https://images.unsplash.com/photo-1581291518633-83b4ebd1d83e?w=300&auto=format&fit=crop",
-        description: "Create robust, accessible, and consistent design systems for enterprise applications."
-    }
-];
-
 let cart = [];
 
-function renderProducts() {
-    const grid = document.getElementById('product-grid');
-    if (!grid) return;
+document.addEventListener("DOMContentLoaded", () => {
+    fetchStoreBooks();
+});
 
-    grid.innerHTML = products.map(product => `
-        <div class="bg-gray-50 border border-gray-200 rounded-xl p-4 flex items-center justify-between gap-4 transition hover:shadow-md">
-            <div class="flex items-center space-x-3">
-                <img src="${product.image}" alt="${product.title}" class="w-16 h-16 rounded-lg object-cover shadow-xs">
-                <div>
-                    <span class="text-[10px] font-bold text-[#d9381e] uppercase">${product.category}</span>
-                    <h4 class="font-bold text-sm text-gray-900">${product.title}</h4>
-                    <span class="text-xs font-semibold text-gray-600">$${product.price.toFixed(2)}</span>
-                </div>
-            </div>
-            <button onclick="addToCart(${product.id})" class="bg-[#d9381e] hover:bg-red-700 text-white px-3.5 py-2 rounded-lg text-xs font-bold transition shadow-xs flex items-center gap-1.5">
-                <i class="fa-solid fa-cart-plus"></i> Add
-            </button>
-        </div>
-    `).join('');
+async function fetchStoreBooks() {
+    try {
+        const response = await fetch('/api/books');
+        const data = await response.json();
+        const grid = document.getElementById("product-grid");
+        
+        if (!grid) return;
+        grid.innerHTML = "";
+
+        if (data.success && data.books.length > 0) {
+            data.books.forEach(book => {
+                grid.innerHTML += `
+                    <div class="flex items-center justify-between border-b border-gray-100 pb-3">
+                        <div>
+                            <h4 class="font-bold text-xs text-gray-900">${book.title}</h4>
+                            <p class="text-[11px] text-gray-500">${book.author} — <span class="text-[#d9381e] font-bold">${book.price} ETB</span></p>
+                        </div>
+                        <button onclick="addToCart('${book.title}', ${book.price})" class="bg-[#d9381e] hover:bg-red-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition">
+                            Buy
+                        </button>
+                    </div>
+                `;
+            });
+        } else {
+            grid.innerHTML = `<p class="text-xs text-gray-400 text-center py-4">ምንም መጽሐፍ አልተገኘም።</p>`;
+        }
+    } catch (error) {
+        console.error("Error fetching store books:", error);
+    }
 }
 
-function addToCart(productId) {
-    const product = products.find(p => p.id === productId);
-    if (!product) return;
-
-    const existingItem = cart.find(item => item.id === productId);
-    if (existingItem) {
-        existingItem.quantity += 1;
-    } else {
-        cart.push({ ...product, quantity: 1 });
-    }
-
+function addToCart(title, price) {
+    cart.push({ title, price });
     updateCartUI();
-    toggleCart(); 
+    alert(`"${title}" ወደ ጋሪዎ ገብቷል!`);
 }
 
 function updateCartUI() {
-    const cartBadge = document.getElementById('cart-badge');
-    const cartBadgeMobile = document.getElementById('cart-badge-mobile');
-    const cartItems = document.getElementById('cart-items');
-    const cartTotal = document.getElementById('cart-total');
+    const badge = document.getElementById("cart-badge");
+    const badgeMobile = document.getElementById("cart-badge-mobile");
+    const container = document.getElementById("cart-items");
+    const totalEl = document.getElementById("cart-total");
 
-    const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
-    const totalPrice = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    if (badge) badge.textContent = cart.length;
+    if (badgeMobile) badgeMobile.textContent = cart.length;
 
-    if (cartBadge) cartBadge.textContent = totalItems;
-    if (cartBadgeMobile) cartBadgeMobile.textContent = totalItems;
+    if (container) {
+        container.innerHTML = "";
+        let total = 0;
 
-    if (cartItems) {
-        if (cart.length === 0) {
-            cartItems.innerHTML = `<p class="text-xs text-gray-500 text-center py-8">Your cart is empty.</p>`;
-        } else {
-            cartItems.innerHTML = cart.map(item => `
-                <div class="flex items-center justify-between border-b border-gray-100 pb-3">
+        cart.forEach((item, index) => {
+            total += Number(item.price);
+            container.innerHTML += `
+                <div class="flex justify-between items-center border-b pb-2 text-xs">
                     <div>
-                        <h5 class="font-bold text-xs text-gray-900">${item.title}</h5>
-                        <span class="text-xs text-gray-500">$${item.price.toFixed(2)} x ${item.quantity}</span>
+                        <p class="font-bold text-gray-900">${item.title}</p>
+                        <p class="text-gray-500">${item.price} ETB</p>
                     </div>
-                    <button onclick="removeFromCart(${item.id})" class="text-red-500 hover:text-red-700 text-xs font-bold">Remove</button>
+                    <button onclick="removeFromCart(${index})" class="text-red-500 hover:underline">Remove</button>
                 </div>
-            `).join('');
-        }
-    }
+            `;
+        });
 
-    if (cartTotal) {
-        cartTotal.textContent = `$${totalPrice.toFixed(2)}`;
+        if (totalEl) totalEl.textContent = `${total.toFixed(2)} ETB`;
     }
 }
 
-function removeFromCart(productId) {
-    cart = cart.filter(item => item.id !== productId);
+function removeFromCart(index) {
+    cart.splice(index, 1);
     updateCartUI();
 }
 
 function toggleCart() {
-    const drawer = document.getElementById('cart-drawer');
+    const drawer = document.getElementById("cart-drawer");
     if (drawer) {
-        drawer.classList.toggle('translate-x-full');
+        drawer.classList.toggle("translate-x-full");
     }
 }
 
 function openCheckout() {
     if (cart.length === 0) {
-        alert('Your cart is empty!');
+        alert("ጋሪዎ ባዶ ነው!");
         return;
     }
 
-    // የትዕዛዙን ዝርዝር ማዘጋጀት
-    let orderSummary = "🛒 *New DevStackReads Order*%0A%0A";
-    let totalPrice = 0;
+    let message = "🛒 *새로운 የመጽሐፍ ትዕዛዝ (New Order)*\n\n";
+    let total = 0;
 
-    cart.forEach((item, index) => {
-        let itemTotal = item.price * item.quantity;
-        totalPrice += itemTotal;
-        orderSummary += `${index + 1}. *${item.title}* (x${item.quantity}) - $${itemTotal.toFixed(2)}%0A`;
+    cart.forEach(item => {
+        message += `- ${item.title}: ${item.price} ETB\n`;
+        total += Number(item.price);
     });
 
-    orderSummary += `%0A💰 *Total Amount:* $${totalPrice.toFixed(2)}%0A%0A_Please confirm my order!_`;
+    message += `\n*ጠቅላላ ዋጋ (Total): ${total.toFixed(2)} ETB*`;
 
-    // ወደ @Ychalal2 ቴሌግራም አድራሻ ፕሪ-ፊልድ የተደረገ መልዕክት መላኪያ ሊንክ ማመንጨት
-    const telegramUrl = `https://t.me/${TELEGRAM_USERNAME}?text=${orderSummary}`;
-
-    // ቴሌግራም አፕሊኬሽን ወይም ዌብ መክፈቻ
-    window.open(telegramUrl, '_blank');
+    const telegramUsername = "Ychalal2"; 
+    const url = `https://t.me/${telegramUsername}?text=${encodeURIComponent(message)}`;
+    
+    window.open(url, '_blank');
 }
-
-// Initialize store on load
-document.addEventListener('DOMContentLoaded', () => {
-    renderProducts();
-    updateCartUI();
-});
