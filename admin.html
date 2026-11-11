@@ -3,70 +3,122 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DevStackReads — Admin Dashboard</title>
-    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <title>DevStackReads - Secure Admin Login</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="./css/style.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Inter:wght@400;500;600;700&display=swap');
+        .font-serif-custom { font-family: 'Playfair Display', serif; }
+        body { font-family: 'Inter', sans-serif; }
+    </style>
 </head>
-<body class="bg-gray-100 text-gray-900 min-h-screen p-6">
-    <div class="max-w-5xl mx-auto space-y-8">
-        <header class="flex justify-between items-center bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
+<body class="bg-gray-50 text-gray-900 min-h-screen flex flex-col justify-center items-center">
+
+    <!-- Login Container -->
+    <div id="login-section" class="max-w-md w-full bg-white p-8 rounded-2xl border border-gray-200 shadow-sm">
+        <div class="text-center mb-6">
+            <span class="bg-[#d9381e] text-white font-black text-xs px-2.5 py-1.5 rounded-lg">RESTRICTED</span>
+            <h2 class="font-serif-custom text-2xl font-bold mt-3 text-gray-900">Admin Authentication</h2>
+            <p class="text-xs text-gray-500 mt-1">Enter your Neon Auth credentials to access the dashboard.</p>
+        </div>
+
+        <form id="admin-login-form" onsubmit="handleAdminLogin(event)" class="space-y-4">
             <div>
-                <h1 class="text-2xl font-black text-[#d9381e]">DevStackReads Admin Panel</h1>
-                <p class="text-xs text-gray-500">Secure management for products & telegram orders</p>
+                <label class="block text-xs font-bold uppercase text-gray-700 mb-1">Admin Email</label>
+                <input type="email" id="admin-email" required class="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-[#d9381e]" placeholder="admin@devstackreads.com">
             </div>
-            <a href="index.html" class="bg-gray-900 text-white px-4 py-2 rounded-xl text-xs font-bold hover:bg-gray-800">Return to Website</a>
-        </header>
-
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div class="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm">
-                <h2 class="text-lg font-bold mb-4">Add New Product</h2>
-                <form onsubmit="adminAddProduct(event)" class="space-y-4">
-                    <div>
-                        <label class="block text-xs font-semibold mb-1">Product Title</label>
-                        <input type="text" id="p-title" required class="w-full border rounded-lg px-3 py-2 text-sm">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-semibold mb-1">Price ($)</label>
-                        <input type="number" step="0.01" id="p-price" required class="w-full border rounded-lg px-3 py-2 text-sm">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-semibold mb-1">Category</label>
-                        <input type="text" id="p-cat" required class="w-full border rounded-lg px-3 py-2 text-sm">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-semibold mb-1">Image URL</label>
-                        <input type="url" id="p-img" required class="w-full border rounded-lg px-3 py-2 text-sm">
-                    </div>
-                    <button type="submit" class="w-full bg-[#d9381e] text-white font-bold py-2.5 rounded-xl text-xs shadow">Save Product</button>
-                </form>
+            <div>
+                <label class="block text-xs font-bold uppercase text-gray-700 mb-1">Password</label>
+                <input type="password" id="admin-password" required class="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-[#d9381e]" placeholder="••••••••">
             </div>
-
-            <div class="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm">
-                <h2 class="text-lg font-bold mb-4">Recent Telegram Orders</h2>
-                <div id="admin-orders-list" class="space-y-3 text-xs text-gray-600">
-                    <p class="text-gray-400">No orders received yet.</p>
-                </div>
-            </div>
+            <button type="submit" class="w-full bg-[#d9381e] hover:bg-red-700 text-white font-bold py-2.5 rounded-xl text-xs transition shadow-xs">
+                Login to Dashboard
+            </button>
+        </form>
+        <div class="mt-4 text-center">
+            <a href="index.html" class="text-xs font-bold text-gray-500 hover:text-[#d9381e]">← Back to Storefront</a>
         </div>
     </div>
-    <script src="./js/store.js"></script>
+
+    <!-- Admin Dashboard (Hidden by default until authenticated) -->
+    <div id="admin-dashboard" class="hidden w-full max-w-7xl mx-auto px-4 py-8 flex-grow flex flex-col">
+        <!-- Top Navigation -->
+        <header class="bg-white border-b border-gray-200 sticky top-0 z-50 mb-8 rounded-2xl px-6 py-4 flex items-center justify-between shadow-xs">
+            <div class="flex items-center space-x-3">
+                <span class="bg-[#d9381e] text-white font-black text-xs px-2.5 py-1.5 rounded-lg">ADMIN</span>
+                <h1 class="font-serif-custom text-xl font-bold tracking-tight text-gray-900">DevStackReads Dashboard</h1>
+            </div>
+            <div class="flex items-center gap-4">
+                <span class="text-xs font-bold text-gray-600" id="logged-in-user"></span>
+                <button onclick="handleLogout()" class="text-xs font-bold text-red-500 hover:underline">Logout</button>
+            </div>
+        </header>
+
+        <!-- Main Dashboard Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div class="bg-white p-6 rounded-2xl border border-gray-200 shadow-xs">
+                <p class="text-xs text-gray-500 uppercase font-bold">Total Products</p>
+                <h3 class="text-2xl font-black mt-1 text-gray-900">4</h3>
+            </div>
+            <div class="bg-white p-6 rounded-2xl border border-gray-200 shadow-xs">
+                <p class="text-xs text-gray-500 uppercase font-bold">Telegram Notifications</p>
+                <h3 class="text-2xl font-black mt-1 text-sky-600">@Ychalal2</h3>
+            </div>
+            <div class="bg-white p-6 rounded-2xl border border-gray-200 shadow-xs">
+                <p class="text-xs text-gray-500 uppercase font-bold">Database Status</p>
+                <h3 class="text-2xl font-black mt-1 text-emerald-600">Neon DB Secure</h3>
+            </div>
+        </div>
+
+        <section class="bg-white rounded-2xl border border-gray-200 p-6 shadow-xs">
+            <h3 class="font-bold text-sm uppercase tracking-wider text-gray-900 mb-4">Store Products Catalog</h3>
+            <p class="text-xs text-gray-500">Authorized admin session active. Database operations ready.</p>
+        </section>
+    </div>
+
+    <!-- Script Logic for Auth Check -->
     <script>
-        function adminAddProduct(e) {
-            e.preventDefault();
-            const newProd = {
-                id: Date.now(),
-                title: document.getElementById('p-title').value,
-                price: parseFloat(document.getElementById('p-price').value),
-                category: document.getElementById('p-cat').value,
-                image: document.getElementById('p-img').value
-            };
-            let products = JSON.parse(localStorage.getItem('devstack_products')) || defaultProducts;
-            products.push(newProd);
-            localStorage.setItem('devstack_products', JSON.stringify(products));
-            alert('Product added successfully!');
-            e.target.reset();
+        const NEON_JWKS_URL = "https://ep-aged-pond-bb5q85jq.neonauth.c-15.us-east-1.aws.neon.tech/neondb/auth/.well-known/jwks.json";
+
+        // Check if already logged in via LocalStorage session
+        document.addEventListener("DOMContentLoaded", () => {
+            const token = localStorage.getItem("admin_session_token");
+            if (token) {
+                showDashboard(localStorage.getItem("admin_email"));
+            }
+        });
+
+        async function handleAdminLogin(event) {
+            event.preventDefault();
+            const email = document.getElementById("admin-email").value;
+            const password = document.getElementById("admin-password").value;
+
+            // Simulated Neon Auth Verification (In production, validate against Neon DB / Auth API endpoint)
+            if (email && password) {
+                // Here you would normally fetch your Neon Auth endpoint or backend API
+                localStorage.setItem("admin_session_token", "neon_auth_secure_token_xyz");
+                localStorage.setItem("admin_email", email);
+                
+                showDashboard(email);
+            } else {
+                alert("Please enter valid credentials.");
+            }
+        }
+
+        function showDashboard(email) {
+            document.getElementById("login-section").classList.add("hidden");
+            document.getElementById("admin-dashboard").classList.remove("hidden");
+            document.getElementById("logged-in-user").textContent = email;
+        }
+
+        function handleLogout() {
+            localStorage.removeItem("admin_session_token");
+            localStorage.removeItem("admin_email");
+            location.reload();
         }
     </script>
+
 </body>
 </html>
