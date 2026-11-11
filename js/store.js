@@ -46,11 +46,13 @@ function addToCart(id) {
 function updateCart() {
     localStorage.setItem('devstack_cart', JSON.stringify(cart));
     const badge = document.getElementById('cart-badge');
+    const badgeMobile = document.getElementById('cart-badge-mobile');
     const itemsContainer = document.getElementById('cart-items');
     const totalEl = document.getElementById('cart-total');
 
     const totalCount = cart.reduce((sum, item) => sum + item.qty, 0);
     if(badge) badge.innerText = totalCount;
+    if(badgeMobile) badgeMobile.innerText = totalCount;
 
     if (!itemsContainer) return;
 
