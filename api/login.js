@@ -7,8 +7,12 @@ export default async function handler(req, res) {
 
     const { email, password } = req.body;
 
+    if (!email || !password) {
+        return res.status(400).json({ success: false, message: 'እባክዎ ኢሜይል እና የይለፍ ቃል ያስገቡ።' });
+    }
+
     try {
-        // ከ Neon ዳታቤዝ ጋር በ DATABASE_URL በኩል መገናኘት
+        // በ Vercel ላይ ከቀመጡት DATABASE_URL ጋር መገናኘት
         const sql = neon(process.env.DATABASE_URL);
 
         // አድሚኑን በዳታቤዝ ውስጥ መፈልግ
@@ -25,15 +29,15 @@ export default async function handler(req, res) {
             return res.status(401).json({ success: false, message: 'የተሳሳተ ኢሜይል ወይም የይለፍ ቃል!' });
         }
 
-        // ማረጋገጫው ትክክል ከሆነ
-        return.status(200).json({
+        // ማረጋገጫው ትክክል ከሆነ ቶከን (Token) በመመለስ ወደ ፓነሉ እንዲገባ መፍቀድ
+        return res.status(200).json({
             success: true,
             email: admin.email,
             token: 'neon_db_secure_token_' + admin.id
         });
 
     } catch (error) {
-        console.error('Database error:', error);
+        console.error('Database connection error:', error);
         return res.status(500).json({ success: false, message: 'የሰርቨር ስህተት ተፈጥሯል።' });
     }
 }
