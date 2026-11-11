@@ -8,8 +8,46 @@
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <!-- FontAwesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Three.js Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <!-- Custom CSS -->
     <link rel="stylesheet" href="./css/style.css">
+    <style>
+        .hero-canvas-container {
+            position: relative;
+            width: 100%;
+            height: 440px;
+            overflow: hidden;
+            border-radius: 28px;
+            background-color: #0b0f19;
+            box-shadow: 0 25px 50px -12px rgba(217, 56, 30, 0.35);
+            border: 1px solid rgba(217, 56, 30, 0.4);
+        }
+        .hero-overlay {
+            position: absolute;
+            inset: 0;
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: flex-start;
+            padding: 40px;
+            background: linear-gradient(90deg, rgba(11,15,25,0.96) 0%, rgba(11,15,25,0.75) 60%, rgba(11,15,25,0.2) 100%);
+            color: #ffffff;
+            pointer-events: none;
+        }
+        .hero-overlay a {
+            pointer-events: auto;
+        }
+        .posters-bg {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+    </style>
 </head>
 <body class="bg-[#fcfbfa] text-[#111111] antialiased flex flex-col min-h-screen">
 
@@ -28,11 +66,11 @@
             </div>
 
             <nav class="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm font-bold">
-                <a href="#articles" class="hover:underline">Articles[cite: 1]</a>
-                <a href="#shop" class="hover:underline">Books[cite: 1]</a>
-                <a href="#events" class="hover:underline">Events[cite: 1]</a>
-                <a href="#membership" class="hover:underline">Membership[cite: 1]</a>
-                <a href="#newsletter" class="hover:underline">Newsletter[cite: 1]</a>
+                <a href="#articles" class="hover:underline">Articles</a>
+                <a href="#shop" class="hover:underline">Books</a>
+                <a href="#events" class="hover:underline">Events</a>
+                <a href="#membership" class="hover:underline">Membership</a>
+                <a href="#newsletter" class="hover:underline">Newsletter</a>
             </nav>
 
             <div class="flex items-center space-x-3">
@@ -56,16 +94,162 @@
     <!-- Sub-header Tags Bar -->
     <div class="bg-white border-b border-gray-200 py-2.5 px-4 overflow-x-auto shadow-xs">
         <div class="max-w-7xl mx-auto flex items-center space-x-2 text-xs font-bold text-gray-700 whitespace-nowrap">
-            <span class="bg-red-50 text-[#d9381e] px-2.5 py-1 rounded-md border border-red-100">Accessibility[cite: 1]</span>
-            <span class="bg-red-50 text-[#d9381e] px-2.5 py-1 rounded-md border border-red-100">UX[cite: 1]</span>
-            <span class="bg-red-50 text-[#d9381e] px-2.5 py-1 rounded-md border border-red-100">CSS[cite: 1]</span>
-            <span class="bg-red-50 text-[#d9381e] px-2.5 py-1 rounded-md border border-red-100">JavaScript[cite: 1]</span>
+            <span class="bg-red-50 text-[#d9381e] px-2.5 py-1 rounded-md border border-red-100">Accessibility</span>
+            <span class="bg-red-50 text-[#d9381e] px-2.5 py-1 rounded-md border border-red-100">UX</span>
+            <span class="bg-red-50 text-[#d9381e] px-2.5 py-1 rounded-md border border-red-100">CSS</span>
+            <span class="bg-red-50 text-[#d9381e] px-2.5 py-1 rounded-md border border-red-100">JavaScript</span>
             <span class="bg-red-50 text-[#d9381e] px-2.5 py-1 rounded-md border border-red-100">React</span>
             <span class="text-gray-400">|</span>
             <a href="#articles" class="text-[#d9381e] hover:underline font-bold">Jump to all articles ↪</a>
         </div>
     </div>
-    <!-- Complete 3D Three.js Animation Script -->
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 flex-grow w-full">
+        
+        <!-- 3D Dynamic Books & Tech Posters Hero Section -->
+        <section class="mb-12">
+            <div class="hero-canvas-container">
+                <!-- Three.js Canvas Target -->
+                <div class="posters-bg" id="canvas-target"></div>
+                
+                <!-- Foreground Content Overlay -->
+                <div class="hero-overlay max-w-2xl">
+                    <div style="display: inline-flex; align-items: center; gap: 8px; background: rgba(217, 56, 30, 0.3); border: 1px solid rgba(217, 56, 30, 0.6); color: #ff6b4a; font-size: 11px; font-weight: 800; padding: 5px 12px; border-radius: 9999px; text-transform: uppercase; margin-bottom: 12px;">
+                        <i class="fa-solid fa-book-bookmark text-[#d9381e]"></i>
+                        <span>DevStackReads Editorial & Bookstore Hub</span>
+                    </div>
+                    
+                    <h1 style="font-size: 30px; font-weight: 900; line-height: 1.25; margin-bottom: 12px; font-family: 'Merriweather', serif;">
+                        የዘመናዊ ዌብ አርክቴክቸር መጻሕፍትን እና <span style="color: #ff6b4a;">ዩአይ ኪቶችን</span> በ 3ዲ ያስሱ!
+                    </h1>
+                    
+                    <p style="font-size: 13px; color: #cbd5e1; line-height: 1.6; margin-bottom: 20px;">
+                        ለሙያዊ ዴቨሎፐሮች እና ዲዛይነሮች የተዘጋጁ ጥልቅ መጻሕፍት፣ አጋዥ ማዕቀፎች እና የቅርብ ጊዜ ቴክኖሎጂዎች በአንድ ቦታ።
+                    </p>
+                    
+                    <div style="display: flex; gap: 12px;">
+                        <a href="#shop" style="background-color: #d9381e; color: #ffffff; font-weight: 800; padding: 12px 24px; border-radius: 12px; font-size: 12px; text-decoration: none; box-shadow: 0 10px 20px rgba(217,56,30,0.4);">
+                            መደብሩን ይጎብኙ ↪
+                        </a>
+                        <a href="#articles" style="background: rgba(255, 255, 255, 0.1); color: #ffffff; font-weight: 700; padding: 12px 20px; border-radius: 12px; font-size: 12px; text-decoration: none; border: 1px solid rgba(255,255,255,0.3);">
+                            ጽሑፎችን አንብብ
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-12">
+            
+            <!-- Left 2 Columns: Articles & Cards -->
+            <div class="lg:col-span-2 space-y-12" id="articles">
+                
+                <!-- Article 1 -->
+                <article class="space-y-4 bg-white p-8 rounded-2xl border border-gray-200 shadow-xs">
+                    <div class="flex items-center space-x-3 text-xs text-gray-600 font-medium">
+                        <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop" alt="Paul Boag" class="w-12 h-12 rounded-xl object-cover border-2 border-red-500 shadow-sm">
+                        <div>
+                            <span class="font-bold text-[#d9381e]">Paul Boag</span> <span class="text-gray-500">wrote</span>
+                            <div class="text-[11px] text-gray-400">Nov 6, 2026 in UX, Business, Community</div>
+                        </div>
+                    </div>
+                    <h2 class="font-serif-custom text-3xl font-bold text-gray-900">A New Community For In-House UX People</h2>
+                    <p class="text-gray-700 text-sm leading-relaxed">We’ve teamed up for a new small community for people doing UX inside organizations with weekly calls and shared frameworks.</p>
+                </article>
+
+                <!-- Article 2 -->
+                <article class="space-y-4 bg-white p-8 rounded-2xl border border-gray-200 shadow-xs">
+                    <div class="flex items-center space-x-3 text-xs text-gray-600 font-medium">
+                        <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop" alt="Eric Bailey" class="w-12 h-12 rounded-xl object-cover border-2 border-red-500 shadow-sm">
+                        <div>
+                            <span class="font-bold text-[#d9381e]">Eric Bailey</span> <span class="text-gray-500">wrote</span>
+                            <div class="text-[11px] text-gray-400">Nov 5, 2026 in Accessibility, AI, Web Design</div>
+                        </div>
+                    </div>
+                    <h2 class="font-serif-custom text-3xl font-bold text-gray-900">Making Immersive LLM Chat Experiences More Accessible</h2>
+                    <p class="text-gray-700 text-sm leading-relaxed">AI streaming interfaces present serious accessibility challenges. Let’s break down how to build inclusive windows.</p>
+                </article>
+
+            </div>
+
+            <!-- Right Column: Newsletter & Store Catalog -->
+            <div class="space-y-8">
+                <!-- Newsletter Box -->
+                <div class="bg-sky-50 border border-sky-200 rounded-2xl p-6 text-center shadow-xs">
+                    <span class="bg-white text-[#d9381e] text-[10px] font-bold px-3 py-1 rounded-full border border-sky-200 uppercase">Email Newsletter</span>
+                    <h3 class="font-serif-custom text-xl font-bold text-gray-900 mt-3 mb-2">Useful front-end & UX tips, weekly.</h3>
+                    <p class="text-xs text-gray-600 mb-4">Subscribe to get Vitaly’s Smart Interface Design Checklists PDF.</p>
+                    <form onsubmit="event.preventDefault(); alert('Subscribed successfully!');" class="space-y-2">
+                        <input type="email" placeholder="Your email" required class="w-full bg-white border border-gray-300 rounded-xl px-3 py-2 text-xs">
+                        <button type="submit" class="w-full bg-sky-600 hover:bg-sky-700 text-white font-bold py-2.5 rounded-xl text-xs transition">Meow!</button>
+                    </form>
+                </div>
+
+                <!-- Store Catalog -->
+                <section id="shop" class="bg-white border border-gray-200 rounded-2xl p-6 shadow-xs">
+                    <div class="flex items-center justify-between mb-4 border-b border-gray-200 pb-2">
+                        <h3 class="font-black text-xs text-gray-900 uppercase tracking-wider">DEVSTACKREADS STORE</h3>
+                        <span class="text-[11px] text-[#d9381e] font-bold">Books & UI Kits</span>
+                    </div>
+                    <div id="product-grid" class="space-y-4"></div>
+                </section>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Exact Smashing Magazine Footer -->
+    <footer class="bg-[#d9381e] text-white pt-16 pb-12 border-t border-red-700 mt-20">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <h4 class="text-xs font-black uppercase tracking-widest mb-4">BROWSE ALL DEVSTACKREADS TOPICS</h4>
+            <div class="flex flex-wrap justify-center gap-x-4 gap-y-2 text-xs font-semibold text-white/90 mb-8">
+                <span>• Accessibility</span><span>• CSS</span><span>• JavaScript</span><span>• React</span><span>• UI/UX</span>
+            </div>
+            <p class="text-xs text-white/80">© 2026 DevStackReads. All rights reserved. Built with precision.</p>
+        </div>
+    </footer>
+
+    <!-- Auth Modal -->
+    <div id="auth-modal" class="fixed inset-0 z-50 bg-black/50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl relative">
+            <button onclick="closeAuthModal()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+            <h3 id="auth-title" class="text-xl font-bold text-gray-900 mb-4">Log In to Your Account</h3>
+            <form onsubmit="handleAuthSubmit(event)" class="space-y-3">
+                <div id="name-field" class="hidden">
+                    <label class="block text-xs font-semibold text-gray-700 mb-1">Full Name</label>
+                    <input type="text" id="auth-name" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-700 mb-1">Email Address</label>
+                    <input type="email" id="auth-email" required class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-700 mb-1">Password</label>
+                    <input type="password" id="auth-password" required class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
+                </div>
+                <button type="submit" id="auth-btn" class="w-full bg-[#d9381e] hover:bg-red-700 text-white font-bold py-2.5 rounded-xl text-xs transition shadow mt-2">Log In</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Cart Drawer -->
+    <div id="cart-drawer" class="fixed inset-y-0 right-0 z-50 w-full max-w-md bg-white shadow-2xl transform translate-x-full transition-transform duration-300 flex flex-col border-l border-gray-200">
+        <div class="p-5 bg-gray-900 text-white flex justify-between items-center">
+            <h3 class="font-bold text-base"><i class="fa-solid fa-cart-shopping text-[#d9381e]"></i> Your Shopping Cart</h3>
+            <button onclick="toggleCart()" class="text-gray-400 hover:text-white text-lg"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div id="cart-items" class="flex-1 overflow-y-auto p-5 space-y-4"></div>
+        <div class="p-5 bg-gray-50 border-t border-gray-200">
+            <div class="flex justify-between items-center mb-4">
+                <span class="font-semibold text-gray-700">Total:</span>
+                <span id="cart-total" class="font-bold text-xl text-[#d9381e]">$0.00</span>
+            </div>
+            <button onclick="openCheckout()" class="w-full bg-[#d9381e] text-white font-bold py-3 rounded-xl shadow">Proceed to Telegram Checkout</button>
+        </div>
+    </div>
+
+    <!-- Three.js Animation Script -->
     <script>
         let assetGroupY = 0;
         let scrollStatus = false;
@@ -135,8 +319,6 @@
 
         function initThreeJS() {
             let x = 0, y = 0, rowGroup;
-            
-            // High quality book covers and UI design mockups for 3D grid
             const devPosters = [
                 "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=400&auto=format&fit=crop",
                 "https://images.unsplash.com/photo-1512820790803-83ca734da794?w=400&auto=format&fit=crop",
@@ -178,154 +360,8 @@
             }
         }
     </script>
-    <!-- Main Content -->
-    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 flex-grow">
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-12">
-            
-            <!-- Left 2 Columns: Articles & Card Components -->
-            <div class="lg:col-span-2 space-y-12" id="articles">
-                
-                <!-- Article 1 -->
-                <article class="space-y-4 bg-white p-8 rounded-2xl border border-gray-200 shadow-xs">
-                    <div class="flex items-center space-x-3 text-xs text-gray-600 font-medium">
-                        <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop" alt="Paul Boag" class="w-12 h-12 rounded-xl object-cover border-2 border-red-500 shadow-sm">
-                        <div>
-                            <span class="font-bold text-[#d9381e]">Paul Boag</span> <span class="text-gray-500">wrote[cite: 1]</span>
-                            <div class="text-[11px] text-gray-400">Nov 6, 2026 in UX, Business, Community</div>
-                        </div>
-                    </div>
-                    <h2 class="font-serif-custom text-3xl font-bold text-gray-900">A New Community For In-House UX People[cite: 1]</h2>
-                    <p class="text-gray-700 text-sm leading-relaxed">We’ve teamed up for a new small community for people doing UX inside organizations with weekly calls and shared frameworks.</p>
-                </article>
 
-                <!-- Article 2 -->
-                <article class="space-y-4 bg-white p-8 rounded-2xl border border-gray-200 shadow-xs">
-                    <div class="flex items-center space-x-3 text-xs text-gray-600 font-medium">
-                        <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop" alt="Eric Bailey" class="w-12 h-12 rounded-xl object-cover border-2 border-red-500 shadow-sm">
-                        <div>
-                            <span class="font-bold text-[#d9381e]">Eric Bailey</span> <span class="text-gray-500">wrote[cite: 1]</span>
-                            <div class="text-[11px] text-gray-400">Nov 5, 2026 in Accessibility, AI, Web Design</div>
-                        </div>
-                    </div>
-                    <h2 class="font-serif-custom text-3xl font-bold text-gray-900">Making Immersive LLM Chat Experiences More Accessible[cite: 1]</h2>
-                    <p class="text-gray-700 text-sm leading-relaxed">AI streaming interfaces present serious accessibility challenges. Let’s break down how to build inclusive windows.</p>
-                </article>
-
-                <!-- SEE MORE LATEST ARTICLES BUTTON -->
-                <div class="text-center py-4">
-                    <button onclick="alert('Loading more latest articles...')" class="inline-block text-xs font-bold text-gray-800 hover:text-[#d9381e] border-b-2 border-gray-300 hover:border-[#d9381e] pb-1 transition">
-                        SEE MORE LATEST ARTICLES ↪
-                    </button>
-                </div>
-
-                <!-- Featured Graphic & Colored Cards Grid (As requested) -->
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 pt-4">
-                    <!-- Card 1 -->
-                    <div class="bg-emerald-50 border border-emerald-200 rounded-2xl p-6 flex flex-col justify-between shadow-xs">
-                        <div>
-                            <h3 class="font-serif-custom text-lg font-bold text-emerald-900 mb-2">Accessible Front-End Components[cite: 1]</h3>
-                            <p class="text-xs text-gray-600 leading-relaxed mb-4">Reliable accessible UI elements: modals, tables, pickers, and menus[cite: 1].</p>
-                        </div>
-                        <button onclick="alert('Opening components...')" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 rounded-xl text-xs transition">Explore Components</button>
-                    </div>
-
-                    <!-- Card 2 -->
-                    <div class="bg-orange-50 border border-orange-200 rounded-2xl p-6 flex flex-col justify-between shadow-xs">
-                        <div>
-                            <h3 class="font-serif-custom text-lg font-bold text-orange-900 mb-2">CSS Generators & Tools[cite: 1]</h3>
-                            <p class="text-xs text-gray-600 leading-relaxed mb-4">Useful CSS tools for animations, shadows, filters, and layouts[cite: 1].</p>
-                        </div>
-                        <button onclick="alert('Opening generators...')" class="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold py-2 rounded-xl text-xs transition">Explore Tools</button>
-                    </div>
-
-                    <!-- Card 3 -->
-                    <div class="bg-purple-50 border border-purple-200 rounded-2xl p-6 flex flex-col justify-between shadow-xs">
-                        <div>
-                            <h3 class="font-serif-custom text-lg font-bold text-purple-900 mb-2">Front-End Boilerplates</h3>
-                            <p class="text-xs text-gray-600 leading-relaxed mb-4">HTML templates, resets, style guides, and robust starter kits[cite: 1].</p>
-                        </div>
-                        <button onclick="alert('Opening kits...')" class="w-full bg-purple-700 hover:bg-purple-800 text-white font-bold py-2 rounded-xl text-xs transition">Explore Kits</button>
-                    </div>
-                </div>
-
-            </div>
-
-            <!-- Right Column: Newsletter & Store Catalog -->
-            <div class="space-y-8">
-                <!-- Newsletter Box -->
-                <div class="bg-sky-50 border border-sky-200 rounded-2xl p-6 text-center shadow-xs">
-                    <span class="bg-white text-[#d9381e] text-[10px] font-bold px-3 py-1 rounded-full border border-sky-200 uppercase">Email Newsletter</span>
-                    <h3 class="font-serif-custom text-xl font-bold text-gray-900 mt-3 mb-2">Useful front-end & UX tips, weekly.</h3>
-                    <p class="text-xs text-gray-600 mb-4">Subscribe to get Vitaly’s Smart Interface Design Checklists PDF.</p>
-                    <form onsubmit="event.preventDefault(); alert('Subscribed successfully!');" class="space-y-2">
-                        <input type="email" placeholder="Your email" required class="w-full bg-white border border-gray-300 rounded-xl px-3 py-2 text-xs">
-                        <button type="submit" class="w-full bg-sky-600 hover:bg-sky-700 text-white font-bold py-2.5 rounded-xl text-xs transition">Meow!</button>
-                    </form>
-                </div>
-
-                <!-- Store Catalog -->
-                <section id="shop" class="bg-white border border-gray-200 rounded-2xl p-6 shadow-xs">
-                    <div class="flex items-center justify-between mb-4 border-b border-gray-200 pb-2">
-                        <h3 class="font-black text-xs text-gray-900 uppercase tracking-wider">DEVSTACKREADS STORE</h3>
-                        <span class="text-[11px] text-[#d9381e] font-bold">Books & UI Kits</span>
-                    </div>
-                    <div id="product-grid" class="space-y-4"></div>
-                </section>
-            </div>
-
-        </div>
-    </main>
-
-    <!-- Exact Smashing Magazine Footer -->
-    <footer class="bg-[#d9381e] text-white pt-16 pb-12 border-t border-red-700 mt-20">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <h4 class="text-xs font-black uppercase tracking-widest mb-4">BROWSE ALL DEVSTACKREADS TOPICS</h4>
-            <div class="flex flex-wrap justify-center gap-x-4 gap-y-2 text-xs font-semibold text-white/90 mb-8">
-                <span>• Accessibility</span><span>• CSS</span><span>• JavaScript</span><span>• React</span><span>• UI/UX</span>
-            </div>
-            <p class="text-xs text-white/80">© 2026 DevStackReads. All rights reserved. Built with precision.</p>
-        </div>
-    </footer>
-
-    <!-- Auth Modal -->
-    <div id="auth-modal" class="fixed inset-0 z-50 bg-black/50 hidden flex items-center justify-center p-4">
-        <div class="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl relative">
-            <button onclick="closeAuthModal()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600"><i class="fa-solid fa-xmark text-lg"></i></button>
-            <h3 id="auth-title" class="text-xl font-bold text-gray-900 mb-4">Log In to Your Account</h3>
-            <form onsubmit="handleAuthSubmit(event)" class="space-y-3">
-                <div id="name-field" class="hidden">
-                    <label class="block text-xs font-semibold text-gray-700 mb-1">Full Name</label>
-                    <input type="text" id="auth-name" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
-                </div>
-                <div>
-                    <label class="block text-xs font-semibold text-gray-700 mb-1">Email Address</label>
-                    <input type="email" id="auth-email" required class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
-                </div>
-                <div>
-                    <label class="block text-xs font-semibold text-gray-700 mb-1">Password</label>
-                    <input type="password" id="auth-password" required class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
-                </div>
-                <button type="submit" id="auth-btn" class="w-full bg-[#d9381e] text-white font-bold py-2.5 rounded-xl text-xs transition shadow mt-2">Log In</button>
-            </form>
-        </div>
-    </div>
-
-    <!-- Cart Drawer -->
-    <div id="cart-drawer" class="fixed inset-y-0 right-0 z-50 w-full max-w-md bg-white shadow-2xl transform translate-x-full transition-transform duration-300 flex flex-col border-l border-gray-200">
-        <div class="p-5 bg-gray-900 text-white flex justify-between items-center">
-            <h3 class="font-bold text-base"><i class="fa-solid fa-cart-shopping text-[#d9381e]"></i> Your Shopping Cart</h3>
-            <button onclick="toggleCart()" class="text-gray-400 hover:text-white text-lg"><i class="fa-solid fa-xmark"></i></button>
-        </div>
-        <div id="cart-items" class="flex-1 overflow-y-auto p-5 space-y-4"></div>
-        <div class="p-5 bg-gray-50 border-t border-gray-200">
-            <div class="flex justify-between items-center mb-4">
-                <span class="font-semibold text-gray-700">Total:</span>
-                <span id="cart-total" class="font-bold text-xl text-[#d9381e]">$0.00</span>
-            </div>
-            <button onclick="openCheckout()" class="w-full bg-[#d9381e] text-white font-bold py-3 rounded-xl shadow">Proceed to Telegram Checkout</button>
-        </div>
-    </div>
-
+    <!-- App & Store Scripts -->
     <script src="./js/app.js"></script>
     <script src="./js/store.js"></script>
 </body>
