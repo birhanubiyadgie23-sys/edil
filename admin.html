@@ -6,6 +6,7 @@
     <title>DevStackReads - Admin Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="./css/style.css">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Inter:wght@400;500;600;700&display=swap');
         .font-serif-custom { font-family: 'Playfair Display', serif; }
@@ -157,12 +158,14 @@
                 if (data.success && data.books.length > 0) {
                     data.books.forEach(book => {
                         tbody.innerHTML += `
-                            <tr class="hover:bg-gray-50">
+                            <tr class="hover:bg-gray-50 border-b border-gray-100">
                                 <td class="py-3 px-4 font-medium text-gray-900">${book.title}</td>
                                 <td class="py-3 px-4 text-gray-600">${book.author}</td>
                                 <td class="py-3 px-4 text-gray-600">${book.price} ETB</td>
                                 <td class="py-3 px-4 text-right">
-                                    <span class="text-xs text-gray-400">Active</span>
+                                    <button onclick="deleteBook(${book.id})" class="bg-red-50 hover:bg-red-100 text-red-600 px-3 py-1 rounded-lg text-xs font-bold transition">
+                                        <i class="fa-solid fa-trash"></i> Delete
+                                    </button>
                                 </td>
                             </tr>
                         `;
@@ -178,7 +181,7 @@
         async function handleAddBook(event) {
             event.preventDefault();
             const title = document.getElementById("book-title").value.trim();
-            const author = document.getElementById("book-author").value.output || document.getElementById("book-author").value.trim();
+            const author = document.getElementById("book-author").value.trim();
             const price = document.getElementById("book-price").value.trim();
             const image_url = document.getElementById("book-image").value.trim();
 
@@ -199,6 +202,29 @@
                 }
             } catch (error) {
                 console.error("Error adding book:", error);
+                alert("ሰርቨር ጋር መገናኘት አልተቻለም።");
+            }
+        }
+
+        async function deleteBook(id) {
+            if (!confirm("ይህንን መጽሐፍ በእርግጥ መሰረዝ ይፈልጋሉ?")) return;
+
+            try {
+                const response = await fetch('/api/books', {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id })
+                });
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    alert("መጽሐፉ ተሰርዟል!");
+                    loadAdminBooks();
+                } else {
+                    alert(data.message || "መሰረዝ አልተቻለም።");
+                }
+            } catch (error) {
+                console.error("Error deleting book:", error);
                 alert("ሰርቨር ጋር መገናኘት አልተቻለም።");
             }
         }
