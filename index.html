@@ -13,7 +13,7 @@
 </head>
 <body class="bg-[#fcfbfa] text-[#111111] antialiased flex flex-col min-h-screen">
 
-    <!-- Header -->
+    <!-- Exact Smashing Magazine Red Header -->
     <header class="bg-[#d9381e] text-white pt-3 pb-4 px-4 sm:px-8 shadow-md">
         <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
             <div class="flex items-center space-x-3 w-full md:w-auto justify-between md:justify-start">
@@ -21,21 +21,25 @@
                     <span class="bg-white text-[#d9381e] font-black p-2 rounded-lg text-2xl tracking-tighter shadow">DS</span>
                     <span class="text-2xl sm:text-3xl font-black tracking-tight text-white font-serif-custom">DevStackReads</span>
                 </a>
-                <div class="flex items-center space-x-2 md:hidden">
-                    <button onclick="toggleCart()" class="relative bg-black/20 text-white px-3 py-1.5 rounded-lg text-sm font-bold"><i class="fa-solid fa-cart-shopping"></i></button>
-                </div>
+                <button onclick="toggleCart()" class="md:hidden relative bg-black/20 text-white px-3 py-1.5 rounded-lg text-sm font-bold flex items-center space-x-1">
+                    <i class="fa-solid fa-cart-shopping"></i>
+                    <span id="cart-badge-mobile" class="absolute -top-2 -right-2 bg-yellow-400 text-gray-900 font-bold text-xs rounded-full h-5 w-5 flex items-center justify-center shadow">0</span>
+                </button>
             </div>
 
+            <!-- Main Nav Links (Exact Smashing Style) -->
             <nav class="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm font-bold">
-                <a href="index.html" class="hover:underline">Articles[cite: 1]</a>
-                <a href="#shop" class="hover:underline">Books & Store</a>
-                <a href="admin.html" target="_blank" class="bg-black/30 px-3 py-1 rounded text-xs">Admin Panel</a>
+                <a href="#articles" class="hover:underline">Articles[cite: 1]</a>
+                <a href="#shop" class="hover:underline">Books[cite: 1]</a>
+                <a href="#events" class="hover:underline">Events[cite: 1]</a>
+                <a href="#membership" class="hover:underline">Membership[cite: 1]</a>
+                <a href="#newsletter" class="hover:underline">Newsletter[cite: 1]</a>
             </nav>
 
-            <!-- User Auth Profile / Login Button Section -->
+            <!-- User Auth Area & Cart -->
             <div class="flex items-center space-x-3">
                 <div id="user-auth-area">
-                    <button onclick="openAuthModal('login')" class="bg-white text-[#d9381e] px-4 py-1.5 rounded-lg text-xs font-extrabold shadow hover:bg-gray-100 transition">Log In</button>
+                    <button onclick="openAuthModal('login')" class="bg-white text-[#d9381e] px-3.5 py-1.5 rounded-lg text-xs font-extrabold shadow hover:bg-gray-100 transition">Log In</button>
                     <button onclick="openAuthModal('register')" class="bg-black/20 text-white px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-black/30 transition">Sign Up</button>
                 </div>
                 <div id="user-profile-area" class="hidden flex items-center space-x-2 bg-white/10 px-3 py-1 rounded-lg">
@@ -51,18 +55,37 @@
         </div>
     </header>
 
+    <!-- Sub-header Tags Bar -->
+    <div class="bg-white border-b border-gray-200 py-2.5 px-4 overflow-x-auto shadow-xs">
+        <div class="max-w-7xl mx-auto flex items-center space-x-2 text-xs font-bold text-gray-700 whitespace-nowrap">
+            <span class="bg-red-50 text-[#d9381e] px-2.5 py-1 rounded-md border border-red-100">Accessibility[cite: 1]</span>
+            <span class="bg-red-50 text-[#d9381e] px-2.5 py-1 rounded-md border border-red-100">UX[cite: 1]</span>
+            <span class="bg-red-50 text-[#d9381e] px-2.5 py-1 rounded-md border border-red-100">CSS[cite: 1]</span>
+            <span class="bg-red-50 text-[#d9381e] px-2.5 py-1 rounded-md border border-red-100">JavaScript[cite: 1]</span>
+            <span class="bg-red-50 text-[#d9381e] px-2.5 py-1 rounded-md border border-red-100">React</span>
+            <span class="text-gray-400">|</span>
+            <a href="#articles" class="text-[#d9381e] hover:underline font-bold">Jump to all articles ↪</a>
+        </div>
+    </div>
+
     <!-- Main Content -->
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 flex-grow">
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-12">
-            <div class="lg:col-span-2 space-y-12">
+            <div class="lg:col-span-2 space-y-12" id="articles">
                 <article class="space-y-4 bg-white p-8 rounded-2xl border border-gray-200 shadow-xs">
-                    <span class="text-xs font-bold text-[#d9381e] uppercase">Featured Guide</span>
+                    <div class="flex items-center space-x-3 text-xs text-gray-600 font-medium">
+                        <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop" alt="Paul Boag" class="w-12 h-12 rounded-xl object-cover border-2 border-red-500 shadow-sm">
+                        <div>
+                            <span class="font-bold text-[#d9381e]">Paul Boag</span> <span class="text-gray-500">wrote[cite: 1]</span>
+                            <div class="text-[11px] text-gray-400">Nov 6, 2026 in UX, Business, Community</div>
+                        </div>
+                    </div>
                     <h2 class="font-serif-custom text-3xl font-bold text-gray-900">A New Community For In-House UX People[cite: 1]</h2>
                     <p class="text-gray-700 text-sm leading-relaxed">We’ve teamed up for a new small community for people doing UX inside organizations with weekly calls and shared frameworks.</p>
                 </article>
             </div>
 
-            <!-- Store Catalog -->
+            <!-- Sidebar Store Catalog -->
             <div class="space-y-8">
                 <section id="shop" class="bg-white border border-gray-200 rounded-2xl p-6 shadow-xs">
                     <div class="flex items-center justify-between mb-4 border-b border-gray-200 pb-2">
@@ -75,7 +98,18 @@
         </div>
     </main>
 
-    <!-- Auth Modal (Login / Register) -->
+    <!-- Exact Smashing Magazine Footer -->
+    <footer class="bg-[#d9381e] text-white pt-16 pb-12 border-t border-red-700 mt-20">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <h4 class="text-xs font-black uppercase tracking-widest mb-4">BROWSE ALL DEVSTACKREADS TOPICS</h4>
+            <div class="flex flex-wrap justify-center gap-x-4 gap-y-2 text-xs font-semibold text-white/90 mb-8">
+                <span>• Accessibility</span><span>• CSS</span><span>• JavaScript</span><span>• React</span><span>• UI/UX</span>
+            </div>
+            <p class="text-xs text-white/80">© 2026 DevStackReads. All rights reserved. Built with precision.</p>
+        </div>
+    </footer>
+
+    <!-- Auth Modal -->
     <div id="auth-modal" class="fixed inset-0 z-50 bg-black/50 hidden flex items-center justify-center p-4">
         <div class="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl relative">
             <button onclick="closeAuthModal()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600"><i class="fa-solid fa-xmark text-lg"></i></button>
@@ -98,7 +132,7 @@
         </div>
     </div>
 
-    <!-- Cart Drawer & Checkout Modals (Same modular logic) -->
+    <!-- Cart Drawer -->
     <div id="cart-drawer" class="fixed inset-y-0 right-0 z-50 w-full max-w-md bg-white shadow-2xl transform translate-x-full transition-transform duration-300 flex flex-col border-l border-gray-200">
         <div class="p-5 bg-gray-900 text-white flex justify-between items-center">
             <h3 class="font-bold text-base"><i class="fa-solid fa-cart-shopping text-[#d9381e]"></i> Your Shopping Cart</h3>
