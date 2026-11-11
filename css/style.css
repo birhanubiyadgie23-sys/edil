@@ -1,0 +1,28 @@
+/* Custom typography & layout enhancements */
+body {
+    font-family: 'Inter', sans-serif;
+    background-color: #fcfbfa;
+    color: #111111;
+}
+
+.font-serif-custom {
+    font-family: 'Merriweather', serif;
+}
+
+/* Smooth transitions for cart drawer and modals */
+#cart-drawer {
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Custom scrollbar for clean UI */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+::-webkit-scrollbar-thumb {
+    background: #d9381e;
+    border-radius: 3px;
+}
