@@ -35,5 +35,22 @@ export default async function handler(req, res) {
         }
     }
 
+    // መጽሐፍ መሰረዝ (DELETE)
+    if (req.method === 'DELETE') {
+        const { id } = req.body;
+
+        if (!id) {
+            return res.status(400).json({ success: false, message: 'የመጽሐፍ መታወቂያ (ID) አልተገኘም!' });
+        }
+
+        try {
+            await sql`DELETE FROM books WHERE id = ${id}`;
+            return res.status(200).json({ success: true, message: 'መጽሐፉ ተሰርዟል!' });
+        } catch (error) {
+            console.error('Error deleting book:', error);
+            return res.status(500).json({ success: false, message: 'መጽሐፍ መሰረዝ ላይ ስህተት ተፈጥሯል።' });
+        }
+    }
+
     return res.status(405).json({ success: false, message: 'Method not allowed' });
 }
