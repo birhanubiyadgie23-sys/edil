@@ -90,23 +90,32 @@
             }
         });
 
-        async function handleAdminLogin(event) {
-            event.preventDefault();
-            const email = document.getElementById("admin-email").value;
-            const password = document.getElementById("admin-password").value;
+       async function handleAdminLogin(event) {
+    event.preventDefault();
+    const email = document.getElementById("admin-email").value.trim();
+    const password = document.getElementById("admin-password").value.trim();
 
-            // Simulated Neon Auth Verification (In production, validate against Neon DB / Auth API endpoint)
-            if (email && password) {
-                // Here you would normally fetch your Neon Auth endpoint or backend API
-                localStorage.setItem("admin_session_token", "neon_auth_secure_token_xyz");
-                localStorage.setItem("admin_email", email);
-                
-                showDashboard(email);
-            } else {
-                alert("Please enter valid credentials.");
-            }
+    try {
+        const response = await fetch('/api/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, password })
+        });
+
+        const data = await response.json();
+
+        if (response.ok && data.success) {
+            localStorage.setItem("admin_session_token", data.token);
+            localStorage.setItem("admin_email", data.email);
+            showDashboard(data.email);
+        } else {
+            alert(data.message || "መግባት አልተቻለም!");
         }
-
+    } catch (error) {
+        console.error("Connection error:", error);
+        alert("ከዳታቤዙ ጋር መገናኘት አልተቻለም።");
+    }
+}
         function showDashboard(email) {
             document.getElementById("login-section").classList.add("hidden");
             document.getElementById("admin-dashboard").classList.remove("hidden");
