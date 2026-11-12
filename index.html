@@ -1,0 +1,789 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#101827">
+  <meta name="description" content="DevStackReads — Discover books, articles, events and resources for modern web developers and designers.">
+  <title>DevStackReads — Learn. Build. Grow.</title>
+
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Merriweather:wght@400;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./css/style.css">
+
+  <style>
+    :root {
+      --primary: #e4472e;
+      --dark: #101827;
+      --muted: #64748b;
+      --surface: #f7f8fa;
+    }
+
+    * { box-sizing: border-box; scroll-behavior: smooth; }
+
+    body {
+      margin: 0;
+      font-family: Inter, sans-serif;
+      background: #fff;
+      color: var(--dark);
+    }
+
+    a { text-decoration: none; }
+
+    .font-serif-custom { font-family: Merriweather, serif; }
+
+    .site-header {
+      background: rgba(255,255,255,.95);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid #e8edf2;
+    }
+
+    .brand-mark {
+      background: var(--primary);
+      width: 42px;
+      height: 42px;
+      border-radius: 13px;
+      display: grid;
+      place-items: center;
+      color: white;
+      font-weight: 900;
+    }
+
+    .nav-link {
+      color: #475569;
+      font-size: 13px;
+      font-weight: 700;
+      transition: .2s;
+    }
+
+    .nav-link:hover { color: var(--primary); }
+
+    .btn-primary {
+      background: var(--primary);
+      color: white;
+      border-radius: 12px;
+      padding: 13px 21px;
+      font-size: 13px;
+      font-weight: 800;
+      transition: .25s;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 9px;
+    }
+
+    .btn-primary:hover {
+      background: #c8321d;
+      transform: translateY(-2px);
+    }
+
+    .btn-outline {
+      border: 1px solid #dce3eb;
+      color: #1e293b;
+      border-radius: 12px;
+      padding: 13px 21px;
+      font-size: 13px;
+      font-weight: 800;
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+      transition: .2s;
+    }
+
+    .btn-outline:hover {
+      border-color: var(--primary);
+      color: var(--primary);
+    }
+
+    .hero {
+      background:
+        radial-gradient(circle at 80% 25%, rgba(228,71,46,.15), transparent 30%),
+        linear-gradient(135deg,#101827 0%,#17263d 60%,#111c30 100%);
+      color: white;
+      position: relative;
+      overflow: hidden;
+    }
+
+    #canvas-target {
+      position: absolute;
+      inset: 0;
+      opacity: .75;
+      pointer-events: none;
+    }
+
+    #canvas-target canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    .hero-content { position: relative; z-index: 2; }
+
+    .hero-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      border: 1px solid rgba(255,255,255,.18);
+      background: rgba(255,255,255,.07);
+      color: #ffb5a7;
+      border-radius: 50px;
+      padding: 8px 14px;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 1.2px;
+    }
+
+    .hero-title {
+      font-size: clamp(38px,6vw,72px);
+      line-height: 1.12;
+      font-weight: 900;
+      letter-spacing: -2.5px;
+    }
+
+    .hero-title span { color: #ff8069; }
+
+    .section-label {
+      color: var(--primary);
+      text-transform: uppercase;
+      font-size: 11px;
+      font-weight: 900;
+      letter-spacing: 2px;
+    }
+
+    .section-title {
+      font-size: clamp(27px,4vw,40px);
+      line-height: 1.2;
+      font-weight: 900;
+      letter-spacing: -1.2px;
+    }
+
+    .topic-tag {
+      border: 1px solid #e2e8f0;
+      padding: 9px 17px;
+      border-radius: 50px;
+      font-size: 12px;
+      font-weight: 700;
+      color: #475569;
+      transition: .2s;
+    }
+
+    .topic-tag:hover {
+      background: var(--primary);
+      color: white;
+      border-color: var(--primary);
+    }
+
+    .feature-card, .content-card {
+      border: 1px solid #edf0f4;
+      border-radius: 19px;
+      background: white;
+      transition: .25s;
+    }
+
+    .feature-card:hover, .content-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 18px 40px rgba(15,23,42,.07);
+    }
+
+    .icon-box {
+      width: 48px;
+      height: 48px;
+      border-radius: 14px;
+      background: #fff0ed;
+      color: var(--primary);
+      display: grid;
+      place-items: center;
+      font-size: 19px;
+    }
+
+    .product-card {
+      border: 1px solid #e9edf2;
+      border-radius: 18px;
+      overflow: hidden;
+      background: white;
+      transition: .25s;
+    }
+
+    .product-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 16px 35px rgba(15,23,42,.08);
+    }
+
+    .product-cover {
+      height: 190px;
+      display: grid;
+      place-items: center;
+      background: linear-gradient(145deg,#17263d,#304b69);
+      color: white;
+      font-size: 55px;
+    }
+
+    .soft-section { background: #f7f8fa; }
+
+    #cart-drawer {
+      transition: transform .3s ease;
+    }
+
+    .modal-backdrop {
+      background: rgba(15,23,42,.65);
+      backdrop-filter: blur(5px);
+    }
+
+    .mobile-menu { display: none; }
+
+    @media(max-width:768px) {
+      .desktop-nav { display:none; }
+      .mobile-menu.open { display:flex; }
+      .hero-title { letter-spacing:-1.5px; }
+    }
+  </style>
+</head>
+
+<body>
+
+<!-- HEADER -->
+<header class="site-header sticky top-0 z-50">
+  <div class="max-w-7xl mx-auto px-5 lg:px-8 h-[76px] flex items-center justify-between">
+
+    <a href="#" class="flex items-center gap-3">
+      <div class="brand-mark"><i class="fa-solid fa-code"></i></div>
+      <div>
+        <div class="font-black text-lg tracking-tight">DevStack<span style="color:#e4472e">Reads</span></div>
+        <div class="text-[9px] font-bold text-gray-400 tracking-[2px]">LEARN • BUILD • GROW</div>
+      </div>
+    </a>
+
+    <nav class="desktop-nav flex items-center gap-7">
+      <a class="nav-link" href="#articles">Articles</a>
+      <a class="nav-link" href="#shop">Book Store</a>
+      <a class="nav-link" href="#events">Events</a>
+      <a class="nav-link" href="#membership">Membership</a>
+      <a class="nav-link" href="#newsletter">Newsletter</a>
+    </nav>
+
+    <div class="hidden md:flex items-center gap-3">
+      <div id="user-auth-area" class="flex items-center gap-3">
+        <button onclick="openAuthModal('login')" class="text-xs font-bold text-gray-600">Log in</button>
+        <button onclick="openAuthModal('register')" class="btn-primary">Get Started</button>
+      </div>
+
+      <div id="user-profile-area" class="hidden flex items-center gap-3">
+        <span id="logged-username" class="text-xs font-bold"></span>
+        <button onclick="logoutUser()" class="text-xs text-red-500 font-bold">Logout</button>
+      </div>
+
+      <button onclick="toggleCart()" class="relative w-10 h-10 rounded-xl border border-gray-200">
+        <i class="fa-solid fa-bag-shopping"></i>
+        <span id="cart-badge" class="absolute -top-2 -right-2 bg-red-600 text-white text-[10px] rounded-full w-5 h-5 grid place-items-center">0</span>
+      </button>
+    </div>
+
+    <div class="md:hidden flex items-center gap-3">
+      <button onclick="toggleCart()" class="relative w-10 h-10 rounded-xl border border-gray-200">
+        <i class="fa-solid fa-bag-shopping"></i>
+        <span id="cart-badge-mobile" class="absolute -top-2 -right-2 bg-red-600 text-white text-[10px] rounded-full w-5 h-5 grid place-items-center">0</span>
+      </button>
+      <button onclick="toggleMobileMenu()" class="text-xl p-2"><i class="fa-solid fa-bars"></i></button>
+    </div>
+  </div>
+
+  <nav id="mobile-menu" class="mobile-menu flex-col gap-4 px-6 pb-6">
+    <a class="nav-link" href="#articles">Articles</a>
+    <a class="nav-link" href="#shop">Book Store</a>
+    <a class="nav-link" href="#events">Events</a>
+    <a class="nav-link" href="#membership">Membership</a>
+    <a class="nav-link" href="#newsletter">Newsletter</a>
+    <button onclick="openAuthModal('login')" class="btn-primary">Log in / Sign up</button>
+  </nav>
+</header>
+
+<!-- HERO -->
+<section class="hero min-h-[620px] flex items-center">
+  <div id="canvas-target"></div>
+
+  <div class="max-w-7xl mx-auto px-6 lg:px-8 py-24 w-full hero-content">
+    <div class="max-w-3xl">
+      <div class="hero-label mb-7">
+        <i class="fa-solid fa-sparkles"></i>
+        THE FUTURE OF WEB DEVELOPMENT
+      </div>
+
+      <h1 class="hero-title mb-7">
+        Learn Skills.<br>
+        Build Your <span>Future.</span>
+      </h1>
+
+      <p class="text-gray-300 text-base md:text-lg leading-8 max-w-xl mb-9">
+        Discover practical knowledge, premium books, expert articles and learning resources designed for the next generation of developers and designers.
+      </p>
+
+      <div class="flex flex-wrap gap-3">
+        <a href="#shop" class="btn-primary">
+          Explore Books <i class="fa-solid fa-arrow-right"></i>
+        </a>
+        <a href="#articles" class="btn-outline !border-white/30 !text-white">
+          Read Articles
+        </a>
+      </div>
+
+      <div class="grid grid-cols-3 gap-7 max-w-lg mt-16 border-t border-white/15 pt-7">
+        <div>
+          <div class="text-2xl font-black">01</div>
+          <div class="text-[10px] text-gray-400 mt-1">LEARN</div>
+        </div>
+        <div>
+          <div class="text-2xl font-black">02</div>
+          <div class="text-[10px] text-gray-400 mt-1">PRACTICE</div>
+        </div>
+        <div>
+          <div class="text-2xl font-black">03</div>
+          <div class="text-[10px] text-gray-400 mt-1">SUCCEED</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- TOPICS -->
+<section class="py-8 border-b border-gray-100">
+  <div class="max-w-7xl mx-auto px-6 flex flex-wrap justify-center gap-3">
+    <a class="topic-tag" href="#articles">Accessibility</a>
+    <a class="topic-tag" href="#articles">UX Design</a>
+    <a class="topic-tag" href="#articles">CSS</a>
+    <a class="topic-tag" href="#articles">JavaScript</a>
+    <a class="topic-tag" href="#articles">React</a>
+    <a class="topic-tag" href="#articles">Web Design</a>
+  </div>
+</section>
+
+<!-- ARTICLES -->
+<section id="articles" class="py-24">
+  <div class="max-w-7xl mx-auto px-6 lg:px-8">
+
+    <div class="flex flex-wrap justify-between items-end gap-5 mb-12">
+      <div>
+        <div class="section-label mb-3">Knowledge & Insights</div>
+        <h2 class="section-title">Latest Articles</h2>
+        <p class="text-gray-500 text-sm mt-3">Ideas and insights to help you become a better developer.</p>
+      </div>
+      <a href="#articles" class="text-sm font-bold text-red-600">Explore all articles <i class="fa-solid fa-arrow-right ml-2"></i></a>
+    </div>
+
+    <div id="articles-grid" class="grid md:grid-cols-2 lg:grid-cols-3 gap-7">
+
+      <article class="content-card overflow-hidden">
+        <div class="h-48 bg-gradient-to-br from-slate-900 to-blue-800 flex items-center justify-center text-white text-6xl">
+          <i class="fa-solid fa-universal-access"></i>
+        </div>
+        <div class="p-6">
+          <div class="text-[10px] font-black text-red-600 tracking-widest mb-3">ACCESSIBILITY</div>
+          <h3 class="font-extrabold text-lg mb-3">Building More Accessible Web Experiences</h3>
+          <p class="text-sm text-gray-500 leading-6">Learn how thoughtful design and accessibility practices create better digital experiences.</p>
+          <div class="flex justify-between items-center mt-6 pt-5 border-t border-gray-100">
+            <span class="text-xs font-bold text-gray-500">Editorial Team</span>
+            <span class="text-xs text-gray-400">8 min read</span>
+          </div>
+        </div>
+      </article>
+
+      <article class="content-card overflow-hidden">
+        <div class="h-48 bg-gradient-to-br from-orange-600 to-red-900 flex items-center justify-center text-white text-6xl">
+          <i class="fa-brands fa-js"></i>
+        </div>
+        <div class="p-6">
+          <div class="text-[10px] font-black text-red-600 tracking-widest mb-3">JAVASCRIPT</div>
+          <h3 class="font-extrabold text-lg mb-3">Modern JavaScript Development</h3>
+          <p class="text-sm text-gray-500 leading-6">Explore useful concepts and modern techniques for building reliable web applications.</p>
+          <div class="flex justify-between items-center mt-6 pt-5 border-t border-gray-100">
+            <span class="text-xs font-bold text-gray-500">Editorial Team</span>
+            <span class="text-xs text-gray-400">10 min read</span>
+          </div>
+        </div>
+      </article>
+
+      <article class="content-card overflow-hidden">
+        <div class="h-48 bg-gradient-to-br from-violet-700 to-indigo-950 flex items-center justify-center text-white text-6xl">
+          <i class="fa-brands fa-react"></i>
+        </div>
+        <div class="p-6">
+          <div class="text-[10px] font-black text-red-600 tracking-widest mb-3">REACT</div>
+          <h3 class="font-extrabold text-lg mb-3">Creating Better React Applications</h3>
+          <p class="text-sm text-gray-500 leading-6">Understand component architecture and practical approaches to maintainable applications.</p>
+          <div class="flex justify-between items-center mt-6 pt-5 border-t border-gray-100">
+            <span class="text-xs font-bold text-gray-500">Editorial Team</span>
+            <span class="text-xs text-gray-400">7 min read</span>
+          </div>
+        </div>
+      </article>
+
+    </div>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section class="soft-section py-20">
+  <div class="max-w-7xl mx-auto px-6">
+    <div class="text-center max-w-2xl mx-auto mb-14">
+      <div class="section-label mb-3">Why DevStackReads</div>
+      <h2 class="section-title">Everything You Need to Grow</h2>
+      <p class="text-gray-500 text-sm mt-4 leading-7">A learning ecosystem built for people who want to create meaningful digital experiences.</p>
+    </div>
+
+    <div class="grid md:grid-cols-3 gap-6">
+      <div class="feature-card p-8">
+        <div class="icon-box mb-6"><i class="fa-solid fa-book-open"></i></div>
+        <h3 class="font-extrabold text-lg mb-3">Curated Knowledge</h3>
+        <p class="text-sm text-gray-500 leading-7">Discover useful articles, professional books and carefully selected learning materials.</p>
+      </div>
+      <div class="feature-card p-8">
+        <div class="icon-box mb-6"><i class="fa-solid fa-laptop-code"></i></div>
+        <h3 class="font-extrabold text-lg mb-3">Practical Learning</h3>
+        <p class="text-sm text-gray-500 leading-7">Build your skills through practical ideas, technical resources and community learning.</p>
+      </div>
+      <div class="feature-card p-8">
+        <div class="icon-box mb-6"><i class="fa-solid fa-people-group"></i></div>
+        <h3 class="font-extrabold text-lg mb-3">Growing Community</h3>
+        <p class="text-sm text-gray-500 leading-7">Connect with learning opportunities and discover events for developers and designers.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- BOOK STORE -->
+<section id="shop" class="py-24">
+  <div class="max-w-7xl mx-auto px-6 lg:px-8">
+    <div class="flex flex-wrap justify-between items-end gap-5 mb-12">
+      <div>
+        <div class="section-label mb-3">Knowledge Library</div>
+        <h2 class="section-title">Explore Our Book Store</h2>
+        <p class="text-gray-500 text-sm mt-3">Find books that help you learn, create and grow.</p>
+      </div>
+      <span class="text-xs font-bold text-gray-400">PRICES IN ETHIOPIAN BIRR</span>
+    </div>
+
+    <div id="product-grid" class="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+      <div class="product-card">
+        <div class="product-cover"><i class="fa-solid fa-book"></i></div>
+        <div class="p-5">
+          <div class="text-[10px] font-black text-red-600 mb-2">DEVELOPMENT</div>
+          <h3 class="font-extrabold text-sm">Discover Our Books</h3>
+          <p class="text-xs text-gray-500 mt-2">Explore the available book collection.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- EVENTS -->
+<section id="events" class="soft-section py-24">
+  <div class="max-w-7xl mx-auto px-6">
+    <div class="text-center max-w-2xl mx-auto mb-12">
+      <div class="section-label mb-3">Learn Together</div>
+      <h2 class="section-title">Upcoming Events</h2>
+      <p class="text-gray-500 text-sm mt-4">Discover workshops, learning sessions and community events.</p>
+    </div>
+
+    <div id="events-grid" class="grid md:grid-cols-3 gap-6">
+      <div class="content-card p-7">
+        <div class="icon-box mb-5"><i class="fa-solid fa-calendar-days"></i></div>
+        <h3 class="font-extrabold mb-2">Developer Workshops</h3>
+        <p class="text-sm text-gray-500 leading-6">Practical sessions designed to improve your technical skills.</p>
+      </div>
+      <div class="content-card p-7">
+        <div class="icon-box mb-5"><i class="fa-solid fa-users"></i></div>
+        <h3 class="font-extrabold mb-2">Community Sessions</h3>
+        <p class="text-sm text-gray-500 leading-6">Meet other learners and share ideas and experiences.</p>
+      </div>
+      <div class="content-card p-7">
+        <div class="icon-box mb-5"><i class="fa-solid fa-lightbulb"></i></div>
+        <h3 class="font-extrabold mb-2">Expert Talks</h3>
+        <p class="text-sm text-gray-500 leading-6">Learn about modern technologies and development practices.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- MEMBERSHIP -->
+<section id="membership" class="py-24">
+  <div class="max-w-7xl mx-auto px-6">
+    <div class="text-center max-w-2xl mx-auto mb-14">
+      <div class="section-label mb-3">Membership</div>
+      <h2 class="section-title">Grow With Us</h2>
+      <p class="text-gray-500 text-sm mt-4">Choose a membership experience that supports your learning journey.</p>
+    </div>
+
+    <div id="membership-grid" class="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+      <div class="content-card p-8">
+        <h3 class="font-extrabold text-xl">Free</h3>
+        <div class="text-3xl font-black mt-5">0 <span class="text-sm text-gray-400">ETB</span></div>
+        <p class="text-sm text-gray-500 mt-4">Access public articles and learning resources.</p>
+        <button onclick="openAuthModal('register')" class="btn-outline w-full mt-8">Join Free</button>
+      </div>
+
+      <div class="content-card p-8 !border-red-200 shadow-xl relative">
+        <div class="absolute right-5 top-5 text-[9px] font-black bg-red-100 text-red-600 px-3 py-1 rounded-full">POPULAR</div>
+        <h3 class="font-extrabold text-xl">Pro</h3>
+        <div class="text-3xl font-black mt-5">Coming Soon</div>
+        <p class="text-sm text-gray-500 mt-4">Premium resources and exclusive learning opportunities.</p>
+        <button onclick="openAuthModal('register')" class="btn-primary w-full mt-8">Get Started</button>
+      </div>
+
+      <div class="content-card p-8">
+        <h3 class="font-extrabold text-xl">Premium</h3>
+        <div class="text-3xl font-black mt-5">Coming Soon</div>
+        <p class="text-sm text-gray-500 mt-4">Explore advanced learning and member benefits.</p>
+        <button onclick="openAuthModal('register')" class="btn-outline w-full mt-8">Learn More</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- NEWSLETTER -->
+<section id="newsletter" class="py-20 px-6">
+  <div class="max-w-5xl mx-auto rounded-3xl p-9 md:p-16 text-center text-white" style="background:linear-gradient(135deg,#101827,#243c5b)">
+    <div class="text-red-400 text-xs font-black tracking-[2px] mb-4">STAY CONNECTED</div>
+    <h2 class="text-3xl md:text-4xl font-black mb-5">Get Better at What You Do.</h2>
+    <p class="text-gray-300 text-sm leading-7 max-w-xl mx-auto mb-9">Subscribe to receive new articles, book updates and learning opportunities.</p>
+
+    <form id="newsletter-form" class="flex flex-col sm:flex-row gap-3 max-w-xl mx-auto">
+      <input id="newsletter-email" type="email" required placeholder="Enter your email address" class="flex-1 px-5 py-4 rounded-xl text-sm text-gray-900 outline-none">
+      <button type="submit" class="btn-primary">Subscribe <i class="fa-solid fa-arrow-right"></i></button>
+    </form>
+    <p id="newsletter-message" class="text-xs mt-4 text-gray-300" aria-live="polite"></p>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer class="bg-[#0c1421] text-white pt-16 pb-8">
+  <div class="max-w-7xl mx-auto px-6">
+    <div class="grid md:grid-cols-4 gap-10 pb-12 border-b border-white/10">
+      <div class="md:col-span-2">
+        <div class="flex items-center gap-3 mb-5">
+          <div class="brand-mark"><i class="fa-solid fa-code"></i></div>
+          <div class="font-black text-xl">DevStack<span class="text-red-500">Reads</span></div>
+        </div>
+        <p class="text-gray-400 text-sm leading-7 max-w-sm">A place for developers and designers to learn, build and grow through knowledge and practical resources.</p>
+      </div>
+
+      <div>
+        <h4 class="font-extrabold text-sm mb-5">Explore</h4>
+        <div class="flex flex-col gap-3 text-xs text-gray-400">
+          <a href="#articles">Articles</a>
+          <a href="#shop">Book Store</a>
+          <a href="#events">Events</a>
+          <a href="#membership">Membership</a>
+        </div>
+      </div>
+
+      <div>
+        <h4 class="font-extrabold text-sm mb-5">Connect</h4>
+        <div class="flex gap-4 text-gray-400 text-lg">
+          <a href="#" aria-label="Telegram"><i class="fa-brands fa-telegram"></i></a>
+          <a href="#" aria-label="Facebook"><i class="fa-brands fa-facebook"></i></a>
+          <a href="#" aria-label="Instagram"><i class="fa-brands fa-instagram"></i></a>
+        </div>
+      </div>
+    </div>
+
+    <div class="pt-7 flex flex-wrap justify-between gap-3 text-[11px] text-gray-500">
+      <span>© 2026 DevStackReads. All rights reserved.</span>
+      <span>Built for the next generation of creators.</span>
+    </div>
+  </div>
+</footer>
+
+<!-- AUTH MODAL -->
+<div id="auth-modal" class="hidden fixed inset-0 z-[100] modal-backdrop flex items-center justify-center p-5">
+  <div class="bg-white rounded-3xl p-8 w-full max-w-md relative">
+    <button onclick="closeAuthModal()" class="absolute top-5 right-5 text-gray-400 text-xl" aria-label="Close">&times;</button>
+    <div class="brand-mark mb-6"><i class="fa-solid fa-user-lock"></i></div>
+    <h2 id="auth-title" class="text-2xl font-black mb-2">Log In to Your Account</h2>
+    <p class="text-sm text-gray-500 mb-7">Continue your learning journey with DevStackReads.</p>
+
+    <form id="auth-form" onsubmit="handleAuthSubmit(event)" class="space-y-4">
+      <div id="name-field" class="hidden">
+        <label for="auth-name" class="text-xs font-bold block mb-2">Full Name</label>
+        <input id="auth-name" type="text" class="w-full border border-gray-200 rounded-xl p-3 text-sm outline-none" placeholder="Your name">
+      </div>
+
+      <div>
+        <label for="auth-email" class="text-xs font-bold block mb-2">Email Address</label>
+        <input id="auth-email" type="email" required class="w-full border border-gray-200 rounded-xl p-3 text-sm outline-none" placeholder="you@example.com">
+      </div>
+
+      <div>
+        <label for="auth-password" class="text-xs font-bold block mb-2">Password</label>
+        <input id="auth-password" type="password" required minlength="8" class="w-full border border-gray-200 rounded-xl p-3 text-sm outline-none" placeholder="At least 8 characters">
+      </div>
+
+      <button id="auth-btn" type="submit" class="btn-primary w-full">Log In</button>
+      <p id="auth-message" class="text-xs text-center text-gray-500" aria-live="polite"></p>
+    </form>
+  </div>
+</div>
+
+<!-- CART DRAWER -->
+<div id="cart-drawer" class="fixed top-0 right-0 z-[110] h-full w-full max-w-md bg-white shadow-2xl translate-x-full flex flex-col">
+  <div class="p-6 border-b flex items-center justify-between">
+    <div>
+      <h2 class="font-black text-xl">Your Cart</h2>
+      <p class="text-xs text-gray-400 mt-1">Review your selected books</p>
+    </div>
+    <button onclick="toggleCart()" class="text-2xl text-gray-400" aria-label="Close cart">&times;</button>
+  </div>
+
+  <div id="cart-items" class="flex-1 overflow-y-auto p-6">
+    <p class="text-sm text-gray-400 text-center py-10">Your cart is empty.</p>
+  </div>
+
+  <div class="p-6 border-t">
+    <div class="flex justify-between font-black mb-5">
+      <span>Total</span>
+      <span id="cart-total">0.00 ETB</span>
+    </div>
+    <button onclick="openCheckout()" class="btn-primary w-full">Continue to Checkout <i class="fa-solid fa-arrow-right"></i></button>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+<script>
+  function toggleMobileMenu() {
+    document.getElementById('mobile-menu').classList.toggle('open');
+  }
+
+  document.querySelectorAll('#mobile-menu a').forEach(link => {
+    link.addEventListener('click', () => {
+      document.getElementById('mobile-menu').classList.remove('open');
+    });
+  });
+
+  // Three.js hero animation
+  let scene, camera, renderer, posterGroup;
+  let animationFrame;
+
+  function initThreeJS() {
+    const target = document.getElementById('canvas-target');
+    if (!target || !window.THREE) return;
+
+    const width = target.clientWidth;
+    const height = target.clientHeight;
+    if (!width || !height) return;
+
+    scene = new THREE.Scene();
+    camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
+    camera.position.z = 17;
+
+    renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setSize(width, height);
+    target.appendChild(renderer.domElement);
+
+    posterGroup = new THREE.Group();
+
+    const colors = [0xe4472e,0x315b8a,0x6d4acb,0x168b83,0x34445b];
+    const geometry = new THREE.BoxGeometry(1.15, 1.55, .12);
+
+    for (let i = 0; i < 30; i++) {
+      const material = new THREE.MeshStandardMaterial({
+        color: colors[i % colors.length],
+        roughness: .65,
+        metalness: .1,
+        transparent: true,
+        opacity: .78
+      });
+
+      const book = new THREE.Mesh(geometry, material);
+      book.position.x = (Math.random() - .5) * 19;
+      book.position.y = (Math.random() - .5) * 9;
+      book.position.z = (Math.random() - .5) * 5;
+      book.rotation.z = (Math.random() - .5) * .3;
+      posterGroup.add(book);
+    }
+
+    scene.add(posterGroup);
+
+    scene.add(new THREE.AmbientLight(0xffffff, 1.5));
+
+    const light = new THREE.PointLight(0xff8069, 3, 100);
+    light.position.set(5, 5, 10);
+    scene.add(light);
+
+    animateThree();
+  }
+
+  function animateThree() {
+    if (!renderer) return;
+
+    animationFrame = requestAnimationFrame(animateThree);
+
+    if (posterGroup) {
+      posterGroup.rotation.y += 0.0008;
+      posterGroup.rotation.x = Math.sin(Date.now() * 0.0002) * .025;
+    }
+
+    renderer.render(scene, camera);
+  }
+
+  function resizeThreeJS() {
+    const target = document.getElementById('canvas-target');
+    if (!target || !renderer || !camera) return;
+
+    const width = target.clientWidth;
+    const height = target.clientHeight;
+
+    camera.aspect = width / height;
+    camera.updateProjectionMatrix();
+    renderer.setSize(width, height);
+  }
+
+  window.addEventListener('resize', resizeThreeJS);
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initThreeJS);
+  } else {
+    initThreeJS();
+  }
+</script>
+
+<!-- Application logic -->
+<script src="./js/app.js"></script>
+<script src="./js/store.js"></script>
+
+<script>
+  // Newsletter API integration
+  document.getElementById('newsletter-form').addEventListener('submit', async function(e) {
+    e.preventDefault();
+
+    const email = document.getElementById('newsletter-email').value.trim();
+    const message = document.getElementById('newsletter-message');
+    const button = this.querySelector('button[type="submit"]');
+
+    button.disabled = true;
+    message.textContent = 'Submitting...';
+
+    try {
+      const response = await fetch('/api/newsletter', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email })
+      });
+
+      const data = await response.json();
+      if (!response.ok || !data.success) throw new Error(data.message || 'Subscription failed');
+
+      message.textContent = 'Thank you for subscribing!';
+      this.reset();
+    } catch (error) {
+      message.textContent = 'Unable to subscribe right now. Please try again.';
+    } finally {
+      button.disabled = false;
+    }
+  });
+</script>
+
+</body>
+</html>
