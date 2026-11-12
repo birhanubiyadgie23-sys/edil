@@ -1,0 +1,7 @@
+body {
+    font-family: 'Inter', sans-serif;
+    background-color: #fcfbfa;
+    color: #111111;
+}
+.font-serif-custom { font-family: 'Merriweather', serif; }
+#cart-drawer { transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
