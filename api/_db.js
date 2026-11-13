@@ -7,7 +7,7 @@ import crypto from "node:crypto";
 // DATABASE CONNECTION
 // ==========================================
 
-const databaseUrl = process.env.DATABASE_URL;
+const databaseUrl = (process.env.DATABASE_URL || "").trim();
 
 export const sql = databaseUrl
   ? neon(databaseUrl)
@@ -17,7 +17,11 @@ export const sql = databaseUrl
       );
     };
 
-const cookieName = "dsr_session";
+// ==========================================
+// SESSION CONFIGURATION
+// ==========================================
+
+const COOKIE_NAME = "dsr_session";
 const SESSION_DURATION = 7 * 24 * 60 * 60;
 
 // ==========================================
@@ -25,22 +29,31 @@ const SESSION_DURATION = 7 * 24 * 60 * 60;
 // ==========================================
 
 export function json(res, status, body) {
+  if (res.writableEnded) return;
+
   res.status(status);
   res.setHeader(
     "Content-Type",
     "application/json; charset=utf-8"
   );
   res.setHeader("Cache-Control", "no-store");
+
   return res.end(JSON.stringify(body));
 }
+
+// ==========================================
+// HTTP METHOD VALIDATION
+// ==========================================
 
 export function method(req, res, allowed) {
   if (!allowed.includes(req.method)) {
     res.setHeader("Allow", allowed.join(", "));
+
     json(res, 405, {
       success: false,
       message: "Method not allowed."
     });
+
     return false;
   }
 
@@ -56,8 +69,8 @@ export function getCookie(req, name) {
 
   const item = raw
     .split(";")
-    .map(x => x.trim())
-    .find(x => x.startsWith(name + "="));
+    .map(value => value.trim())
+    .find(value => value.startsWith(name + "="));
 
   if (!item) return null;
 
@@ -70,27 +83,23 @@ export function getCookie(req, name) {
   }
 }
 
-export function setSessionCookie(res, token) {
-  const secure =
-    process.env.NODE_ENV === "production"
-      ? "; Secure"
-      : "";
+function cookieSecurity() {
+  return process.env.NODE_ENV === "production"
+    ? "; Secure"
+    : "";
+}
 
+export function setSessionCookie(res, token) {
   res.setHeader(
     "Set-Cookie",
-    `${cookieName}=${encodeURIComponent(token)}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${SESSION_DURATION}${secure}`
+    `${COOKIE_NAME}=${encodeURIComponent(token)}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${SESSION_DURATION}${cookieSecurity()}`
   );
 }
 
 export function clearSessionCookie(res) {
-  const secure =
-    process.env.NODE_ENV === "production"
-      ? "; Secure"
-      : "";
-
   res.setHeader(
     "Set-Cookie",
-    `${cookieName}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0${secure}`
+    `${COOKIE_NAME}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0; Expires=Thu, 01 Jan 1970 00:00:00 GMT${cookieSecurity()}`
   );
 }
 
@@ -101,7 +110,7 @@ export function clearSessionCookie(res) {
 export function hashToken(token) {
   return crypto
     .createHash("sha256")
-    .update(token)
+    .update(String(token))
     .digest("hex");
 }
 
@@ -110,7 +119,7 @@ export function hashToken(token) {
 // ==========================================
 
 export async function currentUser(req) {
-  const token = getCookie(req, cookieName);
+  const token = getCookie(req, COOKIE_NAME);
 
   if (!token) return null;
 
@@ -122,8 +131,10 @@ export async function currentUser(req) {
       u.role,
       u.status
     FROM sessions s
-    JOIN users u ON u.id = s.user_id
-    WHERE s.token_hash = ${hashToken(token)}
+    INNER JOIN users u
+      ON u.id = s.user_id
+    WHERE
+      s.token_hash = ${hashToken(token)}
       AND s.expires_at > NOW()
       AND u.status = 'active'
     LIMIT 1
@@ -151,7 +162,10 @@ export async function requireUser(req, res) {
   return user;
 }
 
-// Admin and Editor access
+// ==========================================
+// ADMIN AND EDITOR AUTHORIZATION
+// ==========================================
+
 export async function requireAdmin(req, res) {
   const user = await requireUser(req, res);
 
@@ -169,7 +183,10 @@ export async function requireAdmin(req, res) {
   return user;
 }
 
-// Admin-only access for sensitive operations
+// ==========================================
+// ADMIN-ONLY AUTHORIZATION
+// ==========================================
+
 export async function requireSuperAdmin(req, res) {
   const user = await requireUser(req, res);
 
@@ -240,8 +257,8 @@ export async function audit(
         ${JSON.stringify(details)}::jsonb
       )
     `;
-  } catch (e) {
-    console.error("Audit log failed:", e);
+  } catch (error) {
+    console.error("Audit log failed:", error);
   }
 }
 
@@ -260,19 +277,33 @@ export async function ensureAdmin() {
     console.warn(
       "ADMIN_EMAIL or ADMIN_PASSWORD is not configured."
     );
+
     return false;
   }
 
+  // Check whether this email already exists.
   const found = await sql`
-    SELECT id
+    SELECT id, role
     FROM users
     WHERE lower(email) = ${email}
     LIMIT 1
   `;
 
-  if (found.length) return true;
+  // Do not automatically promote an existing user.
+  if (found.length) {
+    if (found[0].role !== "admin") {
+      console.error(
+        "ADMIN_EMAIL already belongs to a non-admin account. Review the account role manually."
+      );
 
-  const hash = await bcrypt.hash(password, 12);
+      return false;
+    }
+
+    return true;
+  }
+
+  // Create the initial administrator.
+  const passwordHash = await bcrypt.hash(password, 12);
 
   await sql`
     INSERT INTO users (
@@ -285,12 +316,21 @@ export async function ensureAdmin() {
     VALUES (
       'Administrator',
       ${email},
-      ${hash},
+      ${passwordHash},
       'admin',
       'active'
     )
     ON CONFLICT (email) DO NOTHING
   `;
 
-  return true;
+  // Confirm that the administrator account exists.
+  const confirmed = await sql`
+    SELECT id, role
+    FROM users
+    WHERE lower(email) = ${email}
+    LIMIT 1
+  `;
+
+  return confirmed.length > 0 &&
+    confirmed[0].role === "admin";
 }
