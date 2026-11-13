@@ -65,7 +65,7 @@ button:disabled {
 
 <body class="bg-gray-50 min-h-screen">
 
-<!-- LOGIN -->
+<!-- ADMIN LOGIN -->
 <section id="login-section" class="min-h-screen flex items-center justify-center p-4">
     <div class="bg-white p-8 rounded-2xl border max-w-md w-full shadow-sm">
 
@@ -93,7 +93,7 @@ button:disabled {
             </button>
         </form>
 
-        <p id="login-error" class="text-red-600 text-xs mt-3"></p>
+        <p id="login-error" class="text-red-600 text-xs mt-3" role="alert"></p>
 
         <a href="../" class="block text-center mt-5 text-xs text-gray-500">
             ← Back to Storefront
@@ -221,7 +221,11 @@ let cache = {};
 
 const API = {
     adminOverview: "/api/admin?view=overview",
-    adminManage: "/api/admin?view=manage"
+    adminManage: "/api/admin?view=manage",
+
+    authLogin: "/api/auth?action=login",
+    authMe: "/api/auth?action=me",
+    authLogout: "/api/auth?action=logout"
 };
 
 async function api(url, options = {}) {
@@ -230,7 +234,9 @@ async function api(url, options = {}) {
         ...options,
         headers: {
             ...(options.headers || {}),
-            ...(options.body ? { "Content-Type": "application/json" } : {})
+            ...(options.body ? {
+                "Content-Type": "application/json"
+            } : {})
         }
     });
 
@@ -239,11 +245,15 @@ async function api(url, options = {}) {
     try {
         data = await response.json();
     } catch {
-        throw new Error("The server returned an invalid response. Check the API route.");
+        throw new Error(
+            "The server returned an invalid response. Check the API route."
+        );
     }
 
     if (!response.ok || data.success === false) {
-        throw new Error(data.message || `Request failed (${response.status}).`);
+        throw new Error(
+            data.message || `Request failed (${response.status}).`
+        );
     }
 
     return data;
@@ -303,34 +313,49 @@ function showError(error) {
 
 async function boot() {
     try {
-        const data = await api("/api/auth/me");
+        const data = await api(API.authMe);
 
-        if (!data.user || !["admin", "editor"].includes(data.user.role)) {
+        // Only the admin role can access this dashboard.
+        if (!data.user || data.user.role !== "admin") {
             throw new Error("Admin access required.");
         }
 
         $("#login-section").classList.add("hidden");
         $("#app").classList.remove("hidden");
+
         $("#admin-name").textContent = data.user.email;
 
         await loadPage("overview");
 
+        return true;
+
     } catch (error) {
-        $("#login-error").textContent = error.message;
+        $("#login-error").textContent =
+            error.message || "Admin authentication failed.";
+
         $("#login-section").classList.remove("hidden");
         $("#app").classList.add("hidden");
+
+        return false;
     }
 }
+
+/* --------------------------------
+   ADMIN LOGIN
+-------------------------------- */
 
 $("#login-form").addEventListener("submit", async event => {
     event.preventDefault();
 
     const button = $("#login-button");
+
     button.disabled = true;
     button.textContent = "Signing in...";
 
+    $("#login-error").textContent = "";
+
     try {
-        const data = await api("/api/auth/login", {
+        const data = await api(API.authLogin, {
             method: "POST",
             body: JSON.stringify({
                 email: $("#email").value.trim(),
@@ -338,16 +363,29 @@ $("#login-form").addEventListener("submit", async event => {
             })
         });
 
-        if (!data.user || !["admin", "editor"].includes(data.user.role)) {
-            await api("/api/auth/logout", { method: "POST" });
-            throw new Error("This account does not have admin access.");
+        if (!data.user || data.user.role !== "admin") {
+            await api(API.authLogout, {
+                method: "POST"
+            });
+
+            throw new Error(
+                "This account does not have administrator access."
+            );
         }
 
-        $("#login-error").textContent = "";
-        await boot();
+        const success = await boot();
+
+        if (!success) {
+            throw new Error(
+                "Login succeeded, but the admin dashboard could not be opened."
+            );
+        }
+
+        $("#password").value = "";
 
     } catch (error) {
-        $("#login-error").textContent = error.message;
+        $("#login-error").textContent =
+            error.message || "Login failed.";
 
     } finally {
         button.disabled = false;
@@ -355,10 +393,18 @@ $("#login-form").addEventListener("submit", async event => {
     }
 });
 
+/* --------------------------------
+   LOGOUT
+-------------------------------- */
+
 $("#logout").addEventListener("click", async () => {
     try {
-        await api("/api/auth/logout", { method: "POST" });
+        await api(API.authLogout, {
+            method: "POST"
+        });
+
         location.reload();
+
     } catch (error) {
         alert(error.message);
     }
@@ -401,7 +447,11 @@ async function loadOverview() {
         ["Books", stats.books, "fa-book"],
         ["Articles", stats.articles, "fa-newspaper"],
         ["Orders", stats.orders, "fa-cart-shopping"],
-        ["Revenue", Number(stats.revenue || 0).toFixed(2) + " ETB", "fa-coins"],
+        [
+            "Revenue",
+            Number(stats.revenue || 0).toFixed(2) + " ETB",
+            "fa-coins"
+        ],
         ["Subscribers", stats.subscribers, "fa-envelope"]
     ];
 
@@ -410,7 +460,9 @@ async function loadOverview() {
             ${cards.map(item => `
                 <div class="panel">
                     <i class="fa ${item[2]} text-[#d9381e]"></i>
-                    <p class="text-xs text-gray-500 mt-3">${esc(item[0])}</p>
+                    <p class="text-xs text-gray-500 mt-3">
+                        ${esc(item[0])}
+                    </p>
                     <b class="text-2xl">${esc(item[1] ?? 0)}</b>
                 </div>
             `).join("")}
@@ -445,10 +497,12 @@ async function loadArticles() {
 
             <div class="grid md:grid-cols-2 gap-3">
                 <input id="a-author" class="field" placeholder="Author">
-                <input id="a-category" class="field" placeholder="Category (CSS, UX, JavaScript...)">
+                <input id="a-category" class="field"
+                    placeholder="Category (CSS, UX, JavaScript...)">
             </div>
 
-            <input id="a-image" class="field" placeholder="Featured image URL">
+            <input id="a-image" class="field"
+                placeholder="Featured image URL">
 
             <textarea id="a-excerpt" class="field" rows="2"
                 placeholder="Short excerpt"></textarea>
@@ -810,7 +864,10 @@ async function loadPage(page) {
     activePage = page;
 
     document.querySelectorAll(".navbtn").forEach(button => {
-        button.classList.toggle("active", button.dataset.page === page);
+        button.classList.toggle(
+            "active",
+            button.dataset.page === page
+        );
     });
 
     $("#page-title").textContent =
@@ -877,7 +934,10 @@ $("#content").addEventListener("click", async event => {
     try {
         if (editButton) {
             const id = editButton.dataset.edit;
-            const article = cache.articles?.find(item => String(item.id) === String(id));
+
+            const article = cache.articles?.find(
+                item => String(item.id) === String(id)
+            );
 
             if (!article) {
                 throw new Error("Article not found.");
@@ -891,7 +951,10 @@ $("#content").addEventListener("click", async event => {
             $("#a-excerpt").value = article.excerpt || "";
             $("#a-content").value = article.content || "";
 
-            window.scrollTo({ top: 0, behavior: "smooth" });
+            window.scrollTo({
+                top: 0,
+                behavior: "smooth"
+            });
         }
 
         if (deleteButton) {
