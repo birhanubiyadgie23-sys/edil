@@ -1,7 +1,19 @@
-import { sql, json, method, requireAdmin, audit } from "../_db.js";
+
+import {
+  sql,
+  json,
+  method,
+  requireAdmin,
+  audit
+} from "../_db.js";
 
 export default async function handler(req, res) {
   const view = String(req.query?.view || "manage");
+
+  // ==============================
+  // DASHBOARD OVERVIEW
+  // GET /api/admin?view=overview
+  // ==============================
 
   if (view === "overview") {
     if (!method(req, res, ["GET"])) return;
@@ -10,17 +22,47 @@ export default async function handler(req, res) {
       const admin = await requireAdmin(req, res);
       if (!admin) return;
 
-      const [users, books, articles, orders, revenue, subscribers] =
-        await Promise.all([
-          sql`SELECT COUNT(*)::int AS count FROM users`,
-          sql`SELECT COUNT(*)::int AS count FROM books WHERE active = TRUE`,
-          sql`SELECT COUNT(*)::int AS count FROM articles`,
-          sql`SELECT COUNT(*)::int AS count FROM orders`,
-          sql`SELECT COALESCE(SUM(total), 0)::numeric AS total
-              FROM orders WHERE status IN ('paid','processing','completed')`,
-          sql`SELECT COUNT(*)::int AS count
-              FROM newsletter_subscribers WHERE status = 'active'`
-        ]);
+      const [
+        users,
+        books,
+        articles,
+        orders,
+        revenue,
+        subscribers
+      ] = await Promise.all([
+        sql`
+          SELECT COUNT(*)::int AS count
+          FROM users
+        `,
+
+        sql`
+          SELECT COUNT(*)::int AS count
+          FROM books
+          WHERE active = TRUE
+        `,
+
+        sql`
+          SELECT COUNT(*)::int AS count
+          FROM articles
+        `,
+
+        sql`
+          SELECT COUNT(*)::int AS count
+          FROM orders
+        `,
+
+        sql`
+          SELECT COALESCE(SUM(total), 0)::numeric AS total
+          FROM orders
+          WHERE status IN ('paid', 'processing', 'completed')
+        `,
+
+        sql`
+          SELECT COUNT(*)::int AS count
+          FROM newsletter_subscribers
+          WHERE status = 'active'
+        `
+      ]);
 
       return json(res, 200, {
         success: true,
@@ -33,14 +75,22 @@ export default async function handler(req, res) {
           subscribers: subscribers[0].count
         }
       });
-    } catch (e) {
-      console.error(e);
+
+    } catch (error) {
+      console.error("Admin overview error:", error);
+
       return json(res, 500, {
         success: false,
         message: "Could not load dashboard."
       });
     }
   }
+
+  // ==============================
+  // ADMIN MANAGEMENT
+  // GET /api/admin?view=manage
+  // PATCH /api/admin?view=manage
+  // ==============================
 
   if (view === "manage") {
     if (!method(req, res, ["GET", "PATCH"])) return;
@@ -49,30 +99,84 @@ export default async function handler(req, res) {
       const admin = await requireAdmin(req, res);
       if (!admin) return;
 
+      // GET MANAGEMENT DATA
       if (req.method === "GET") {
-        const users = await sql`
-          SELECT id,name,email,role,status,created_at
-          FROM users ORDER BY created_at DESC LIMIT 300`;
+        const [users, orders, logs] = await Promise.all([
+          sql`
+            SELECT
+              id,
+              name,
+              email,
+              role,
+              status,
+              created_at
+            FROM users
+            ORDER BY created_at DESC
+            LIMIT 300
+          `,
 
-        const orders = await sql`
-          SELECT id,customer_name,customer_email,items,total,status,created_at
-          FROM orders ORDER BY created_at DESC LIMIT 300`;
+          sql`
+            SELECT
+              id,
+              customer_name,
+              customer_email,
+              items,
+              total,
+              status,
+              created_at
+            FROM orders
+            ORDER BY created_at DESC
+            LIMIT 300
+          `,
 
-        const logs = await sql`
-          SELECT id,action,target_type,target_id,details,created_at
-          FROM audit_logs ORDER BY created_at DESC LIMIT 100`;
+          sql`
+            SELECT
+              id,
+              action,
+              target_type,
+              target_id,
+              details,
+              created_at
+            FROM audit_logs
+            ORDER BY created_at DESC
+            LIMIT 100
+          `
+        ]);
 
-        return json(res, 200, { success: true, users, orders, logs });
+        return json(res, 200, {
+          success: true,
+          users,
+          orders,
+          logs
+        });
       }
 
+      // PATCH MANAGEMENT DATA
       const {
-        user_id, role, status,
-        order_id, order_status
+        user_id,
+        role,
+        status,
+        order_id,
+        order_status
       } = req.body || {};
 
-      let changed = false;
+      const hasUserUpdate = user_id !== undefined;
+      const hasOrderUpdate = order_id !== undefined;
 
-      if (user_id !== undefined) {
+      // Require exactly one target per request.
+      if (hasUserUpdate === hasOrderUpdate) {
+        return json(res, 400, {
+          success: false,
+          message: "Provide either a user update or an order update."
+        });
+      }
+
+      // ==============================
+      // UPDATE USER
+      // ==============================
+
+      if (hasUserUpdate) {
+        // Only admin can manage user accounts.
         if (admin.role !== "admin") {
           return json(res, 403, {
             success: false,
@@ -81,10 +185,15 @@ export default async function handler(req, res) {
         }
 
         const id = Number(user_id);
+
         if (!Number.isSafeInteger(id) || id < 1) {
-          return json(res, 400, { success: false, message: "Invalid user id." });
+          return json(res, 400, {
+            success: false,
+            message: "Invalid user ID."
+          });
         }
 
+        // Prevent changing own account.
         if (id === Number(admin.id)) {
           return json(res, 400, {
             success: false,
@@ -92,68 +201,140 @@ export default async function handler(req, res) {
           });
         }
 
-        const allowedRoles = ["user", "editor", "admin"];
-        const allowedStatuses = ["active", "inactive", "suspended"];
+        const allowedRoles = [
+          "user",
+          "editor",
+          "admin"
+        ];
 
-        if (role !== undefined && !allowedRoles.includes(role)) {
-          return json(res, 400, { success: false, message: "Invalid user role." });
+        const allowedStatuses = [
+          "active",
+          "inactive",
+          "suspended"
+        ];
+
+        if (
+          role !== undefined &&
+          !allowedRoles.includes(role)
+        ) {
+          return json(res, 400, {
+            success: false,
+            message: "Invalid user role."
+          });
         }
 
-        if (status !== undefined && !allowedStatuses.includes(status)) {
-          return json(res, 400, { success: false, message: "Invalid user status." });
+        if (
+          status !== undefined &&
+          !allowedStatuses.includes(status)
+        ) {
+          return json(res, 400, {
+            success: false,
+            message: "Invalid user status."
+          });
         }
 
         if (role === undefined && status === undefined) {
-          return json(res, 400, { success: false, message: "No user changes supplied." });
+          return json(res, 400, {
+            success: false,
+            message: "No user changes supplied."
+          });
         }
 
         const rows = await sql`
           UPDATE users
-          SET role = COALESCE(${role ?? null}, role),
-              status = COALESCE(${status ?? null}, status),
-              updated_at = NOW()
+          SET
+            role = COALESCE(${role ?? null}, role),
+            status = COALESCE(${status ?? null}, status),
+            updated_at = NOW()
           WHERE id = ${id}
-          RETURNING id`;
+          RETURNING id
+        `;
 
         if (!rows.length) {
-          return json(res, 404, { success: false, message: "User not found." });
+          return json(res, 404, {
+            success: false,
+            message: "User not found."
+          });
         }
 
-        await audit(admin.id, "user.update", "user", id, { role, status });
-        changed = true;
+        await audit(
+          admin.id,
+          "user.update",
+          "user",
+          id,
+          {
+            role: role ?? null,
+            status: status ?? null
+          }
+        );
+
+        return json(res, 200, {
+          success: true,
+          message: "User updated successfully."
+        });
       }
 
-      if (order_id !== undefined) {
-        const id = Number(order_id);
-        const allowed = ["pending", "paid", "processing", "completed", "cancelled"];
+      // ==============================
+      // UPDATE ORDER
+      // ==============================
 
-        if (!Number.isSafeInteger(id) || id < 1 || !allowed.includes(order_status)) {
-          return json(res, 400, { success: false, message: "Invalid order update." });
+      if (hasOrderUpdate) {
+        const id = Number(order_id);
+
+        const allowedStatuses = [
+          "pending",
+          "paid",
+          "processing",
+          "completed",
+          "cancelled"
+        ];
+
+        if (
+          !Number.isSafeInteger(id) ||
+          id < 1 ||
+          !allowedStatuses.includes(order_status)
+        ) {
+          return json(res, 400, {
+            success: false,
+            message: "Invalid order update."
+          });
         }
 
         const rows = await sql`
           UPDATE orders
-          SET status = ${order_status}, updated_at = NOW()
+          SET
+            status = ${order_status},
+            updated_at = NOW()
           WHERE id = ${id}
-          RETURNING id`;
+          RETURNING id
+        `;
 
         if (!rows.length) {
-          return json(res, 404, { success: false, message: "Order not found." });
+          return json(res, 404, {
+            success: false,
+            message: "Order not found."
+          });
         }
 
-        await audit(admin.id, "order.update", "order", id, {
-          status: order_status
+        await audit(
+          admin.id,
+          "order.update",
+          "order",
+          id,
+          {
+            status: order_status
+          }
+        );
+
+        return json(res, 200, {
+          success: true,
+          message: "Order updated successfully."
         });
-        changed = true;
       }
 
-      if (!changed) {
-        return json(res, 400, { success: false, message: "No changes supplied." });
-      }
+    } catch (error) {
+      console.error("Admin management error:", error);
 
-      return json(res, 200, { success: true });
-    } catch (e) {
-      console.error(e);
       return json(res, 500, {
         success: false,
         message: "Admin operation failed."
@@ -161,5 +342,12 @@ export default async function handler(req, res) {
     }
   }
 
-  return json(res, 404, { success: false, message: "Unknown admin action." });
+  // ==============================
+  // UNKNOWN VIEW
+  // ==============================
+
+  return json(res, 404, {
+    success: false,
+    message: "Unknown admin action."
+  });
 }
