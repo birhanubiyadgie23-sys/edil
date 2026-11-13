@@ -1,352 +1,331 @@
+
 import {
   sql,
   json,
   method,
-  requireSuperAdmin,
+  requireAdmin,
   audit
 } from "../_db.js";
 
 export default async function handler(req, res) {
-  const view = String(req.query?.view || "manage");
+  if (!method(req, res, ["GET", "POST", "PUT", "PATCH", "DELETE"])) {
+    return;
+  }
 
-  // ==============================
-  // DASHBOARD OVERVIEW
-  // GET /api/admin?view=overview
-  // ==============================
+  try {
+    // =====================================
+    // GET ARTICLES
+    // Public: GET /api/articles
+    // Admin:  GET /api/articles?admin=1
+    // =====================================
 
-  if (view === "overview") {
-    if (!method(req, res, ["GET"])) return;
+    if (req.method === "GET") {
+      const isAdminRequest = req.query?.admin === "1";
 
-    try {
-      const admin = await requireSuperAdmin(req, res);
-      if (!admin) return;
+      if (isAdminRequest) {
+        const admin = await requireAdmin(req, res);
+        if (!admin) return;
 
-      const [
-        users,
-        books,
-        articles,
-        orders,
-        revenue,
-        subscribers
-      ] = await Promise.all([
-        sql`
-          SELECT COUNT(*)::int AS count
-          FROM users
-        `,
-
-        sql`
-          SELECT COUNT(*)::int AS count
-          FROM books
-          WHERE active = TRUE
-        `,
-
-        sql`
-          SELECT COUNT(*)::int AS count
+        const articles = await sql`
+          SELECT
+            id, title, author, category, excerpt,
+            content, image_url, active,
+            CASE WHEN active = TRUE
+              THEN 'published' ELSE 'draft'
+            END AS status,
+            created_at, updated_at
           FROM articles
-        `,
+          ORDER BY created_at DESC
+        `;
 
-        sql`
-          SELECT COUNT(*)::int AS count
-          FROM orders
-        `,
+        return json(res, 200, {
+          success: true,
+          articles
+        });
+      }
 
-        sql`
-          SELECT COALESCE(SUM(total), 0)::numeric AS total
-          FROM orders
-          WHERE status IN ('paid', 'processing', 'completed')
-        `,
-
-        sql`
-          SELECT COUNT(*)::int AS count
-          FROM newsletter_subscribers
-          WHERE status = 'active'
-        `
-      ]);
+      const articles = await sql`
+        SELECT
+          id, title, author, category, excerpt,
+          content, image_url, active, created_at
+        FROM articles
+        WHERE active = TRUE
+        ORDER BY created_at DESC
+      `;
 
       return json(res, 200, {
         success: true,
-        stats: {
-          users: users[0].count,
-          books: books[0].count,
-          articles: articles[0].count,
-          orders: orders[0].count,
-          revenue: revenue[0].total,
-          subscribers: subscribers[0].count
-        }
-      });
-
-    } catch (error) {
-      console.error("Admin overview error:", error);
-
-      return json(res, 500, {
-        success: false,
-        message: "Could not load dashboard."
+        articles
       });
     }
-  }
 
-  // ==============================
-  // ADMIN MANAGEMENT
-  // GET /api/admin?view=manage
-  // PATCH /api/admin?view=manage
-  // ==============================
+    // =====================================
+    // ADMIN AUTHENTICATION
+    // =====================================
 
-  if (view === "manage") {
-    if (!method(req, res, ["GET", "PATCH"])) return;
+    const admin = await requireAdmin(req, res);
+    if (!admin) return;
 
-    try {
-      const admin = await requireSuperAdmin(req, res);
-      if (!admin) return;
+    const b = req.body || {};
 
-      // GET MANAGEMENT DATA
-      if (req.method === "GET") {
-        const [users, orders, logs] = await Promise.all([
-          sql`
-            SELECT
-              id,
-              name,
-              email,
-              role,
-              status,
-              created_at
-            FROM users
-            ORDER BY created_at DESC
-            LIMIT 300
-          `,
+    // =====================================
+    // CREATE ARTICLE
+    // POST /api/articles
+    // =====================================
 
-          sql`
-            SELECT
-              id,
-              customer_name,
-              customer_email,
-              items,
-              total,
-              status,
-              created_at
-            FROM orders
-            ORDER BY created_at DESC
-            LIMIT 300
-          `,
+    if (req.method === "POST") {
+      const title = String(b.title || "").trim();
+      const content = String(b.content || "").trim();
 
-          sql`
-            SELECT
-              id,
-              action,
-              target_type,
-              target_id,
-              details,
-              created_at
-            FROM audit_logs
-            ORDER BY created_at DESC
-            LIMIT 100
-          `
-        ]);
+      const author = String(
+        b.author || admin.name || "Admin"
+      ).trim();
 
-        return json(res, 200, {
-          success: true,
-          users,
-          orders,
-          logs
-        });
-      }
+      const category = String(
+        b.category || "General"
+      ).trim();
 
-      // PATCH MANAGEMENT DATA
-      const {
-        user_id,
-        role,
-        status,
-        order_id,
-        order_status
-      } = req.body || {};
+      const excerpt = String(b.excerpt || "").trim();
 
-      const hasUserUpdate = user_id !== undefined;
-      const hasOrderUpdate = order_id !== undefined;
+      const imageUrl = b.image_url
+        ? String(b.image_url).trim()
+        : null;
 
-      // Require exactly one target per request.
-      if (hasUserUpdate === hasOrderUpdate) {
+      const status = b.status || "draft";
+
+      if (!title || !content || !author || !category) {
         return json(res, 400, {
           success: false,
-          message: "Provide either a user update or an order update."
+          message: "Title, author, category and content are required."
         });
       }
 
-      // ==============================
-      // UPDATE USER
-      // ==============================
-
-      if (hasUserUpdate) {
-        // Only admin can manage user accounts.
-        if (admin.role !== "admin") {
-          return json(res, 403, {
-            success: false,
-            message: "Only an administrator can manage user accounts."
-          });
-        }
-
-        const id = Number(user_id);
-
-        if (!Number.isSafeInteger(id) || id < 1) {
-          return json(res, 400, {
-            success: false,
-            message: "Invalid user ID."
-          });
-        }
-
-        // Prevent changing own account.
-        if (id === Number(admin.id)) {
-          return json(res, 400, {
-            success: false,
-            message: "You cannot change your own account here."
-          });
-        }
-
-        const allowedRoles = [
-          "user",
-          "editor",
-          "admin"
-        ];
-
-        const allowedStatuses = [
-          "active",
-          "inactive",
-          "suspended"
-        ];
-
-        if (
-          role !== undefined &&
-          !allowedRoles.includes(role)
-        ) {
-          return json(res, 400, {
-            success: false,
-            message: "Invalid user role."
-          });
-        }
-
-        if (
-          status !== undefined &&
-          !allowedStatuses.includes(status)
-        ) {
-          return json(res, 400, {
-            success: false,
-            message: "Invalid user status."
-          });
-        }
-
-        if (role === undefined && status === undefined) {
-          return json(res, 400, {
-            success: false,
-            message: "No user changes supplied."
-          });
-        }
-
-        const rows = await sql`
-          UPDATE users
-          SET
-            role = COALESCE(${role ?? null}, role),
-            status = COALESCE(${status ?? null}, status),
-            updated_at = NOW()
-          WHERE id = ${id}
-          RETURNING id
-        `;
-
-        if (!rows.length) {
-          return json(res, 404, {
-            success: false,
-            message: "User not found."
-          });
-        }
-
-        await audit(
-          admin.id,
-          "user.update",
-          "user",
-          id,
-          {
-            role: role ?? null,
-            status: status ?? null
-          }
-        );
-
-        return json(res, 200, {
-          success: true,
-          message: "User updated successfully."
+      if (!["draft", "published"].includes(status)) {
+        return json(res, 400, {
+          success: false,
+          message: "Invalid article status."
         });
       }
 
-      // ==============================
-      // UPDATE ORDER
-      // ==============================
+      const active = status === "published";
 
-      if (hasOrderUpdate) {
-        const id = Number(order_id);
+      const rows = await sql`
+        INSERT INTO articles (
+          title,
+          author,
+          category,
+          excerpt,
+          content,
+          image_url,
+          active
+        )
+        VALUES (
+          ${title},
+          ${author},
+          ${category},
+          ${excerpt},
+          ${content},
+          ${imageUrl},
+          ${active}
+        )
+        RETURNING *
+      `;
 
-        const allowedStatuses = [
-          "pending",
-          "paid",
-          "processing",
-          "completed",
-          "cancelled"
-        ];
+      await audit(
+        admin.id,
+        "article.create",
+        "article",
+        rows[0].id
+      );
 
-        if (
-          !Number.isSafeInteger(id) ||
-          id < 1 ||
-          !allowedStatuses.includes(order_status)
-        ) {
-          return json(res, 400, {
-            success: false,
-            message: "Invalid order update."
-          });
-        }
-
-        const rows = await sql`
-          UPDATE orders
-          SET
-            status = ${order_status},
-            updated_at = NOW()
-          WHERE id = ${id}
-          RETURNING id
-        `;
-
-        if (!rows.length) {
-          return json(res, 404, {
-            success: false,
-            message: "Order not found."
-          });
-        }
-
-        await audit(
-          admin.id,
-          "order.update",
-          "order",
-          id,
-          {
-            status: order_status
-          }
-        );
-
-        return json(res, 200, {
-          success: true,
-          message: "Order updated successfully."
-        });
-      }
-
-    } catch (error) {
-      console.error("Admin management error:", error);
-
-      return json(res, 500, {
-        success: false,
-        message: "Admin operation failed."
+      return json(res, 201, {
+        success: true,
+        article: {
+          ...rows[0],
+          status: active ? "published" : "draft"
+        },
+        message: "Article created successfully."
       });
     }
+
+    // =====================================
+    // UPDATE ARTICLE / CHANGE STATUS
+    // PUT or PATCH /api/articles
+    // =====================================
+
+    if (req.method === "PUT" || req.method === "PATCH") {
+      const id = Number(b.id);
+
+      if (!Number.isSafeInteger(id) || id < 1) {
+        return json(res, 400, {
+          success: false,
+          message: "A valid article ID is required."
+        });
+      }
+
+      if (
+        b.status !== undefined &&
+        !["draft", "published"].includes(b.status)
+      ) {
+        return json(res, 400, {
+          success: false,
+          message: "Invalid article status."
+        });
+      }
+
+      const requiredFields = [
+        "title",
+        "author",
+        "category"
+      ];
+
+      for (const field of requiredFields) {
+        if (
+          b[field] !== undefined &&
+          !String(b[field]).trim()
+        ) {
+          return json(res, 400, {
+            success: false,
+            message: `${field} cannot be empty.`
+          });
+        }
+      }
+
+      if (
+        b.content !== undefined &&
+        !String(b.content).trim()
+      ) {
+        return json(res, 400, {
+          success: false,
+          message: "Article content cannot be empty."
+        });
+      }
+
+      const title = b.title === undefined
+        ? null
+        : String(b.title).trim();
+
+      const author = b.author === undefined
+        ? null
+        : String(b.author).trim();
+
+      const category = b.category === undefined
+        ? null
+        : String(b.category).trim();
+
+      const excerpt = b.excerpt === undefined
+        ? null
+        : String(b.excerpt);
+
+      const content = b.content === undefined
+        ? null
+        : String(b.content);
+
+      const imageUrl = b.image_url === undefined
+        ? null
+        : (b.image_url ? String(b.image_url).trim() : null);
+
+      const active = b.status === undefined
+        ? null
+        : b.status === "published";
+
+      const rows = await sql`
+        UPDATE articles
+        SET
+          title = COALESCE(${title}, title),
+          author = COALESCE(${author}, author),
+          category = COALESCE(${category}, category),
+          excerpt = COALESCE(${excerpt}, excerpt),
+          content = COALESCE(${content}, content),
+
+          image_url = CASE
+            WHEN ${b.image_url !== undefined}
+            THEN ${imageUrl}
+            ELSE image_url
+          END,
+
+          active = COALESCE(${active}, active),
+          updated_at = NOW()
+
+        WHERE id = ${id}
+        RETURNING *
+      `;
+
+      if (!rows.length) {
+        return json(res, 404, {
+          success: false,
+          message: "Article not found."
+        });
+      }
+
+      await audit(
+        admin.id,
+        "article.update",
+        "article",
+        id
+      );
+
+      return json(res, 200, {
+        success: true,
+        article: {
+          ...rows[0],
+          status: rows[0].active ? "published" : "draft"
+        },
+        message: "Article updated successfully."
+      });
+    }
+
+    // =====================================
+    // ARCHIVE ARTICLE
+    // DELETE /api/articles
+    // Preserve existing database record.
+    // =====================================
+
+    if (req.method === "DELETE") {
+      const id = Number(b.id);
+
+      if (!Number.isSafeInteger(id) || id < 1) {
+        return json(res, 400, {
+          success: false,
+          message: "A valid article ID is required."
+        });
+      }
+
+      const rows = await sql`
+        UPDATE articles
+        SET
+          active = FALSE,
+          updated_at = NOW()
+        WHERE id = ${id}
+        RETURNING id
+      `;
+
+      if (!rows.length) {
+        return json(res, 404, {
+          success: false,
+          message: "Article not found."
+        });
+      }
+
+      await audit(
+        admin.id,
+        "article.archive",
+        "article",
+        id
+      );
+
+      return json(res, 200, {
+        success: true,
+        message: "Article archived successfully."
+      });
+    }
+
+  } catch (error) {
+    console.error("Articles API error:", error);
+
+    return json(res, 500, {
+      success: false,
+      message: "Article operation failed."
+    });
   }
-
-  // ==============================
-  // UNKNOWN VIEW
-  // ==============================
-
-  return json(res, 404, {
-    success: false,
-    message: "Unknown admin action."
-  });
 }
