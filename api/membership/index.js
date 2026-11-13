@@ -1,10 +1,9 @@
-
 import {
   sql,
   json,
   requireAdmin,
   audit
-} from "./_db.js";
+} from "../_db.js";
 
 export default async function handler(req, res) {
   try {
