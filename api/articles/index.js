@@ -1,52 +1,27 @@
+
 import {
   sql,
   json,
+  method,
   requireAdmin,
   audit
 } from "../_db.js";
 
 export default async function handler(req, res) {
-  try {
-    // ==============================
-    // GET ARTICLES
-    // Public: /api/articles
-    // Admin:  /api/articles?admin=1
-    // ==============================
+  if (!method(req, res, ["GET", "POST", "PUT", "PATCH", "DELETE"])) {
+    return;
+  }
 
+  try {
+    // GET ARTICLES
     if (req.method === "GET") {
       const isAdminRequest = req.query?.admin === "1";
 
       if (isAdminRequest) {
         const admin = await requireAdmin(req, res);
         if (!admin) return;
-
-        const articles = await sql`
-          SELECT
-            id,
-            title,
-            author,
-            category,
-            excerpt,
-            content,
-            image_url,
-            active,
-            CASE
-              WHEN active = TRUE THEN 'published'
-              ELSE 'draft'
-            END AS status,
-            created_at,
-            updated_at
-          FROM articles
-          ORDER BY created_at DESC
-        `;
-
-        return json(res, 200, {
-          success: true,
-          articles
-        });
       }
 
-      // Public users see only active articles.
       const articles = await sql`
         SELECT
           id,
@@ -57,9 +32,14 @@ export default async function handler(req, res) {
           content,
           image_url,
           active,
-          created_at
+          CASE
+            WHEN active = TRUE THEN 'published'
+            ELSE 'draft'
+          END AS status,
+          created_at,
+          updated_at
         FROM articles
-        WHERE active = TRUE
+        ${isAdminRequest ? sql`` : sql`WHERE active = TRUE`}
         ORDER BY created_at DESC
       `;
 
@@ -69,57 +49,41 @@ export default async function handler(req, res) {
       });
     }
 
-    // ==============================
     // ADMIN AUTHENTICATION
-    // ==============================
-
-    if (!["POST", "PUT", "PATCH", "DELETE"].includes(req.method)) {
-      res.setHeader(
-        "Allow",
-        "GET, POST, PUT, PATCH, DELETE"
-      );
-
-      return json(res, 405, {
-        success: false,
-        message: "Method not allowed."
-      });
-    }
-
     const admin = await requireAdmin(req, res);
     if (!admin) return;
 
-    // ==============================
+    const b = req.body || {};
+
     // CREATE ARTICLE
-    // ==============================
-
     if (req.method === "POST") {
-      const b = req.body || {};
-
       const title = String(b.title || "").trim();
       const content = String(b.content || "").trim();
-
-      if (!title || !content) {
-        return json(res, 400, {
-          success: false,
-          message: "Title and article content are required."
-        });
-      }
-
-      const author = String(
-        b.author || admin.name || "Admin"
-      ).trim();
-
-      const category = String(
-        b.category || "General"
-      ).trim();
-
+      const author = String(b.author || admin.name || "Admin").trim();
+      const category = String(b.category || "General").trim();
       const excerpt = String(b.excerpt || "").trim();
 
       const imageUrl = b.image_url
         ? String(b.image_url).trim()
         : null;
 
-      const active = b.status === "published";
+      const status = b.status || "draft";
+
+      if (!title || !content || !author || !category) {
+        return json(res, 400, {
+          success: false,
+          message: "Title, author, category and content are required."
+        });
+      }
+
+      if (!["draft", "published"].includes(status)) {
+        return json(res, 400, {
+          success: false,
+          message: "Invalid article status."
+        });
+      }
+
+      const active = status === "published";
 
       const rows = await sql`
         INSERT INTO articles (
@@ -154,17 +118,14 @@ export default async function handler(req, res) {
         success: true,
         article: {
           ...rows[0],
-          status: rows[0].active ? "published" : "draft"
-        }
+          status: active ? "published" : "draft"
+        },
+        message: "Article created successfully."
       });
     }
 
-    // ==============================
-    // UPDATE ARTICLE
-    // ==============================
-
+    // UPDATE ARTICLE / CHANGE STATUS
     if (req.method === "PUT" || req.method === "PATCH") {
-      const b = req.body || {};
       const id = Number(b.id);
 
       if (!Number.isSafeInteger(id) || id < 1) {
@@ -174,37 +135,53 @@ export default async function handler(req, res) {
         });
       }
 
-      let active = null;
-
-      if (b.status === "published") {
-        active = true;
-      } else if (b.status === "draft") {
-        active = false;
+      if (
+        b.status !== undefined &&
+        !["draft", "published"].includes(b.status)
+      ) {
+        return json(res, 400, {
+          success: false,
+          message: "Invalid article status."
+        });
       }
 
-      const title = b.title === undefined
-        ? null
-        : String(b.title).trim();
+      const fields = ["title", "author", "category"];
 
-      const author = b.author === undefined
-        ? null
-        : String(b.author).trim();
+      for (const field of fields) {
+        if (
+          b[field] !== undefined &&
+          !String(b[field]).trim()
+        ) {
+          return json(res, 400, {
+            success: false,
+            message: `${field} cannot be empty.`
+          });
+        }
+      }
 
-      const category = b.category === undefined
-        ? null
-        : String(b.category).trim();
+      if (
+        b.content !== undefined &&
+        !String(b.content).trim()
+      ) {
+        return json(res, 400, {
+          success: false,
+          message: "Article content cannot be empty."
+        });
+      }
 
-      const excerpt = b.excerpt === undefined
-        ? null
-        : String(b.excerpt);
-
-      const content = b.content === undefined
-        ? null
-        : String(b.content);
+      const title = b.title === undefined ? null : String(b.title).trim();
+      const author = b.author === undefined ? null : String(b.author).trim();
+      const category = b.category === undefined ? null : String(b.category).trim();
+      const excerpt = b.excerpt === undefined ? null : String(b.excerpt);
+      const content = b.content === undefined ? null : String(b.content);
 
       const imageUrl = b.image_url === undefined
         ? null
         : (b.image_url ? String(b.image_url).trim() : null);
+
+      const active = b.status === undefined
+        ? null
+        : b.status === "published";
 
       const rows = await sql`
         UPDATE articles
@@ -216,14 +193,13 @@ export default async function handler(req, res) {
           content = COALESCE(${content}, content),
 
           image_url = CASE
-            WHEN ${b.image_url === undefined}
-            THEN image_url
-            ELSE ${imageUrl}
+            WHEN ${b.image_url !== undefined}
+            THEN ${imageUrl}
+            ELSE image_url
           END,
 
           active = COALESCE(${active}, active),
           updated_at = NOW()
-
         WHERE id = ${id}
         RETURNING *
       `;
@@ -247,16 +223,14 @@ export default async function handler(req, res) {
         article: {
           ...rows[0],
           status: rows[0].active ? "published" : "draft"
-        }
+        },
+        message: "Article updated successfully."
       });
     }
 
-    // ==============================
-    // DELETE ARTICLE
-    // ==============================
-
+    // ARCHIVE ARTICLE - DO NOT PERMANENTLY DELETE
     if (req.method === "DELETE") {
-      const id = Number(req.body?.id);
+      const id = Number(b.id);
 
       if (!Number.isSafeInteger(id) || id < 1) {
         return json(res, 400, {
@@ -266,7 +240,10 @@ export default async function handler(req, res) {
       }
 
       const rows = await sql`
-        DELETE FROM articles
+        UPDATE articles
+        SET
+          active = FALSE,
+          updated_at = NOW()
         WHERE id = ${id}
         RETURNING id
       `;
@@ -280,14 +257,14 @@ export default async function handler(req, res) {
 
       await audit(
         admin.id,
-        "article.delete",
+        "article.archive",
         "article",
         id
       );
 
       return json(res, 200, {
         success: true,
-        message: "Article deleted successfully."
+        message: "Article archived successfully."
       });
     }
 
