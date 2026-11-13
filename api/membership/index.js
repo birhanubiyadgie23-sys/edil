@@ -159,14 +159,14 @@ export default async function handler(req, res) {
           active
         )
         VALUES (
-          ${name},
-          ${description},
-          ${price},
-          ${durationDays},
-          ${JSON.stringify(features)},
-          TRUE
-        )
-        RETURNING *
+  ${name},
+  ${description},
+  ${price},
+  ${durationDays},
+  ${JSON.stringify(features)}::jsonb,
+  TRUE
+)
+RETURNING *
       `;
 
       await audit(
