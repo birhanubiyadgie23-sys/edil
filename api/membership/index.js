@@ -1,26 +1,31 @@
+
 import {
   sql,
   json,
+  method,
   requireAdmin,
   audit
 } from "../_db.js";
 
 export default async function handler(req, res) {
-  try {
-    // ==============================
-    // GET MEMBERSHIP PLANS
-    // Public: /api/membership
-    // Admin:  /api/membership?admin=1
-    // ==============================
+  if (!method(req, res, ["GET", "POST", "DELETE"])) {
+    return;
+  }
 
+  try {
+    // GET MEMBERSHIP PLANS
     if (req.method === "GET") {
       const isAdminRequest = req.query?.admin === "1";
 
       if (isAdminRequest) {
         const admin = await requireAdmin(req, res);
         if (!admin) return;
+      }
 
-        const memberships = await sql`
+      let memberships;
+
+      if (isAdminRequest) {
+        memberships = await sql`
           SELECT
             id,
             name,
@@ -33,27 +38,22 @@ export default async function handler(req, res) {
           FROM membership_plans
           ORDER BY price ASC
         `;
-
-        return json(res, 200, {
-          success: true,
-          memberships
-        });
+      } else {
+        memberships = await sql`
+          SELECT
+            id,
+            name,
+            description,
+            price,
+            duration_days,
+            features,
+            active,
+            created_at
+          FROM membership_plans
+          WHERE active = TRUE
+          ORDER BY price ASC
+        `;
       }
-
-      const memberships = await sql`
-        SELECT
-          id,
-          name,
-          description,
-          price,
-          duration_days,
-          features,
-          active,
-          created_at
-        FROM membership_plans
-        WHERE active = TRUE
-        ORDER BY price ASC
-      `;
 
       return json(res, 200, {
         success: true,
@@ -61,40 +61,16 @@ export default async function handler(req, res) {
       });
     }
 
-    // ==============================
-    // CHECK ALLOWED METHODS
-    // ==============================
-
-    if (!["POST", "DELETE"].includes(req.method)) {
-      res.setHeader("Allow", "GET, POST, DELETE");
-
-      return json(res, 405, {
-        success: false,
-        message: "Method not allowed."
-      });
-    }
-
-    // ==============================
     // ADMIN AUTHENTICATION
-    // ==============================
-
     const admin = await requireAdmin(req, res);
     if (!admin) return;
 
-    // ==============================
+    const b = req.body || {};
+
     // CREATE MEMBERSHIP PLAN
-    // ==============================
-
     if (req.method === "POST") {
-      const b = req.body || {};
-
-      const name = String(
-        b.name || b.title || ""
-      ).trim();
-
-      const description = String(
-        b.description || ""
-      ).trim();
+      const name = String(b.name || b.title || "").trim();
+      const description = String(b.description || "").trim();
 
       if (!name) {
         return json(res, 400, {
@@ -103,18 +79,17 @@ export default async function handler(req, res) {
         });
       }
 
-      const price = b.price === undefined
+      const price = b.price === undefined || b.price === ""
         ? 0
         : Number(b.price);
 
-      const durationDays = b.duration_days === undefined
-        ? (b.duration === undefined ? 30 : Number(b.duration))
-        : Number(b.duration_days);
+      const durationValue = b.duration_days !== undefined
+        ? b.duration_days
+        : (b.duration !== undefined ? b.duration : 30);
 
-      if (
-        !Number.isFinite(price) ||
-        price < 0
-      ) {
+      const durationDays = Number(durationValue);
+
+      if (!Number.isFinite(price) || price < 0) {
         return json(res, 400, {
           success: false,
           message: "Membership price must be a valid non-negative number."
@@ -159,14 +134,14 @@ export default async function handler(req, res) {
           active
         )
         VALUES (
-  ${name},
-  ${description},
-  ${price},
-  ${durationDays},
-  ${JSON.stringify(features)}::jsonb,
-  TRUE
-)
-RETURNING *
+          ${name},
+          ${description},
+          ${price},
+          ${durationDays},
+          ${JSON.stringify(features)}::jsonb,
+          TRUE
+        )
+        RETURNING *
       `;
 
       await audit(
@@ -183,12 +158,9 @@ RETURNING *
       });
     }
 
-    // ==============================
     // ARCHIVE MEMBERSHIP PLAN
-    // ==============================
-
     if (req.method === "DELETE") {
-      const id = Number(req.body?.id);
+      const id = Number(b.id);
 
       if (!Number.isSafeInteger(id) || id < 1) {
         return json(res, 400, {
