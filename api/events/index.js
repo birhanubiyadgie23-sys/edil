@@ -1,26 +1,31 @@
+
 import {
   sql,
   json,
+  method,
   requireAdmin,
   audit
 } from "../_db.js";
 
 export default async function handler(req, res) {
-  try {
-    // ==============================
-    // GET EVENTS
-    // Public: /api/events
-    // Admin:  /api/events?admin=1
-    // ==============================
+  if (!method(req, res, ["GET", "POST", "DELETE"])) {
+    return;
+  }
 
+  try {
+    // GET EVENTS
     if (req.method === "GET") {
       const isAdminRequest = req.query?.admin === "1";
 
       if (isAdminRequest) {
         const admin = await requireAdmin(req, res);
         if (!admin) return;
+      }
 
-        const events = await sql`
+      let events;
+
+      if (isAdminRequest) {
+        events = await sql`
           SELECT
             id,
             title,
@@ -38,28 +43,22 @@ export default async function handler(req, res) {
           FROM events
           ORDER BY event_date ASC NULLS LAST
         `;
-
-        return json(res, 200, {
-          success: true,
-          events
-        });
+      } else {
+        events = await sql`
+          SELECT
+            id,
+            title,
+            description,
+            event_date,
+            location,
+            image_url,
+            active,
+            created_at
+          FROM events
+          WHERE active = TRUE
+          ORDER BY event_date ASC NULLS LAST
+        `;
       }
-
-      // Public visitors see active events only.
-      const events = await sql`
-        SELECT
-          id,
-          title,
-          description,
-          event_date,
-          location,
-          image_url,
-          active,
-          created_at
-        FROM events
-        WHERE active = TRUE
-        ORDER BY event_date ASC NULLS LAST
-      `;
 
       return json(res, 200, {
         success: true,
@@ -67,30 +66,21 @@ export default async function handler(req, res) {
       });
     }
 
-    // ==============================
-    // ALLOW ADMIN OPERATIONS ONLY
-    // ==============================
-
-    if (!["POST", "DELETE"].includes(req.method)) {
-      res.setHeader("Allow", "GET, POST, DELETE");
-
-      return json(res, 405, {
-        success: false,
-        message: "Method not allowed."
-      });
-    }
-
+    // ADMIN AUTHENTICATION
     const admin = await requireAdmin(req, res);
     if (!admin) return;
 
-    // ==============================
+    const b = req.body || {};
+
     // CREATE EVENT
-    // ==============================
-
     if (req.method === "POST") {
-      const b = req.body || {};
-
       const title = String(b.title || "").trim();
+      const description = String(b.description || "");
+      const location = String(b.location || "").trim();
+
+      const imageUrl = b.image_url
+        ? String(b.image_url).trim()
+        : null;
 
       if (!title) {
         return json(res, 400, {
@@ -98,13 +88,6 @@ export default async function handler(req, res) {
           message: "Event title is required."
         });
       }
-
-      const description = String(b.description || "");
-      const location = String(b.location || "").trim();
-
-      const imageUrl = b.image_url
-        ? String(b.image_url).trim()
-        : null;
 
       let eventDate = null;
 
@@ -121,17 +104,16 @@ export default async function handler(req, res) {
         eventDate = parsedDate;
       }
 
-      if (
-        b.status !== undefined &&
-        !["draft", "published"].includes(b.status)
-      ) {
+      const status = b.status || "published";
+
+      if (!["draft", "published"].includes(status)) {
         return json(res, 400, {
           success: false,
           message: "Invalid event status."
         });
       }
 
-      const active = b.status !== "draft";
+      const active = status === "published";
 
       const rows = await sql`
         INSERT INTO events (
@@ -164,17 +146,15 @@ export default async function handler(req, res) {
         success: true,
         event: {
           ...rows[0],
-          status: rows[0].active ? "published" : "draft"
-        }
+          status: active ? "published" : "draft"
+        },
+        message: "Event created successfully."
       });
     }
 
-    // ==============================
     // ARCHIVE EVENT
-    // ==============================
-
     if (req.method === "DELETE") {
-      const id = Number(req.body?.id);
+      const id = Number(b.id);
 
       if (!Number.isSafeInteger(id) || id < 1) {
         return json(res, 400, {
