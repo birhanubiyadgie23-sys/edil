@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>DevStackReads — Admin Control Center</title>
+<script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link rel="stylesheet" href="./css/style.css">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Inter:wght@400;500;600;700&display=swap');
+body{font-family:Inter,sans-serif}.font-serif-custom{font-family:'Playfair Display',serif}
+.navbtn{display:flex;gap:.7rem;align-items:center;width:100%;padding:.7rem .85rem;border-radius:.7rem;text-align:left;font-size:.82rem;font-weight:700;color:#4b5563}
+.navbtn.active,.navbtn:hover{background:#fff1ed;color:#d9381e}
+.field{width:100%;border:1px solid #e5e7eb;border-radius:.65rem;padding:.65rem .75rem;font-size:.85rem;background:white}
+.panel{background:white;border:1px solid #e5e7eb;border-radius:1rem;padding:1.2rem}
+</style></head>
+<body class="bg-gray-50 min-h-screen">
+<section id="login-section" class="min-h-screen flex items-center justify-center p-4">
+<div class="bg-white p-8 rounded-2xl border max-w-md w-full shadow-sm">
+<div class="text-center mb-6"><span class="bg-[#d9381e] text-white text-xs font-black px-3 py-2 rounded-lg">RESTRICTED</span>
+<h1 class="font-serif-custom text-2xl font-bold mt-4">Admin Authentication</h1><p class="text-xs text-gray-500 mt-2">Sign in to manage DevStackReads.</p></div>
+<form id="login-form" class="space-y-3"><input id="email" type="email" required class="field" placeholder="Admin email">
+<input id="password" type="password" required class="field" placeholder="Password">
+<button class="w-full bg-[#d9381e] text-white rounded-xl py-3 text-sm font-bold">Login to Dashboard</button></form>
+<p id="login-error" class="text-red-600 text-xs mt-3"></p><a href="index.html" class="block text-center mt-5 text-xs text-gray-500">← Back to Storefront</a>
+</div></section>
+<div id="app" class="hidden min-h-screen">
+<header class="bg-white border-b px-4 lg:px-8 py-3 flex justify-between items-center sticky top-0 z-30">
+<div class="flex items-center gap-3"><button id="mobile-menu" class="lg:hidden"><i class="fa fa-bars"></i></button><span class="bg-[#d9381e] text-white font-black px-2 py-1 rounded">DS</span><b class="font-serif-custom text-lg">DevStackReads Control Center</b></div>
+<div class="flex items-center gap-3 text-xs"><span id="admin-name" class="font-bold"></span><button id="logout" class="text-red-600 font-bold">Logout</button></div></header>
+<div class="max-w-[1500px] mx-auto flex">
+<aside id="sidebar" class="hidden lg:block w-60 shrink-0 p-4 min-h-[calc(100vh-60px)] bg-white border-r">
+<p class="text-[10px] uppercase tracking-widest text-gray-400 font-black px-3 mb-2">Management</p>
+<nav id="nav" class="space-y-1">
+<button class="navbtn active" data-page="overview"><i class="fa fa-chart-pie"></i> Overview</button>
+<button class="navbtn" data-page="articles"><i class="fa fa-newspaper"></i> Articles</button>
+<button class="navbtn" data-page="books"><i class="fa fa-book"></i> Books & Products</button>
+<button class="navbtn" data-page="orders"><i class="fa fa-cart-shopping"></i> Orders</button>
+<button class="navbtn" data-page="users"><i class="fa fa-users"></i> Users</button>
+<button class="navbtn" data-page="events"><i class="fa fa-calendar"></i> Events</button>
+<button class="navbtn" data-page="newsletter"><i class="fa fa-envelope"></i> Newsletter</button>
+<button class="navbtn" data-page="settings"><i class="fa fa-sliders"></i> Website Settings</button>
+<button class="navbtn" data-page="logs"><i class="fa fa-shield-halved"></i> Audit Logs</button>
+</nav><a href="index.html" class="block text-xs text-gray-500 mt-8 px-3">↗ View website</a></aside>
+<main class="flex-1 min-w-0 p-4 lg:p-8"><div class="flex items-center justify-between mb-6"><div><p class="text-xs text-gray-400">DEVSTACKREADS / ADMIN</p><h1 id="page-title" class="text-2xl font-black font-serif-custom">Overview</h1></div><button id="refresh" class="text-xs bg-white border rounded-lg px-3 py-2"><i class="fa fa-rotate"></i> Refresh</button></div>
+<div id="content" class="space-y-5"></div></main></div></div>
+<script>
+const $=s=>document.querySelector(s), api=async(url,opts={})=>{const r=await fetch(url,{...opts,headers:{'Content-Type':'application/json',...(opts.headers||{})}});const d=await r.json();if(!r.ok||d.success===false)throw Error(d.message||'Request failed');return d};
+let activePage='overview', cache={};
+function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function setContent(html){$('#content').innerHTML=html;}
+function formField(label,id,type='text',value=''){return <label class="block text-xs font-bold text-gray-600">${label}<input id="${id}" type="${type}" class="field mt-1" value="${esc(value)}"></label>;}
+function btn(text,id){return <button id="${id}" class="bg-[#d9381e] text-white rounded-lg px-4 py-2 text-xs font-bold">${text}</button>;}
+async function boot(){try{const d=await api('/api/auth/me');if(!d.user||!['admin','editor'].includes(d.user.role))throw Error('Admin access required.');$('#login-section').classList.add('hidden');$('#app').classList.remove('hidden');$('#admin-name').textContent=d.user.email;loadPage('overview');}catch(e){$('#login-error').textContent=e.message;}}
+$('#login-form').addEventListener('submit',async e=>{e.preventDefault();try{const d=await api('/api/auth/login',{method:'POST',body:JSON.stringify({email:$('#email').value,password:$('#password').value})});if(!['admin','editor'].includes(d.user.role))throw Error('This account does not have admin access.');$('#login-error').textContent='';boot();}catch(x){$('#login-error').textContent=x.message;}});
+$('#logout').onclick=async()=>{await api('/api/auth/logout',{method:'POST'});location.reload();};
+$('#nav').addEventListener('click',e=>{const b=e.target.closest('[data-page]');if(b)loadPage(b.dataset.page);});
+$('#mobile-menu').onclick=()=>$('#sidebar').classList.toggle('hidden');$('#refresh').onclick=()=>loadPage(activePage);
+async function loadPage(page){activePage=page;document.querySelectorAll('.navbtn').forEach(b=>b.classList.toggle('active',b.dataset.page===page));$('#page-title').textContent=page[0].toUpperCase()+page.slice(1);
+try{
+ if(page==='overview'){const d=await api('/api/admin/overview'),s=d.stats;setContent(<div class="grid sm:grid-cols-2 xl:grid-cols-3 gap-4">${[['Users',s.users,'fa-users'],['Books',s.books,'fa-book'],['Articles',s.articles,'fa-newspaper'],['Orders',s.orders,'fa-cart-shopping'],['Revenue',Number(s.revenue).toFixed(2)+' ETB','fa-coins'],['Subscribers',s.subscribers,'fa-envelope']].map(x=><div class="panel"><i class="fa ${x[2]} text-[#d9381e]"></i><p class="text-xs text-gray-500 mt-3">${x[0]}</p><b class="text-2xl">${x[1]}</b></div>).join('')}</div><div class="panel"><b>Administration status</b><p class="text-xs text-gray-500 mt-2">Your website content and business records are stored in Neon. Use the navigation to manage each area.</p></div>);}
+ if(page==='articles'){const d=await api('/api/articles?admin=1');cache.articles=d.articles||[];setContent(<div class="panel space-y-3"><h2 class="font-bold">Write / Edit Article</h2><input id="a-id" type="hidden"><input id="a-title" class="field" placeholder="Article title"><div class="grid md:grid-cols-2 gap-3"><input id="a-author" class="field" placeholder="Author"><input id="a-category" class="field" placeholder="Category (CSS, UX, JavaScript...)"></div><input id="a-image" class="field" placeholder="Featured image URL"><textarea id="a-excerpt" class="field" rows="2" placeholder="Short excerpt"></textarea><textarea id="a-content" class="field" rows="10" placeholder="Write the full article here..."></textarea><div class="flex gap-2">${btn('Save Draft','a-draft')}${btn('Publish Article','a-publish')}<button id="a-clear" class="border rounded-lg px-4 text-xs">Clear</button></div></div><div class="panel"><h2 class="font-bold mb-3">Articles</h2><div class="overflow-x-auto"><table class="w-full text-xs"><tbody>${cache.articles.map(a=><tr class="border-t"><td class="py-3">${esc(a.title)}</td><td>${esc(a.status)}</td><td class="text-right"><button class="text-blue-600 mr-3" data-edit="${a.id}">Edit</button><button class="text-red-600" data-delete="${a.id}">Delete</button></td></tr>).join('')}</tbody></table></div></div>);
+ const save=async status=>{const body={id:$('#a-id').value||undefined,title:$('#a-title').value,author:$('#a-author').value,category:$('#a-category').value,image_url:$('#a-image').value,excerpt:$('#a-excerpt').value,content:$('#a-content').value,status};await api('/api/articles',{method:body.id?'PUT':'POST',body:JSON.stringify(body)});alert('Article saved.');loadPage('articles');};
+ $('#a-draft').onclick=()=>save('draft');$('#a-publish').onclick=()=>save('published');$('#a-clear').onclick=()=>loadPage('articles');
+ $('#content').addEventListener('click',async function handler(e){const id=e.target.dataset.edit||e.target.dataset.delete;if(!id)return;this.removeEventListener('click',handler);if(e.target.dataset.edit){const a=cache.articles.find(x=>String(x.id)===id);$('#a-id').value=a.id;$('#a-title').value=a.title;$('#a-author').value=a.author;$('#a-category').value=a.category;$('#a-image').value=a.image_url||'';$('#a-excerpt').value=a.excerpt||'';$('#a-content').value=a.content;}else if(confirm('Delete this article?')){await api('/api/articles',{method:'DELETE',body:JSON.stringify({id})});loadPage('articles');}});
+ }
+ if(page==='books'){const d=await api('/api/books');cache.books=d.books;setContent(<div class="panel space-y-3"><h2 class="font-bold">Add a book</h2><div class="grid md:grid-cols-2 gap-3">${formField('Title','b-title')}${formField('Author','b-author')}${formField('Price ETB','b-price','number')}${formField('Stock','b-stock','number')}${formField('Image URL','b-image','url')}</div><textarea id="b-description" class="field" placeholder="Description"></textarea>${btn('Save Book','b-save')}</div><div class="panel"><h2 class="font-bold mb-3">Catalog</h2>${cache.books.map(b=><div class="border-t py-3 flex justify-between gap-3 text-xs"><div><b>${esc(b.title)}</b><p class="text-gray-500">${esc(b.author)} · ${b.price} ETB · stock ${b.stock}</p></div><button class="text-red-600" data-book-delete="${b.id}">Archive</button></div>).join('')}</div>);
+ $('#b-save').onclick=async()=>{await api('/api/books',{method:'POST',body:JSON.stringify({title:$('#b-title').value,author:$('#b-author').value,price:$('#b-price').value,stock:$('#b-stock').value,image_url:$('#b-image').value,description:$('#b-description').value})});loadPage('books');};
+ $('#content').onclick=async e=>{const id=e.target.dataset.bookDelete;if(id&&confirm('Archive this book?')){await api('/api/books',{method:'DELETE',body:JSON.stringify({id})});loadPage('books');}};}
+ if(page==='orders'||page==='users'||page==='logs'){const d=await api('/api/admin/manage');cache.manage=d;const rows=page==='orders'?d.orders:page==='users'?d.users:d.logs;setContent(<div class="panel overflow-x-auto"><table class="w-full text-xs"><tbody>${rows.map(x=><tr class="border-t"><td class="py-3 pr-3">${esc(x.id)}</td><td class="pr-3">${esc(x.customer_name||x.name||x.action||'')}</td><td class="pr-3">${esc(x.customer_email||x.email||x.target_type||'')}</td><td class="pr-3">${esc(x.status||x.role||x.created_at||'')}</td><td>${page==='orders'?<select data-order="${x.id}" class="border rounded p-1">${['pending','paid','processing','completed','cancelled'].map(s=><option ${x.status===s?'selected':''}>${s}</option>).join('')}</select>:page==='users'?<select data-user="${x.id}" class="border rounded p-1"><option value="customer" ${x.role==='customer'?'selected':''}>customer</option><option value="editor" ${x.role==='editor'?'selected':''}>editor</option><option value="admin" ${x.role==='admin'?'selected':''}>admin</option></select>:''}</td></tr>).join('')}</tbody></table></div>);
+ $('#content').onchange=async e=>{if(e.target.dataset.order)await api('/api/admin/manage',{method:'PATCH',body:JSON.stringify({order_id:e.target.dataset.order,order_status:e.target.value})});if(e.target.dataset.user)await api('/api/admin/manage',{method:'PATCH',body:JSON.stringify({user_id:e.target.dataset.user,role:e.target.value})});};}
+ if(page==='events'){setContent(<div class="panel space-y-3"><h2 class="font-bold">Create Event</h2><input id="e-title" class="field" placeholder="Event title"><textarea id="e-desc" class="field" placeholder="Description"></textarea><input id="e-date" type="datetime-local" class="field"><input id="e-location" class="field" placeholder="Location">${btn('Publish Event','e-save')}</div>);$('#e-save').onclick=async()=>{await api('/api/events',{method:'POST',body:JSON.stringify({title:$('#e-title').value,description:$('#e-desc').value,event_date:$('#e-date').value,location:$('#e-location').value})});alert('Event saved.');};}
+ if(page==='newsletter'){const d=await api('/api/newsletter');setContent(<div class="panel"><h2 class="font-bold mb-3">Newsletter Subscribers (${d.subscribers.length})</h2>${d.subscribers.map(s=><p class="border-t py-2 text-xs">${esc(s.email)} · ${esc(s.status)}</p>).join('')}</div>);}
+ if(page==='settings'){const d=await api('/api/settings');setContent(<div class="panel space-y-3"><h2 class="font-bold">Website Settings</h2><p class="text-xs text-gray-500">Manage basic public website identity and hero text. Additional settings can be added as the site grows.</p><input id="s-title" class="field" placeholder="Site title" value="${esc(d.settings.site_title||'DevStackReads')}"><input id="s-hero" class="field" placeholder="Hero headline" value="${esc(d.settings.hero_title||'')}">${btn('Save Settings','s-save')}</div>);$('#s-save').onclick=async()=>{await api('/api/settings',{method:'PUT',body:JSON.stringify({settings:{site_title:$('#s-title').value,hero_title:$('#s-hero').value}})});alert('Settings saved.');};}
+ }catch(e){setContent(<div class="panel text-red-600 text-sm">${esc(e.message)}</div>);}
+}
+boot();
+</script>
+</body>
+</html>
