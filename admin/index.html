@@ -11,84 +11,264 @@
 
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Inter:wght@400;500;600;700&display=swap');
+
 body { font-family: Inter, sans-serif; }
 .font-serif-custom { font-family: 'Playfair Display', serif; }
+
 .navbtn {
-    display:flex; gap:.7rem; align-items:center; width:100%; padding:.7rem .85rem;
-    border-radius:.7rem; text-align:left; font-size:.82rem; font-weight:700; color:#4b5563;
+    display:flex;
+    gap:.7rem;
+    align-items:center;
+    width:100%;
+    padding:.7rem .85rem;
+    border-radius:.7rem;
+    text-align:left;
+    font-size:.82rem;
+    font-weight:700;
+    color:#4b5563;
 }
-.navbtn.active, .navbtn:hover { background:#fff1ed; color:#d9381e; }
+
+.navbtn.active,
+.navbtn:hover {
+    background:#fff1ed;
+    color:#d9381e;
+}
+
 .field {
-    width:100%; border:1px solid #e5e7eb; border-radius:.65rem; padding:.65rem .75rem;
-    font-size:.85rem; background:white;
+    width:100%;
+    border:1px solid #e5e7eb;
+    border-radius:.65rem;
+    padding:.65rem .75rem;
+    font-size:.85rem;
+    background:white;
 }
-.panel { background:white; border:1px solid #e5e7eb; border-radius:1rem; padding:1.2rem; }
-button:disabled { opacity:.6; cursor:not-allowed; }
-.table-cell { padding:.75rem .6rem; border-top:1px solid #e5e7eb; vertical-align:top; }
-.small-select { border:1px solid #e5e7eb; border-radius:.45rem; padding:.35rem; font-size:.75rem; background:white; }
+
+.panel {
+    background:white;
+    border:1px solid #e5e7eb;
+    border-radius:1rem;
+    padding:1.2rem;
+}
+
+button:disabled {
+    opacity:.6;
+    cursor:not-allowed;
+}
+
+.table-cell {
+    padding:.75rem .6rem;
+    border-top:1px solid #e5e7eb;
+    vertical-align:top;
+}
+
+.small-select {
+    border:1px solid #e5e7eb;
+    border-radius:.45rem;
+    padding:.35rem;
+    font-size:.75rem;
+    background:white;
+}
 </style>
 </head>
+
 <body class="bg-gray-50 min-h-screen">
 
 <!-- ADMIN LOGIN -->
 <section id="login-section" class="min-h-screen flex items-center justify-center p-4">
     <div class="bg-white p-8 rounded-2xl border max-w-md w-full shadow-sm">
+
         <div class="text-center mb-6">
-            <span class="bg-[#d9381e] text-white text-xs font-black px-3 py-2 rounded-lg">RESTRICTED</span>
-            <h1 class="font-serif-custom text-2xl font-bold mt-4">Admin Authentication</h1>
-            <p class="text-xs text-gray-500 mt-2">Sign in to manage DevStackReads.</p>
+            <span class="bg-[#d9381e] text-white text-xs font-black px-3 py-2 rounded-lg">
+                RESTRICTED
+            </span>
+
+            <h1 class="font-serif-custom text-2xl font-bold mt-4">
+                Admin Authentication
+            </h1>
+
+            <p class="text-xs text-gray-500 mt-2">
+                Sign in to manage DevStackReads.
+            </p>
         </div>
+
         <form id="login-form" class="space-y-3">
-            <input id="email" type="email" required autocomplete="username" class="field" placeholder="Admin email">
-            <input id="password" type="password" required autocomplete="current-password" class="field" placeholder="Password">
-            <button id="login-button" type="submit" class="w-full bg-[#d9381e] text-white rounded-xl py-3 text-sm font-bold">Login to Dashboard</button>
+            <input
+                id="email"
+                type="email"
+                required
+                autocomplete="username"
+                class="field"
+                placeholder="Admin email"
+            >
+
+            <input
+                id="password"
+                type="password"
+                required
+                autocomplete="current-password"
+                class="field"
+                placeholder="Password"
+            >
+
+            <button
+                id="login-button"
+                type="submit"
+                class="w-full bg-[#d9381e] text-white rounded-xl py-3 text-sm font-bold"
+            >
+                Login to Dashboard
+            </button>
         </form>
-        <p id="login-error" class="text-red-600 text-xs mt-3" role="alert" aria-live="polite"></p>
-        <a href="../" class="block text-center mt-5 text-xs text-gray-500">← Back to Storefront</a>
+
+        <p
+            id="login-error"
+            class="text-red-600 text-xs mt-3"
+            role="alert"
+            aria-live="polite"
+        ></p>
+
+        <a href="../" class="block text-center mt-5 text-xs text-gray-500">
+            ← Back to Storefront
+        </a>
     </div>
 </section>
 
 <!-- ADMIN APPLICATION -->
 <div id="app" class="hidden min-h-screen">
+
     <header class="bg-white border-b px-4 lg:px-8 py-3 flex justify-between items-center sticky top-0 z-30">
+
         <div class="flex items-center gap-3">
-            <button id="mobile-menu" class="lg:hidden" type="button" aria-label="Toggle menu"><i class="fa fa-bars"></i></button>
-            <span class="bg-[#d9381e] text-white font-black px-2 py-1 rounded">DS</span>
-            <b class="font-serif-custom text-lg">DevStackReads Control Center</b>
+            <button
+                id="mobile-menu"
+                class="lg:hidden"
+                type="button"
+                aria-label="Toggle menu"
+            >
+                <i class="fa fa-bars"></i>
+            </button>
+
+            <span class="bg-[#d9381e] text-white font-black px-2 py-1 rounded">
+                DS
+            </span>
+
+            <b class="font-serif-custom text-lg">
+                DevStackReads Control Center
+            </b>
         </div>
+
         <div class="flex items-center gap-3 text-xs">
             <span id="admin-name" class="font-bold"></span>
-            <button id="logout" class="text-red-600 font-bold" type="button">Logout</button>
+
+            <button
+                id="logout"
+                class="text-red-600 font-bold"
+                type="button"
+            >
+                Logout
+            </button>
         </div>
     </header>
 
     <div class="max-w-[1500px] mx-auto flex">
-        <aside id="sidebar" class="hidden lg:block w-60 shrink-0 p-4 min-h-[calc(100vh-60px)] bg-white border-r">
-            <p class="text-[10px] uppercase tracking-widest text-gray-400 font-black px-3 mb-2">Management</p>
+
+        <!-- SIDEBAR -->
+        <aside
+            id="sidebar"
+            class="hidden lg:block w-60 shrink-0 p-4 min-h-[calc(100vh-60px)] bg-white border-r"
+        >
+
+            <p class="text-[10px] uppercase tracking-widest text-gray-400 font-black px-3 mb-2">
+                Management
+            </p>
+
             <nav id="nav" class="space-y-1">
-                <button class="navbtn active" data-page="overview"><i class="fa fa-chart-pie"></i> Overview</button>
-                <button class="navbtn" data-page="articles"><i class="fa fa-newspaper"></i> Articles</button>
-                <button class="navbtn" data-page="books"><i class="fa fa-book"></i> Books &amp; Products</button>
-                <button class="navbtn" data-page="orders"><i class="fa fa-cart-shopping"></i> Orders</button>
-                <button class="navbtn" data-page="users"><i class="fa fa-users"></i> Users</button>
-                <button class="navbtn" data-page="events"><i class="fa fa-calendar"></i> Events</button>
-                <button class="navbtn" data-page="memberships"><i class="fa fa-id-card"></i> Membership Plans</button>
-                <button class="navbtn" data-page="newsletter"><i class="fa fa-envelope"></i> Newsletter</button>
-                <button class="navbtn" data-page="settings"><i class="fa fa-sliders"></i> Website Settings</button>
-                <button class="navbtn" data-page="logs"><i class="fa fa-shield-halved"></i> Audit Logs</button>
+
+                <button class="navbtn active" data-page="overview">
+                    <i class="fa fa-chart-pie"></i>
+                    Overview
+                </button>
+
+                <button class="navbtn" data-page="articles">
+                    <i class="fa fa-newspaper"></i>
+                    Articles
+                </button>
+
+                <button class="navbtn" data-page="books">
+                    <i class="fa fa-book"></i>
+                    Books &amp; Products
+                </button>
+
+                <button class="navbtn" data-page="orders">
+                    <i class="fa fa-cart-shopping"></i>
+                    Orders
+                </button>
+
+                <button class="navbtn" data-page="users">
+                    <i class="fa fa-users"></i>
+                    Users
+                </button>
+
+                <button class="navbtn" data-page="events">
+                    <i class="fa fa-calendar"></i>
+                    Events
+                </button>
+
+                <button class="navbtn" data-page="memberships">
+                    <i class="fa fa-id-card"></i>
+                    Membership Plans
+                </button>
+
+                <button class="navbtn" data-page="newsletter">
+                    <i class="fa fa-envelope"></i>
+                    Newsletter
+                </button>
+
+                <button class="navbtn" data-page="settings">
+                    <i class="fa fa-sliders"></i>
+                    Website Settings
+                </button>
+
+                <button class="navbtn" data-page="logs">
+                    <i class="fa fa-shield-halved"></i>
+                    Audit Logs
+                </button>
+
             </nav>
-            <a href="../" class="block text-xs text-gray-500 mt-8 px-3">↗ View website</a>
+
+            <a href="../" class="block text-xs text-gray-500 mt-8 px-3">
+                ↗ View website
+            </a>
         </aside>
 
+        <!-- MAIN CONTENT -->
         <main class="flex-1 min-w-0 p-4 lg:p-8">
+
             <div class="flex items-center justify-between mb-6">
                 <div>
-                    <p class="text-xs text-gray-400">DEVSTACKREADS / ADMIN</p>
-                    <h1 id="page-title" class="text-2xl font-black font-serif-custom">Overview</h1>
+                    <p class="text-xs text-gray-400">
+                        DEVSTACKREADS / ADMIN
+                    </p>
+
+                    <h1
+                        id="page-title"
+                        class="text-2xl font-black font-serif-custom"
+                    >
+                        Overview
+                    </h1>
                 </div>
-                <button id="refresh" type="button" class="text-xs bg-white border rounded-lg px-3 py-2"><i class="fa fa-rotate"></i> Refresh</button>
+
+                <button
+                    id="refresh"
+                    type="button"
+                    class="text-xs bg-white border rounded-lg px-3 py-2"
+                >
+                    <i class="fa fa-rotate"></i>
+                    Refresh
+                </button>
             </div>
+
             <div id="content" class="space-y-5"></div>
+
         </main>
     </div>
 </div>
@@ -97,6 +277,7 @@ button:disabled { opacity:.6; cursor:not-allowed; }
 "use strict";
 
 const $ = selector => document.querySelector(selector);
+
 let activePage = "overview";
 let cache = {};
 let currentAdminId = null;
@@ -104,9 +285,11 @@ let currentAdminId = null;
 const API = {
     adminOverview: "/api/admin?view=overview",
     adminManage: "/api/admin?view=manage",
+
     authLogin: "/api/auth?action=login",
     authMe: "/api/auth?action=me",
     authLogout: "/api/auth?action=logout",
+
     articles: "/api/articles",
     books: "/api/books",
     events: "/api/events",
@@ -115,66 +298,123 @@ const API = {
     settings: "/api/settings"
 };
 
+/* API HELPER */
 async function api(url, options = {}) {
+
     const response = await fetch(url, {
         credentials: "same-origin",
         cache: "no-store",
         ...options,
+
         headers: {
             ...(options.headers || {}),
-            ...(options.body ? { "Content-Type": "application/json" } : {})
+
+            ...(options.body
+                ? { "Content-Type": "application/json" }
+                : {})
         }
     });
 
     let data;
+
     try {
         data = await response.json();
     } catch {
-        throw new Error("The server returned an invalid response. Check the API route and Vercel Function Logs.");
+        throw new Error(
+            "The server returned an invalid response. Check the API route and Vercel Function Logs."
+        );
     }
 
     if (!response.ok || data.success === false) {
-        throw new Error(data.message || `Request failed (${response.status}).`);
+        throw new Error(
+            data.message || `Request failed (${response.status}).`
+        );
     }
+
     return data;
 }
 
+/* HELPERS */
 function esc(value) {
     return String(value ?? "").replace(/[&<>"']/g, char => ({
-        "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#39;"
     })[char]);
 }
 
-function setContent(html) { $("#content").innerHTML = html; }
+function setContent(html) {
+    $("#content").innerHTML = html;
+}
+
 function showError(error) {
-    setContent(`<div class="panel text-red-600 text-sm"><i class="fa fa-circle-exclamation mr-2"></i>${esc(error.message || "An unexpected error occurred.")}</div>`);
+    setContent(`
+        <div class="panel text-red-600 text-sm">
+            <i class="fa fa-circle-exclamation mr-2"></i>
+            ${esc(error.message || "An unexpected error occurred.")}
+        </div>
+    `);
 }
+
 function formField(label, id, type = "text", value = "") {
-    return `<label class="block text-xs font-bold text-gray-600">${esc(label)}<input id="${esc(id)}" type="${esc(type)}" class="field mt-1" value="${esc(value)}"></label>`;
+    return `
+        <label class="block text-xs font-bold text-gray-600">
+            ${esc(label)}
+            <input
+                id="${esc(id)}"
+                type="${esc(type)}"
+                class="field mt-1"
+                value="${esc(value)}"
+            >
+        </label>
+    `;
 }
+
 function btn(text, id, extraClass = "") {
-    return `<button type="button" id="${esc(id)}" class="bg-[#d9381e] text-white rounded-lg px-4 py-2 text-xs font-bold ${extraClass}">${esc(text)}</button>`;
+    return `
+        <button
+            type="button"
+            id="${esc(id)}"
+            class="bg-[#d9381e] text-white rounded-lg px-4 py-2 text-xs font-bold ${extraClass}"
+        >
+            ${esc(text)}
+        </button>
+    `;
 }
+
 function formatDate(value) {
     if (!value) return "—";
+
     const date = new Date(value);
-    return Number.isNaN(date.getTime()) ? String(value) : date.toLocaleString();
+
+    return Number.isNaN(date.getTime())
+        ? String(value)
+        : date.toLocaleString();
 }
+
 function showLogin(message = "") {
     $("#login-section").classList.remove("hidden");
     $("#app").classList.add("hidden");
     $("#login-error").textContent = message;
 }
+
 function showApp(user) {
     currentAdminId = user.id;
+
     $("#login-section").classList.add("hidden");
     $("#app").classList.remove("hidden");
-    $("#admin-name").textContent = user.email || user.name || "Administrator";
+
+    $("#admin-name").textContent =
+        user.email || user.name || "Administrator";
 }
 
 /* AUTHENTICATION */
 async function boot() {
+
     let data;
+
     try {
         data = await api(API.authMe);
     } catch {
@@ -183,126 +423,323 @@ async function boot() {
     }
 
     if (!data.user || data.user.role !== "admin") {
-        showLogin("Administrator access is required. Please sign in with an admin account.");
+        showLogin(
+            "Administrator access is required. Please sign in with an admin account."
+        );
+
         return false;
     }
 
     showApp(data.user);
+
     await loadPage("overview");
+
     return true;
 }
 
+/* ADMIN LOGIN */
 $("#login-form").addEventListener("submit", async event => {
+
     event.preventDefault();
+
     const button = $("#login-button");
+
     button.disabled = true;
     button.textContent = "Signing in...";
+
     $("#login-error").textContent = "";
 
     try {
+
         const data = await api(API.authLogin, {
             method: "POST",
-            body: JSON.stringify({ email: $("#email").value.trim(), password: $("#password").value })
+
+            body: JSON.stringify({
+                email: $("#email").value.trim(),
+                password: $("#password").value
+            })
         });
 
         if (!data.user || data.user.role !== "admin") {
-            try { await api(API.authLogout, { method: "POST" }); } catch {}
-            throw new Error("This account does not have administrator access.");
+
+            try {
+                await api(API.authLogout, {
+                    method: "POST"
+                });
+            } catch {}
+
+            throw new Error(
+                "This account does not have administrator access."
+            );
         }
 
         const opened = await boot();
-        if (!opened) throw new Error("Login succeeded, but the admin session could not be verified.");
+
+        if (!opened) {
+            throw new Error(
+                "Login succeeded, but the admin session could not be verified."
+            );
+        }
+
         $("#password").value = "";
+
     } catch (error) {
-        $("#login-error").textContent = error.message || "Login failed.";
+
+        $("#login-error").textContent =
+            error.message || "Login failed.";
+
     } finally {
+
         button.disabled = false;
         button.textContent = "Login to Dashboard";
     }
 });
 
+/* LOGOUT */
 $("#logout").addEventListener("click", async () => {
+
     try {
-        await api(API.authLogout, { method: "POST" });
+
+        await api(API.authLogout, {
+            method: "POST"
+        });
+
         location.reload();
+
     } catch (error) {
+
         alert(error.message);
     }
 });
 
 /* NAVIGATION */
 $("#nav").addEventListener("click", event => {
+
     const button = event.target.closest("[data-page]");
+
     if (!button) return;
+
     loadPage(button.dataset.page);
-    if (window.innerWidth < 1024) $("#sidebar").classList.add("hidden");
+
+    if (window.innerWidth < 1024) {
+        $("#sidebar").classList.add("hidden");
+    }
 });
-$("#mobile-menu").addEventListener("click", () => $("#sidebar").classList.toggle("hidden"));
-$("#refresh").addEventListener("click", () => loadPage(activePage));
+
+$("#mobile-menu").addEventListener("click", () => {
+    $("#sidebar").classList.toggle("hidden");
+});
+
+$("#refresh").addEventListener("click", () => {
+    loadPage(activePage);
+});
 
 /* OVERVIEW */
 async function loadOverview() {
+
     const data = await api(API.adminOverview);
+
     const stats = data.stats || {};
+
     const cards = [
         ["Users", stats.users, "fa-users"],
         ["Books", stats.books, "fa-book"],
         ["Articles", stats.articles, "fa-newspaper"],
         ["Orders", stats.orders, "fa-cart-shopping"],
-        ["Revenue", Number(stats.revenue || 0).toFixed(2) + " ETB", "fa-coins"],
+        [
+            "Revenue",
+            Number(stats.revenue || 0).toFixed(2) + " ETB",
+            "fa-coins"
+        ],
         ["Subscribers", stats.subscribers, "fa-envelope"]
     ];
+
     setContent(`
         <div class="grid sm:grid-cols-2 xl:grid-cols-3 gap-4">
-            ${cards.map(item => `<div class="panel"><i class="fa ${item[2]} text-[#d9381e]"></i><p class="text-xs text-gray-500 mt-3">${esc(item[0])}</p><b class="text-2xl">${esc(item[1] ?? 0)}</b></div>`).join("")}
+
+            ${cards.map(item => `
+                <div class="panel">
+                    <i class="fa ${item[2]} text-[#d9381e]"></i>
+
+                    <p class="text-xs text-gray-500 mt-3">
+                        ${esc(item[0])}
+                    </p>
+
+                    <b class="text-2xl">
+                        ${esc(item[1] ?? 0)}
+                    </b>
+                </div>
+            `).join("")}
+
         </div>
-        <div class="panel"><b>Administration status</b><p class="text-xs text-gray-500 mt-2">Your website content and business records are stored in Neon. Use the navigation to manage each area.</p></div>
+
+        <div class="panel">
+            <b>Administration status</b>
+
+            <p class="text-xs text-gray-500 mt-2">
+                Your website content and business records are stored in Neon.
+                Use the navigation to manage each area.
+            </p>
+        </div>
     `);
 }
 
 /* ARTICLES */
 async function loadArticles() {
+
     const data = await api(`${API.articles}?admin=1`);
+
     cache.articles = data.articles || [];
+
     setContent(`
         <div class="panel space-y-3">
-            <h2 class="font-bold">Write / Edit Article</h2>
+
+            <h2 class="font-bold">
+                Write / Edit Article
+            </h2>
+
             <input id="a-id" type="hidden">
-            <input id="a-title" class="field" placeholder="Article title">
+
+            <input
+                id="a-title"
+                class="field"
+                placeholder="Article title"
+            >
+
             <div class="grid md:grid-cols-2 gap-3">
-                <input id="a-author" class="field" placeholder="Author">
-                <input id="a-category" class="field" placeholder="Category (CSS, UX, JavaScript...)">
+
+                <input
+                    id="a-author"
+                    class="field"
+                    placeholder="Author"
+                >
+
+                <input
+                    id="a-category"
+                    class="field"
+                    placeholder="Category (CSS, UX, JavaScript...)"
+                >
+
             </div>
-            <input id="a-image" class="field" placeholder="Featured image URL">
-            <textarea id="a-excerpt" class="field" rows="2" placeholder="Short excerpt"></textarea>
-            <textarea id="a-content" class="field" rows="10" placeholder="Write the full article here..."></textarea>
+
+            <input
+                id="a-image"
+                class="field"
+                placeholder="Featured image URL"
+            >
+
+            <textarea
+                id="a-excerpt"
+                class="field"
+                rows="2"
+                placeholder="Short excerpt"
+            ></textarea>
+
+            <textarea
+                id="a-content"
+                class="field"
+                rows="10"
+                placeholder="Write the full article here..."
+            ></textarea>
+
             <div class="flex flex-wrap gap-2">
                 ${btn("Save Draft", "a-draft")}
                 ${btn("Publish Article", "a-publish")}
-                <button id="a-clear" type="button" class="border rounded-lg px-4 text-xs">Clear</button>
+
+                <button
+                    id="a-clear"
+                    type="button"
+                    class="border rounded-lg px-4 text-xs"
+                >
+                    Clear
+                </button>
             </div>
+
         </div>
+
         <div class="panel">
-            <h2 class="font-bold mb-3">Articles (${cache.articles.length})</h2>
-            <div class="overflow-x-auto"><table class="w-full text-xs"><thead><tr class="text-left text-gray-500"><th class="pb-2">Title</th><th class="pb-2">Status</th><th class="pb-2 text-right">Actions</th></tr></thead><tbody>
-                ${cache.articles.map(article => `
-                    <tr class="border-t">
-                        <td class="py-3 pr-3">${esc(article.title)}</td>
-                        <td class="pr-3">${esc(article.status || (article.active ? "published" : "draft"))}</td>
-                        <td class="text-right whitespace-nowrap py-3">
-                            <button type="button" class="text-blue-600 mr-3" data-article-edit="${esc(article.id)}">Edit</button>
-                            ${article.active
-                                ? `<button type="button" class="text-amber-700" data-article-draft="${esc(article.id)}">Move to Draft</button>`
-                                : `<button type="button" class="text-green-700" data-article-publish="${esc(article.id)}">Publish</button>`}
-                        </td>
-                    </tr>`).join("")}
-            </tbody></table></div>
-            <p class="text-[11px] text-gray-500 mt-3">Articles are moved between Published and Draft. This dashboard does not permanently delete article records.</p>
+
+            <h2 class="font-bold mb-3">
+                Articles (${cache.articles.length})
+            </h2>
+
+            <div class="overflow-x-auto">
+
+                <table class="w-full text-xs">
+
+                    <thead>
+                        <tr class="text-left text-gray-500">
+                            <th class="pb-2">Title</th>
+                            <th class="pb-2">Status</th>
+                            <th class="pb-2 text-right">Actions</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+
+                        ${cache.articles.map(article => `
+                            <tr class="border-t">
+
+                                <td class="py-3 pr-3">
+                                    ${esc(article.title)}
+                                </td>
+
+                                <td class="pr-3">
+                                    ${esc(article.status || (article.active ? "published" : "draft"))}
+                                </td>
+
+                                <td class="text-right whitespace-nowrap py-3">
+
+                                    <button
+                                        type="button"
+                                        class="text-blue-600 mr-3"
+                                        data-article-edit="${esc(article.id)}"
+                                    >
+                                        Edit
+                                    </button>
+
+                                    ${article.active
+                                        ? `
+                                            <button
+                                                type="button"
+                                                class="text-amber-700"
+                                                data-article-draft="${esc(article.id)}"
+                                            >
+                                                Move to Draft
+                                            </button>
+                                        `
+                                        : `
+                                            <button
+                                                type="button"
+                                                class="text-green-700"
+                                                data-article-publish="${esc(article.id)}"
+                                            >
+                                                Publish
+                                            </button>
+                                        `
+                                    }
+
+                                </td>
+                            </tr>
+                        `).join("")}
+
+                    </tbody>
+
+                </table>
+            </div>
+
+            <p class="text-[11px] text-gray-500 mt-3">
+                Articles are moved between Published and Draft.
+                This dashboard does not permanently delete article records.
+            </p>
+
         </div>
     `);
 
     const saveArticle = async status => {
+
         const id = $("#a-id").value;
+
         const body = {
             title: $("#a-title").value.trim(),
             author: $("#a-author").value.trim(),
@@ -312,52 +749,151 @@ async function loadArticles() {
             content: $("#a-content").value,
             status
         };
+
         if (id) body.id = id;
+
         if (!body.title || !body.content.trim()) {
             alert("Article title and content are required.");
             return;
         }
+
         try {
-            await api(API.articles, { method: id ? "PUT" : "POST", body: JSON.stringify(body) });
+
+            await api(API.articles, {
+                method: id ? "PUT" : "POST",
+                body: JSON.stringify(body)
+            });
+
             alert("Article saved successfully.");
+
             await loadArticles();
-        } catch (error) { alert(error.message); }
+
+        } catch (error) {
+            alert(error.message);
+        }
     };
+
     $("#a-draft").onclick = () => saveArticle("draft");
+
     $("#a-publish").onclick = () => saveArticle("published");
+
     $("#a-clear").onclick = () => loadArticles();
 }
 
 /* BOOKS */
 async function loadBooks() {
+
     const data = await api(API.books);
+
     cache.books = data.books || [];
+
     setContent(`
         <div class="panel space-y-3">
-            <h2 id="b-form-title" class="font-bold">Add a book</h2>
+
+            <h2 id="b-form-title" class="font-bold">
+                Add a book
+            </h2>
+
             <input id="b-id" type="hidden">
+
             <div class="grid md:grid-cols-2 gap-3">
+
                 ${formField("Title", "b-title")}
+
                 ${formField("Author", "b-author")}
+
                 ${formField("Price ETB", "b-price", "number")}
+
                 ${formField("Stock", "b-stock", "number", "0")}
+
                 ${formField("Image URL", "b-image", "url")}
+
             </div>
-            <textarea id="b-description" class="field" rows="3" placeholder="Description"></textarea>
-            <div class="flex flex-wrap gap-2">${btn("Save Book", "b-save")}<button id="b-clear" type="button" class="border rounded-lg px-4 text-xs">Clear</button></div>
+
+            <textarea
+                id="b-description"
+                class="field"
+                rows="3"
+                placeholder="Description"
+            ></textarea>
+
+            <div class="flex flex-wrap gap-2">
+
+                ${btn("Save Book", "b-save")}
+
+                <button
+                    id="b-clear"
+                    type="button"
+                    class="border rounded-lg px-4 text-xs"
+                >
+                    Clear
+                </button>
+
+            </div>
         </div>
+
         <div class="panel">
-            <h2 class="font-bold mb-3">Active Catalog (${cache.books.length})</h2>
-            ${cache.books.length ? cache.books.map(book => `
-                <div class="border-t py-3 flex flex-wrap justify-between gap-3 text-xs">
-                    <div class="min-w-0"><b>${esc(book.title)}</b><p class="text-gray-500">${esc(book.author)} · ${esc(book.price)} ETB · stock ${esc(book.stock)}</p><p class="text-gray-500 mt-1">${esc(book.description || "")}</p></div>
-                    <div class="flex items-start gap-3 whitespace-nowrap"><button type="button" class="text-blue-600" data-book-edit="${esc(book.id)}">Edit</button><button type="button" class="text-red-600" data-book-delete="${esc(book.id)}">Archive</button></div>
-                </div>`).join("") : `<p class="text-xs text-gray-500">No active books found.</p>`}
+
+            <h2 class="font-bold mb-3">
+                Active Catalog (${cache.books.length})
+            </h2>
+
+            ${cache.books.length
+                ? cache.books.map(book => `
+                    <div class="border-t py-3 flex flex-wrap justify-between gap-3 text-xs">
+
+                        <div class="min-w-0">
+
+                            <b>${esc(book.title)}</b>
+
+                            <p class="text-gray-500">
+                                ${esc(book.author)} ·
+                                ${esc(book.price)} ETB ·
+                                stock ${esc(book.stock)}
+                            </p>
+
+                            <p class="text-gray-500 mt-1">
+                                ${esc(book.description || "")}
+                            </p>
+
+                        </div>
+
+                        <div class="flex items-start gap-3 whitespace-nowrap">
+
+                            <button
+                                type="button"
+                                class="text-blue-600"
+                                data-book-edit="${esc(book.id)}"
+                            >
+                                Edit
+                            </button>
+
+                            <button
+                                type="button"
+                                class="text-red-600"
+                                data-book-delete="${esc(book.id)}"
+                            >
+                                Archive
+                            </button>
+
+                        </div>
+
+                    </div>
+                `).join("")
+                : `
+                    <p class="text-xs text-gray-500">
+                        No active books found.
+                    </p>
+                `
+            }
+
         </div>
     `);
 
     $("#b-save").onclick = async () => {
+
         const id = $("#b-id").value;
+
         const body = {
             title: $("#b-title").value.trim(),
             author: $("#b-author").value.trim(),
@@ -366,122 +902,581 @@ async function loadBooks() {
             image_url: $("#b-image").value.trim(),
             description: $("#b-description").value
         };
+
         if (id) body.id = id;
+
         if (!body.title || !body.author || body.price === "") {
             alert("Book title, author, and price are required.");
             return;
         }
+
         try {
-            await api(API.books, { method: id ? "PUT" : "POST", body: JSON.stringify(body) });
-            alert(id ? "Book updated successfully." : "Book created successfully.");
+
+            await api(API.books, {
+                method: id ? "PUT" : "POST",
+                body: JSON.stringify(body)
+            });
+
+            alert(
+                id
+                    ? "Book updated successfully."
+                    : "Book created successfully."
+            );
+
             await loadBooks();
-        } catch (error) { alert(error.message); }
+
+        } catch (error) {
+            alert(error.message);
+        }
     };
+
     $("#b-clear").onclick = () => loadBooks();
 }
 
 /* ORDERS / USERS / AUDIT LOGS */
 async function loadManagement(page) {
+
     const data = await api(API.adminManage);
+
     cache.manage = data;
 
     if (page === "orders") {
+
         const orders = data.orders || [];
-        setContent(`<div class="panel overflow-x-auto">
-            <h2 class="font-bold mb-3">Orders (${orders.length})</h2>
-            <table class="w-full text-xs"><thead><tr class="text-left text-gray-500"><th class="pb-2">Order</th><th class="pb-2">Customer</th><th class="pb-2">Items</th><th class="pb-2">Total</th><th class="pb-2">Status</th><th class="pb-2">Date</th></tr></thead><tbody>
-            ${orders.map(item => {
-                const itemText = Array.isArray(item.items) ? item.items.map(x => `${x.title || "Book"} × ${x.quantity || 1}`).join(", ") : "—";
-                return `<tr><td class="table-cell">#${esc(item.id)}</td><td class="table-cell">${esc(item.customer_name)}<br><span class="text-gray-500">${esc(item.customer_email)}</span></td><td class="table-cell">${esc(itemText)}</td><td class="table-cell">${esc(item.total)} ETB</td><td class="table-cell"><select data-order="${esc(item.id)}" class="small-select">${["pending","paid","processing","completed","cancelled"].map(status => `<option value="${status}" ${item.status === status ? "selected" : ""}>${status}</option>`).join("")}</select></td><td class="table-cell">${esc(formatDate(item.created_at))}</td></tr>`;
-            }).join("")}
-            </tbody></table>
-        </div>`);
+
+        setContent(`
+            <div class="panel overflow-x-auto">
+
+                <h2 class="font-bold mb-3">
+                    Orders (${orders.length})
+                </h2>
+
+                <table class="w-full text-xs">
+
+                    <thead>
+                        <tr class="text-left text-gray-500">
+                            <th class="pb-2">Order</th>
+                            <th class="pb-2">Customer</th>
+                            <th class="pb-2">Items</th>
+                            <th class="pb-2">Total</th>
+                            <th class="pb-2">Status</th>
+                            <th class="pb-2">Date</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+
+                        ${orders.map(item => {
+
+                            const itemText = Array.isArray(item.items)
+                                ? item.items.map(x =>
+                                    `${x.title || "Book"} × ${x.quantity || 1}`
+                                ).join(", ")
+                                : "—";
+
+                            return `
+                                <tr>
+
+                                    <td class="table-cell">
+                                        #${esc(item.id)}
+                                    </td>
+
+                                    <td class="table-cell">
+                                        ${esc(item.customer_name)}
+                                        <br>
+                                        <span class="text-gray-500">
+                                            ${esc(item.customer_email)}
+                                        </span>
+                                    </td>
+
+                                    <td class="table-cell">
+                                        ${esc(itemText)}
+                                    </td>
+
+                                    <td class="table-cell">
+                                        ${esc(item.total)} ETB
+                                    </td>
+
+                                    <td class="table-cell">
+
+                                        <select
+                                            data-order="${esc(item.id)}"
+                                            class="small-select"
+                                        >
+                                            ${[
+                                                "pending",
+                                                "paid",
+                                                "processing",
+                                                "completed",
+                                                "cancelled"
+                                            ].map(status => `
+                                                <option
+                                                    value="${status}"
+                                                    ${item.status === status ? "selected" : ""}
+                                                >
+                                                    ${status}
+                                                </option>
+                                            `).join("")}
+                                        </select>
+
+                                    </td>
+
+                                    <td class="table-cell">
+                                        ${esc(formatDate(item.created_at))}
+                                    </td>
+
+                                </tr>
+                            `;
+
+                        }).join("")}
+
+                    </tbody>
+                </table>
+            </div>
+        `);
+
         return;
     }
 
     if (page === "users") {
+
         const users = data.users || [];
-        setContent(`<div class="panel overflow-x-auto">
-            <h2 class="font-bold mb-3">Users (${users.length})</h2>
-            <table class="w-full text-xs"><thead><tr class="text-left text-gray-500"><th class="pb-2">User</th><th class="pb-2">Role</th><th class="pb-2">Account status</th><th class="pb-2">Created</th></tr></thead><tbody>
-            ${users.map(item => {
-                const ownAccount = String(item.id) === String(currentAdminId);
-                return `<tr><td class="table-cell"><b>${esc(item.name)}</b><br><span class="text-gray-500">${esc(item.email)}</span>${ownAccount ? `<br><span class="text-[10px] text-amber-700">Current admin account</span>` : ""}</td><td class="table-cell"><select data-user-role="${esc(item.id)}" class="small-select" ${ownAccount ? "disabled" : ""}>${["user","editor","admin"].map(role => `<option value="${role}" ${item.role === role ? "selected" : ""}>${role}</option>`).join("")}</select></td><td class="table-cell"><select data-user-status="${esc(item.id)}" class="small-select" ${ownAccount ? "disabled" : ""}>${["active","inactive","suspended"].map(status => `<option value="${status}" ${item.status === status ? "selected" : ""}>${status}</option>`).join("")}</select></td><td class="table-cell">${esc(formatDate(item.created_at))}</td></tr>`;
-            }).join("")}
-            </tbody></table>
-        </div>`);
+
+        setContent(`
+            <div class="panel overflow-x-auto">
+
+                <h2 class="font-bold mb-3">
+                    Users (${users.length})
+                </h2>
+
+                <table class="w-full text-xs">
+
+                    <thead>
+                        <tr class="text-left text-gray-500">
+                            <th class="pb-2">User</th>
+                            <th class="pb-2">Role</th>
+                            <th class="pb-2">Account status</th>
+                            <th class="pb-2">Created</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+
+                        ${users.map(item => {
+
+                            const ownAccount =
+                                String(item.id) === String(currentAdminId);
+
+                            return `
+                                <tr>
+
+                                    <td class="table-cell">
+
+                                        <b>${esc(item.name)}</b>
+
+                                        <br>
+
+                                        <span class="text-gray-500">
+                                            ${esc(item.email)}
+                                        </span>
+
+                                        ${ownAccount
+                                            ? `
+                                                <br>
+                                                <span class="text-[10px] text-amber-700">
+                                                    Current admin account
+                                                </span>
+                                            `
+                                            : ""
+                                        }
+
+                                    </td>
+
+                                    <td class="table-cell">
+
+                                        <select
+                                            data-user-role="${esc(item.id)}"
+                                            class="small-select"
+                                            ${ownAccount ? "disabled" : ""}
+                                        >
+
+                                            ${["user", "editor", "admin"].map(role => `
+                                                <option
+                                                    value="${role}"
+                                                    ${item.role === role ? "selected" : ""}
+                                                >
+                                                    ${role}
+                                                </option>
+                                            `).join("")}
+
+                                        </select>
+
+                                    </td>
+
+                                    <td class="table-cell">
+
+                                        <select
+                                            data-user-status="${esc(item.id)}"
+                                            class="small-select"
+                                            ${ownAccount ? "disabled" : ""}
+                                        >
+
+                                            ${["active", "inactive", "suspended"].map(status => `
+                                                <option
+                                                    value="${status}"
+                                                    ${item.status === status ? "selected" : ""}
+                                                >
+                                                    ${status}
+                                                </option>
+                                            `).join("")}
+
+                                        </select>
+
+                                    </td>
+
+                                    <td class="table-cell">
+                                        ${esc(formatDate(item.created_at))}
+                                    </td>
+
+                                </tr>
+                            `;
+
+                        }).join("")}
+
+                    </tbody>
+                </table>
+            </div>
+        `);
+
         return;
     }
 
     const logs = data.logs || [];
-    setContent(`<div class="panel overflow-x-auto">
-        <h2 class="font-bold mb-3">Audit Logs (${logs.length})</h2>
-        <table class="w-full text-xs"><thead><tr class="text-left text-gray-500"><th class="pb-2">Action</th><th class="pb-2">Target</th><th class="pb-2">Target ID</th><th class="pb-2">Details</th><th class="pb-2">Date</th></tr></thead><tbody>
-        ${logs.map(item => `<tr><td class="table-cell font-bold">${esc(item.action)}</td><td class="table-cell">${esc(item.target_type || "—")}</td><td class="table-cell">${esc(item.target_id || "—")}</td><td class="table-cell max-w-xs break-words">${esc(typeof item.details === "string" ? item.details : JSON.stringify(item.details || {}))}</td><td class="table-cell">${esc(formatDate(item.created_at))}</td></tr>`).join("")}
-        </tbody></table>
-    </div>`);
+
+    setContent(`
+        <div class="panel overflow-x-auto">
+
+            <h2 class="font-bold mb-3">
+                Audit Logs (${logs.length})
+            </h2>
+
+            <table class="w-full text-xs">
+
+                <thead>
+                    <tr class="text-left text-gray-500">
+                        <th class="pb-2">Action</th>
+                        <th class="pb-2">Target</th>
+                        <th class="pb-2">Target ID</th>
+                        <th class="pb-2">Details</th>
+                        <th class="pb-2">Date</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+
+                    ${logs.map(item => `
+                        <tr>
+
+                            <td class="table-cell font-bold">
+                                ${esc(item.action)}
+                            </td>
+
+                            <td class="table-cell">
+                                ${esc(item.target_type || "—")}
+                            </td>
+
+                            <td class="table-cell">
+                                ${esc(item.target_id || "—")}
+                            </td>
+
+                            <td class="table-cell max-w-xs break-words">
+                                ${esc(
+                                    typeof item.details === "string"
+                                        ? item.details
+                                        : JSON.stringify(item.details || {})
+                                )}
+                            </td>
+
+                            <td class="table-cell">
+                                ${esc(formatDate(item.created_at))}
+                            </td>
+
+                        </tr>
+                    `).join("")}
+
+                </tbody>
+            </table>
+        </div>
+    `);
 }
 
 /* EVENTS */
 async function loadEvents() {
+
     const data = await api(`${API.events}?admin=1`);
+
     cache.events = data.events || [];
+
     setContent(`
         <div class="panel space-y-3">
-            <h2 class="font-bold">Create Event</h2>
-            <input id="e-title" class="field" placeholder="Event title">
-            <textarea id="e-desc" class="field" rows="3" placeholder="Description"></textarea>
-            <div class="grid md:grid-cols-2 gap-3"><input id="e-date" type="datetime-local" class="field"><input id="e-location" class="field" placeholder="Location"></div>
-            <input id="e-image" class="field" placeholder="Image URL (optional)">
+
+            <h2 class="font-bold">
+                Create Event
+            </h2>
+
+            <input
+                id="e-title"
+                class="field"
+                placeholder="Event title"
+            >
+
+            <textarea
+                id="e-desc"
+                class="field"
+                rows="3"
+                placeholder="Description"
+            ></textarea>
+
+            <div class="grid md:grid-cols-2 gap-3">
+
+                <input
+                    id="e-date"
+                    type="datetime-local"
+                    class="field"
+                >
+
+                <input
+                    id="e-location"
+                    class="field"
+                    placeholder="Location"
+                >
+
+            </div>
+
+            <input
+                id="e-image"
+                class="field"
+                placeholder="Image URL (optional)"
+            >
+
             ${btn("Publish Event", "e-save")}
+
         </div>
-        <div class="panel"><h2 class="font-bold mb-3">Events (${cache.events.length})</h2>
-            ${cache.events.length ? cache.events.map(item => `<div class="border-t py-3 flex flex-wrap justify-between gap-3 text-xs"><div><b>${esc(item.title)}</b><p class="text-gray-500">${esc(item.status || (item.active ? "published" : "draft"))} · ${esc(formatDate(item.event_date))} · ${esc(item.location || "No location")}</p><p class="mt-1 text-gray-500">${esc(item.description || "")}</p></div>${item.active ? `<button type="button" class="text-red-600" data-event-archive="${esc(item.id)}">Archive</button>` : `<span class="text-gray-500">Archived</span>`}</div>`).join("") : `<p class="text-xs text-gray-500">No events found.</p>`}
+
+        <div class="panel">
+
+            <h2 class="font-bold mb-3">
+                Events (${cache.events.length})
+            </h2>
+
+            ${cache.events.length
+                ? cache.events.map(item => `
+                    <div class="border-t py-3 flex flex-wrap justify-between gap-3 text-xs">
+
+                        <div>
+
+                            <b>${esc(item.title)}</b>
+
+                            <p class="text-gray-500">
+                                ${esc(item.status || (item.active ? "published" : "draft"))}
+                                · ${esc(formatDate(item.event_date))}
+                                · ${esc(item.location || "No location")}
+                            </p>
+
+                            <p class="mt-1 text-gray-500">
+                                ${esc(item.description || "")}
+                            </p>
+
+                        </div>
+
+                        ${item.active
+                            ? `
+                                <button
+                                    type="button"
+                                    class="text-red-600"
+                                    data-event-archive="${esc(item.id)}"
+                                >
+                                    Archive
+                                </button>
+                            `
+                            : `
+                                <span class="text-gray-500">
+                                    Archived
+                                </span>
+                            `
+                        }
+
+                    </div>
+                `).join("")
+                : `
+                    <p class="text-xs text-gray-500">
+                        No events found.
+                    </p>
+                `
+            }
+
         </div>
     `);
 
     $("#e-save").onclick = async () => {
+
         const body = {
             title: $("#e-title").value.trim(),
             description: $("#e-desc").value,
-            event_date: $("#e-date").value ? new Date($("#e-date").value).toISOString() : null,
+
+            event_date: $("#e-date").value
+                ? new Date($("#e-date").value).toISOString()
+                : null,
+
             location: $("#e-location").value.trim(),
             image_url: $("#e-image").value.trim(),
             status: "published"
         };
-        if (!body.title) { alert("Event title is required."); return; }
+
+        if (!body.title) {
+            alert("Event title is required.");
+            return;
+        }
+
         try {
-            await api(API.events, { method: "POST", body: JSON.stringify(body) });
+
+            await api(API.events, {
+                method: "POST",
+                body: JSON.stringify(body)
+            });
+
             alert("Event created successfully.");
+
             await loadEvents();
-        } catch (error) { alert(error.message); }
+
+        } catch (error) {
+            alert(error.message);
+        }
     };
 }
 
 /* MEMBERSHIP PLANS */
 async function loadMemberships() {
+
     const data = await api(`${API.memberships}?admin=1`);
+
     cache.memberships = data.memberships || [];
+
     setContent(`
         <div class="panel space-y-3">
-            <h2 class="font-bold">Create Membership Plan</h2>
-            <input id="m-name" class="field" placeholder="Plan name">
-            <textarea id="m-description" class="field" rows="2" placeholder="Description"></textarea>
-            <div class="grid md:grid-cols-2 gap-3">${formField("Price ETB", "m-price", "number", "0")}${formField("Duration (days)", "m-duration", "number", "30")}</div>
-            <textarea id="m-features" class="field" rows="3" placeholder="Features — one per line or separated by commas"></textarea>
+
+            <h2 class="font-bold">
+                Create Membership Plan
+            </h2>
+
+            <input
+                id="m-name"
+                class="field"
+                placeholder="Plan name"
+            >
+
+            <textarea
+                id="m-description"
+                class="field"
+                rows="2"
+                placeholder="Description"
+            ></textarea>
+
+            <div class="grid md:grid-cols-2 gap-3">
+
+                ${formField("Price ETB", "m-price", "number", "0")}
+
+                ${formField("Duration (days)", "m-duration", "number", "30")}
+
+            </div>
+
+            <textarea
+                id="m-features"
+                class="field"
+                rows="3"
+                placeholder="Features — one per line or separated by commas"
+            ></textarea>
+
             ${btn("Create Plan", "m-save")}
+
         </div>
-        <div class="panel"><h2 class="font-bold mb-3">Membership Plans (${cache.memberships.length})</h2>
-            ${cache.memberships.length ? cache.memberships.map(item => {
-                const features = Array.isArray(item.features) ? item.features.join(" · ") : "";
-                return `<div class="border-t py-3 flex flex-wrap justify-between gap-3 text-xs"><div><b>${esc(item.name)}</b><p class="text-gray-500">${esc(item.price)} ETB · ${esc(item.duration_days)} days · ${item.active ? "Active" : "Archived"}</p><p class="text-gray-500 mt-1">${esc(item.description || "")}</p><p class="text-gray-500 mt-1">${esc(features)}</p></div>${item.active ? `<button type="button" class="text-red-600" data-membership-archive="${esc(item.id)}">Archive</button>` : `<span class="text-gray-500">Archived</span>`}</div>`;
-            }).join("") : `<p class="text-xs text-gray-500">No membership plans found.</p>`}
+
+        <div class="panel">
+
+            <h2 class="font-bold mb-3">
+                Membership Plans (${cache.memberships.length})
+            </h2>
+
+            ${cache.memberships.length
+                ? cache.memberships.map(item => {
+
+                    const features = Array.isArray(item.features)
+                        ? item.features.join(" · ")
+                        : "";
+
+                    return `
+                        <div class="border-t py-3 flex flex-wrap justify-between gap-3 text-xs">
+
+                            <div>
+
+                                <b>${esc(item.name)}</b>
+
+                                <p class="text-gray-500">
+                                    ${esc(item.price)} ETB ·
+                                    ${esc(item.duration_days)} days ·
+                                    ${item.active ? "Active" : "Archived"}
+                                </p>
+
+                                <p class="text-gray-500 mt-1">
+                                    ${esc(item.description || "")}
+                                </p>
+
+                                <p class="text-gray-500 mt-1">
+                                    ${esc(features)}
+                                </p>
+
+                            </div>
+
+                            ${item.active
+                                ? `
+                                    <button
+                                        type="button"
+                                        class="text-red-600"
+                                        data-membership-archive="${esc(item.id)}"
+                                    >
+                                        Archive
+                                    </button>
+                                `
+                                : `
+                                    <span class="text-gray-500">
+                                        Archived
+                                    </span>
+                                `
+                            }
+
+                        </div>
+                    `;
+
+                }).join("")
+                : `
+                    <p class="text-xs text-gray-500">
+                        No membership plans found.
+                    </p>
+                `
+            }
+
         </div>
     `);
 
     $("#m-save").onclick = async () => {
+
         const rawFeatures = $("#m-features").value;
-        const features = rawFeatures.split(/[\n,]/).map(value => value.trim()).filter(Boolean);
+
+        const features = rawFeatures
+            .split(/[\n,]/)
+            .map(value => value.trim())
+            .filter(Boolean);
+
         const body = {
             name: $("#m-name").value.trim(),
             description: $("#m-description").value.trim(),
@@ -489,83 +1484,248 @@ async function loadMemberships() {
             duration_days: $("#m-duration").value,
             features
         };
-        if (!body.name) { alert("Membership plan name is required."); return; }
+
+        if (!body.name) {
+            alert("Membership plan name is required.");
+            return;
+        }
+
         try {
-            await api(API.memberships, { method: "POST", body: JSON.stringify(body) });
+
+            await api(API.memberships, {
+                method: "POST",
+                body: JSON.stringify(body)
+            });
+
             alert("Membership plan created successfully.");
+
             await loadMemberships();
-        } catch (error) { alert(error.message); }
+
+        } catch (error) {
+            alert(error.message);
+        }
     };
 }
 
 /* NEWSLETTER */
 async function loadNewsletter() {
+
     const data = await api(API.newsletter);
+
     const subscribers = data.subscribers || [];
-    setContent(`<div class="panel overflow-x-auto"><h2 class="font-bold mb-3">Newsletter Subscribers (${subscribers.length})</h2>
-        ${subscribers.length ? `<table class="w-full text-xs"><thead><tr class="text-left text-gray-500"><th class="pb-2">Email</th><th class="pb-2">Status</th><th class="pb-2">Subscribed</th></tr></thead><tbody>${subscribers.map(item => `<tr><td class="table-cell">${esc(item.email)}</td><td class="table-cell">${esc(item.status)}</td><td class="table-cell">${esc(formatDate(item.created_at))}</td></tr>`).join("")}</tbody></table>` : `<p class="text-xs text-gray-500">No subscribers found.</p>`}
-    </div>`);
+
+    setContent(`
+        <div class="panel overflow-x-auto">
+
+            <h2 class="font-bold mb-3">
+                Newsletter Subscribers (${subscribers.length})
+            </h2>
+
+            ${subscribers.length
+                ? `
+                    <table class="w-full text-xs">
+
+                        <thead>
+                            <tr class="text-left text-gray-500">
+                                <th class="pb-2">Email</th>
+                                <th class="pb-2">Status</th>
+                                <th class="pb-2">Subscribed</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+
+                            ${subscribers.map(item => `
+                                <tr>
+
+                                    <td class="table-cell">
+                                        ${esc(item.email)}
+                                    </td>
+
+                                    <td class="table-cell">
+                                        ${esc(item.status)}
+                                    </td>
+
+                                    <td class="table-cell">
+                                        ${esc(formatDate(item.created_at))}
+                                    </td>
+
+                                </tr>
+                            `).join("")}
+
+                        </tbody>
+                    </table>
+                `
+                : `
+                    <p class="text-xs text-gray-500">
+                        No subscribers found.
+                    </p>
+                `
+            }
+
+        </div>
+    `);
 }
 
 /* SETTINGS */
 async function loadSettings() {
+
     const data = await api(API.settings);
+
     const settings = data.settings || {};
+
     setContent(`
         <div class="panel space-y-3">
-            <h2 class="font-bold">Website Settings</h2>
-            <p class="text-xs text-gray-500">Manage basic public website identity and hero text.</p>
-            <input id="s-title" class="field" placeholder="Site title" value="${esc(settings.site_title || "DevStackReads")}">
-            <input id="s-hero" class="field" placeholder="Hero headline" value="${esc(settings.hero_title || "")}">
+
+            <h2 class="font-bold">
+                Website Settings
+            </h2>
+
+            <p class="text-xs text-gray-500">
+                Manage basic public website identity and hero text.
+            </p>
+
+            <input
+                id="s-title"
+                class="field"
+                placeholder="Site title"
+                value="${esc(settings.site_title || "DevStackReads")}"
+            >
+
+            <input
+                id="s-hero"
+                class="field"
+                placeholder="Hero headline"
+                value="${esc(settings.hero_title || "")}"
+            >
+
             ${btn("Save Settings", "s-save")}
+
         </div>
     `);
+
     $("#s-save").onclick = async () => {
+
         try {
-            await api(API.settings, { method: "PUT", body: JSON.stringify({ settings: { site_title: $("#s-title").value, hero_title: $("#s-hero").value } }) });
+
+            await api(API.settings, {
+                method: "PUT",
+
+                body: JSON.stringify({
+                    settings: {
+                        site_title: $("#s-title").value,
+                        hero_title: $("#s-hero").value
+                    }
+                })
+            });
+
             alert("Settings saved successfully.");
-        } catch (error) { alert(error.message); }
+
+        } catch (error) {
+            alert(error.message);
+        }
     };
 }
 
 /* MAIN PAGE LOADER */
 async function loadPage(page) {
+
     activePage = page;
-    document.querySelectorAll(".navbtn").forEach(button => button.classList.toggle("active", button.dataset.page === page));
-    $("#page-title").textContent = page.charAt(0).toUpperCase() + page.slice(1);
-    setContent(`<div class="panel text-gray-500 text-sm"><i class="fa fa-spinner fa-spin mr-2"></i>Loading...</div>`);
+
+    document.querySelectorAll(".navbtn").forEach(button => {
+        button.classList.toggle(
+            "active",
+            button.dataset.page === page
+        );
+    });
+
+    $("#page-title").textContent =
+        page.charAt(0).toUpperCase() + page.slice(1);
+
+    setContent(`
+        <div class="panel text-gray-500 text-sm">
+            <i class="fa fa-spinner fa-spin mr-2"></i>
+            Loading...
+        </div>
+    `);
+
     try {
+
         switch (page) {
-            case "overview": await loadOverview(); break;
-            case "articles": await loadArticles(); break;
-            case "books": await loadBooks(); break;
-            case "orders": case "users": case "logs": await loadManagement(page); break;
-            case "events": await loadEvents(); break;
-            case "memberships": await loadMemberships(); break;
-            case "newsletter": await loadNewsletter(); break;
-            case "settings": await loadSettings(); break;
-            default: throw new Error("Unknown dashboard page.");
+
+            case "overview":
+                await loadOverview();
+                break;
+
+            case "articles":
+                await loadArticles();
+                break;
+
+            case "books":
+                await loadBooks();
+                break;
+
+            case "orders":
+            case "users":
+            case "logs":
+                await loadManagement(page);
+                break;
+
+            case "events":
+                await loadEvents();
+                break;
+
+            case "memberships":
+                await loadMemberships();
+                break;
+
+            case "newsletter":
+                await loadNewsletter();
+                break;
+
+            case "settings":
+                await loadSettings();
+                break;
+
+            default:
+                throw new Error("Unknown dashboard page.");
         }
+
     } catch (error) {
+
         console.error("Admin page error:", error);
+
         showError(error);
     }
 }
 
 /* SHARED CONTENT ACTIONS */
 $("#content").addEventListener("click", async event => {
+
     const articleEdit = event.target.closest("[data-article-edit]");
     const articleDraft = event.target.closest("[data-article-draft]");
     const articlePublish = event.target.closest("[data-article-publish]");
+
     const bookEdit = event.target.closest("[data-book-edit]");
     const bookArchive = event.target.closest("[data-book-delete]");
+
     const eventArchive = event.target.closest("[data-event-archive]");
-    const membershipArchive = event.target.closest("[data-membership-archive]");
+
+    const membershipArchive =
+        event.target.closest("[data-membership-archive]");
 
     try {
+
         if (articleEdit) {
-            const article = cache.articles?.find(item => String(item.id) === String(articleEdit.dataset.articleEdit));
-            if (!article) throw new Error("Article not found.");
+
+            const article = cache.articles?.find(
+                item => String(item.id) === String(articleEdit.dataset.articleEdit)
+            );
+
+            if (!article) {
+                throw new Error("Article not found.");
+            }
+
             $("#a-id").value = article.id;
             $("#a-title").value = article.title || "";
             $("#a-author").value = article.author || "";
@@ -573,21 +1733,49 @@ $("#content").addEventListener("click", async event => {
             $("#a-image").value = article.image_url || "";
             $("#a-excerpt").value = article.excerpt || "";
             $("#a-content").value = article.content || "";
-            window.scrollTo({ top: 0, behavior: "smooth" });
+
+            window.scrollTo({
+                top: 0,
+                behavior: "smooth"
+            });
         }
 
         if (articleDraft || articlePublish) {
+
             const button = articleDraft || articlePublish;
-            const id = button.dataset.articleDraft || button.dataset.articlePublish;
-            const status = articleDraft ? "draft" : "published";
-            await api(API.articles, { method: "PUT", body: JSON.stringify({ id, status }) });
-            alert(status === "draft" ? "Article moved to Draft." : "Article published.");
+
+            const id =
+                button.dataset.articleDraft ||
+                button.dataset.articlePublish;
+
+            const status = articleDraft
+                ? "draft"
+                : "published";
+
+            await api(API.articles, {
+                method: "PUT",
+                body: JSON.stringify({ id, status })
+            });
+
+            alert(
+                status === "draft"
+                    ? "Article moved to Draft."
+                    : "Article published."
+            );
+
             await loadArticles();
         }
 
         if (bookEdit) {
-            const book = cache.books?.find(item => String(item.id) === String(bookEdit.dataset.bookEdit));
-            if (!book) throw new Error("Book not found.");
+
+            const book = cache.books?.find(
+                item => String(item.id) === String(bookEdit.dataset.bookEdit)
+            );
+
+            if (!book) {
+                throw new Error("Book not found.");
+            }
+
             $("#b-id").value = book.id;
             $("#b-form-title").textContent = "Edit book";
             $("#b-title").value = book.title || "";
@@ -597,35 +1785,64 @@ $("#content").addEventListener("click", async event => {
             $("#b-image").value = book.image_url || "";
             $("#b-description").value = book.description || "";
             $("#b-save").textContent = "Update Book";
-            window.scrollTo({ top: 0, behavior: "smooth" });
+
+            window.scrollTo({
+                top: 0,
+                behavior: "smooth"
+            });
         }
 
         if (bookArchive) {
+
             const id = bookArchive.dataset.bookDelete;
+
             if (confirm("Archive this book? It will no longer appear in the public catalog.")) {
-                await api(API.books, { method: "DELETE", body: JSON.stringify({ id }) });
+
+                await api(API.books, {
+                    method: "DELETE",
+                    body: JSON.stringify({ id })
+                });
+
                 alert("Book archived.");
+
                 await loadBooks();
             }
         }
 
         if (eventArchive) {
+
             const id = eventArchive.dataset.eventArchive;
+
             if (confirm("Archive this event?")) {
-                await api(API.events, { method: "DELETE", body: JSON.stringify({ id }) });
+
+                await api(API.events, {
+                    method: "DELETE",
+                    body: JSON.stringify({ id })
+                });
+
                 alert("Event archived.");
+
                 await loadEvents();
             }
         }
 
         if (membershipArchive) {
+
             const id = membershipArchive.dataset.membershipArchive;
+
             if (confirm("Archive this membership plan?")) {
-                await api(API.memberships, { method: "DELETE", body: JSON.stringify({ id }) });
+
+                await api(API.memberships, {
+                    method: "DELETE",
+                    body: JSON.stringify({ id })
+                });
+
                 alert("Membership plan archived.");
+
                 await loadMemberships();
             }
         }
+
     } catch (error) {
         alert(error.message);
     }
@@ -633,28 +1850,64 @@ $("#content").addEventListener("click", async event => {
 
 /* MANAGEMENT UPDATES */
 $("#content").addEventListener("change", async event => {
+
     const target = event.target;
+
     try {
+
         if (target.dataset.order) {
-            await api(API.adminManage, { method: "PATCH", body: JSON.stringify({ order_id: target.dataset.order, order_status: target.value }) });
+
+            await api(API.adminManage, {
+                method: "PATCH",
+
+                body: JSON.stringify({
+                    order_id: target.dataset.order,
+                    order_status: target.value
+                })
+            });
+
             alert("Order status updated.");
         }
+
         if (target.dataset.userRole) {
-            await api(API.adminManage, { method: "PATCH", body: JSON.stringify({ user_id: target.dataset.userRole, role: target.value }) });
+
+            await api(API.adminManage, {
+                method: "PATCH",
+
+                body: JSON.stringify({
+                    user_id: target.dataset.userRole,
+                    role: target.value
+                })
+            });
+
             alert("User role updated.");
         }
+
         if (target.dataset.userStatus) {
-            await api(API.adminManage, { method: "PATCH", body: JSON.stringify({ user_id: target.dataset.userStatus, status: target.value }) });
+
+            await api(API.adminManage, {
+                method: "PATCH",
+
+                body: JSON.stringify({
+                    user_id: target.dataset.userStatus,
+                    status: target.value
+                })
+            });
+
             alert("User account status updated.");
         }
+
     } catch (error) {
+
         alert(error.message);
+
         await loadPage(activePage);
     }
 });
 
-/* START */
+/* START APPLICATION */
 boot();
+
 </script>
 </body>
 </html>
