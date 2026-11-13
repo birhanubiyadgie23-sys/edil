@@ -1,9 +1,8 @@
-
 import {
   sql,
   json,
   method,
-  requireAdmin,
+  requireSuperAdmin,
   audit
 } from "../_db.js";
 
@@ -19,7 +18,7 @@ export default async function handler(req, res) {
     if (!method(req, res, ["GET"])) return;
 
     try {
-      const admin = await requireAdmin(req, res);
+      const admin = await requireSuperAdmin(req, res);
       if (!admin) return;
 
       const [
@@ -96,7 +95,7 @@ export default async function handler(req, res) {
     if (!method(req, res, ["GET", "PATCH"])) return;
 
     try {
-      const admin = await requireAdmin(req, res);
+      const admin = await requireSuperAdmin(req, res);
       if (!admin) return;
 
       // GET MANAGEMENT DATA
