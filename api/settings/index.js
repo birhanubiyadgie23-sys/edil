@@ -1,10 +1,9 @@
-
 import {
   sql,
   json,
   requireAdmin,
   audit
-} from "./_db.js";
+} from "../_db.js";
 
 // Only these settings are exposed to public website visitors.
 const ALLOWED_SETTINGS = [
