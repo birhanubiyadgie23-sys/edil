@@ -32,12 +32,10 @@ export function json(res, status, body) {
   if (res.writableEnded) return;
 
   res.status(status);
-
   res.setHeader(
     "Content-Type",
     "application/json; charset=utf-8"
   );
-
   res.setHeader("Cache-Control", "no-store");
 
   return res.end(JSON.stringify(body));
@@ -100,10 +98,7 @@ export function setSessionCookie(res, token) {
     `Max-Age=${SESSION_DURATION}`
   ].join("; ");
 
-  res.setHeader(
-    "Set-Cookie",
-    cookie + cookieSecurity()
-  );
+  res.setHeader("Set-Cookie", cookie + cookieSecurity());
 }
 
 export function clearSessionCookie(res) {
@@ -116,10 +111,7 @@ export function clearSessionCookie(res) {
     "Expires=Thu, 01 Jan 1970 00:00:00 GMT"
   ].join("; ");
 
-  res.setHeader(
-    "Set-Cookie",
-    cookie + cookieSecurity()
-  );
+  res.setHeader("Set-Cookie", cookie + cookieSecurity());
 }
 
 // ==========================================
@@ -167,18 +159,29 @@ export async function currentUser(req) {
 // ==========================================
 
 export async function requireUser(req, res) {
-  const user = await currentUser(req);
+  try {
+    const user = await currentUser(req);
 
-  if (!user) {
-    json(res, 401, {
+    if (!user) {
+      json(res, 401, {
+        success: false,
+        message: "Please log in."
+      });
+
+      return null;
+    }
+
+    return user;
+  } catch (error) {
+    console.error("Authentication check failed:", error);
+
+    json(res, 500, {
       success: false,
-      message: "Please log in."
+      message: "Authentication service temporarily unavailable."
     });
 
     return null;
   }
-
-  return user;
 }
 
 // ==========================================
@@ -303,7 +306,7 @@ export async function ensureAdmin() {
   }
 
   if (
-    email.length > 254 ||
+    email.length > 255 ||
     !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ||
     Buffer.byteLength(password, "utf8") > 72
   ) {
@@ -312,10 +315,13 @@ export async function ensureAdmin() {
     );
   }
 
+  // Check whether this email already exists,
+  // including addresses with different letter casing.
+
   const found = await sql`
     SELECT id, role
     FROM users
-    WHERE lower(email) = ${email}
+    WHERE LOWER(email) = ${email}
     LIMIT 1
   `;
 
@@ -351,16 +357,18 @@ export async function ensureAdmin() {
       )
     `;
   } catch (error) {
-    // Another request may have created the admin at the same time.
+    // Handle a concurrent request creating the same email.
     if (error.code !== "23505") {
       throw error;
     }
   }
 
+  // Confirm the account after insertion or a duplicate conflict.
+
   const confirmed = await sql`
     SELECT id, role
     FROM users
-    WHERE lower(email) = ${email}
+    WHERE LOWER(email) = ${email}
     LIMIT 1
   `;
 
