@@ -595,51 +595,103 @@ function displayPublicMembership(data) {
 // DISPLAY PUBLIC SETTINGS
 // ==========================================
 
+
 function displayPublicSettings(data) {
-  if (!data || !data.success || !data.settings) return;
+  if (!data || typeof data !== "object") return;
 
-  const settings = data.settings;
+  // Support both API response formats
+  const settings = data.settings || data;
 
+  if (typeof settings !== "object" || settings === null) return;
+
+  const siteTitle = String(
+    settings.site_title || "DevStackReads"
+  );
+
+  const siteTagline = String(
+    settings.site_tagline || "LEARN • BUILD • GROW"
+  );
+
+  // ==========================================
   // WEBSITE IDENTITY
-  if (settings.site_title) {
-    document.title = String(settings.site_title);
+  // ==========================================
 
-    const siteTitle =
-      document.getElementById("site-title") ||
-      document.querySelector("header .logo-text");
+  // Browser tab title
+  document.title =
+    siteTitle + " — Learn. Build. Grow.";
 
-    if (siteTitle) {
-      siteTitle.textContent = settings.site_title;
-    }
+  // Header brand
+  const headerTitle =
+    document.getElementById("site-title");
+
+  if (headerTitle) {
+    headerTitle.textContent = siteTitle;
   }
 
-  if (settings.site_tagline) {
-    const tagline =
-      document.getElementById("site-tagline");
+  // Footer brand
+  const footerTitle =
+    document.getElementById("footer-site-title");
 
-    if (tagline) {
-      tagline.textContent = settings.site_tagline;
-    }
+  if (footerTitle) {
+    footerTitle.textContent = siteTitle;
   }
 
+  // Header tagline
+  const tagline =
+    document.getElementById("site-tagline");
+
+  if (tagline) {
+    tagline.textContent = siteTagline;
+  }
+
+  // ==========================================
+  // META DESCRIPTION
+  // ==========================================
+
+  if (settings.site_description) {
+    let meta = document.querySelector(
+      'meta[name="description"]'
+    );
+
+    if (!meta) {
+      meta = document.createElement("meta");
+      meta.name = "description";
+      document.head.appendChild(meta);
+    }
+
+    meta.setAttribute(
+      "content",
+      String(settings.site_description)
+    );
+  }
+
+  // ==========================================
   // LOGO
+  // ==========================================
+
   if (settings.logo_url) {
     const logoUrl = safeImageUrl(settings.logo_url);
-
     const logo = document.getElementById("site-logo");
 
     if (logo && logoUrl) {
       logo.src = logoUrl;
-      logo.alt = settings.site_title || "Website logo";
+      logo.alt = siteTitle + " logo";
     }
   }
 
+  // ==========================================
   // FAVICON
+  // ==========================================
+
   if (settings.favicon_url) {
-    const faviconUrl = safeImageUrl(settings.favicon_url);
+    const faviconUrl = safeImageUrl(
+      settings.favicon_url
+    );
 
     if (faviconUrl) {
-      let favicon = document.querySelector("link[rel~='icon']");
+      let favicon = document.querySelector(
+        'link[rel~="icon"]'
+      );
 
       if (!favicon) {
         favicon = document.createElement("link");
@@ -650,6 +702,8 @@ function displayPublicSettings(data) {
       favicon.href = faviconUrl;
     }
   }
+}
+
 
   // HERO
   const heroTitle =
