@@ -32,10 +32,12 @@ export function json(res, status, body) {
   if (res.writableEnded) return;
 
   res.status(status);
+
   res.setHeader(
     "Content-Type",
     "application/json; charset=utf-8"
   );
+
   res.setHeader("Cache-Control", "no-store");
 
   return res.end(JSON.stringify(body));
@@ -70,7 +72,7 @@ export function getCookie(req, name) {
   const item = raw
     .split(";")
     .map(value => value.trim())
-    .find(value => value.startsWith(name + "="));
+    .find(value => value.startsWith(`${name}=`));
 
   if (!item) return null;
 
@@ -90,16 +92,33 @@ function cookieSecurity() {
 }
 
 export function setSessionCookie(res, token) {
+  const cookie = [
+    `${COOKIE_NAME}=${encodeURIComponent(token)}`,
+    "Path=/",
+    "HttpOnly",
+    "SameSite=Lax",
+    `Max-Age=${SESSION_DURATION}`
+  ].join("; ");
+
   res.setHeader(
     "Set-Cookie",
-    `${COOKIE_NAME}=${encodeURIComponent(token)}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${SESSION_DURATION}${cookieSecurity()}`
+    cookie + cookieSecurity()
   );
 }
 
 export function clearSessionCookie(res) {
+  const cookie = [
+    `${COOKIE_NAME}=`,
+    "Path=/",
+    "HttpOnly",
+    "SameSite=Lax",
+    "Max-Age=0",
+    "Expires=Thu, 01 Jan 1970 00:00:00 GMT"
+  ].join("; ");
+
   res.setHeader(
     "Set-Cookie",
-    `${COOKIE_NAME}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0; Expires=Thu, 01 Jan 1970 00:00:00 GMT${cookieSecurity()}`
+    cookie + cookieSecurity()
   );
 }
 
@@ -184,7 +203,7 @@ export async function requireAdmin(req, res) {
 }
 
 // ==========================================
-// ADMIN-ONLY AUTHORIZATION
+// SUPER ADMIN AUTHORIZATION
 // ==========================================
 
 export async function requireSuperAdmin(req, res) {
@@ -213,6 +232,8 @@ export async function createSession(userId, res) {
     .randomBytes(32)
     .toString("base64url");
 
+  const tokenHash = hashToken(token);
+
   await sql`
     INSERT INTO sessions (
       user_id,
@@ -221,7 +242,7 @@ export async function createSession(userId, res) {
     )
     VALUES (
       ${userId},
-      ${hashToken(token)},
+      ${tokenHash},
       NOW() + INTERVAL '7 days'
     )
   `;
@@ -281,7 +302,16 @@ export async function ensureAdmin() {
     return false;
   }
 
-  // Check whether this email already exists.
+  if (
+    email.length > 254 ||
+    !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ||
+    Buffer.byteLength(password, "utf8") > 72
+  ) {
+    throw new Error(
+      "ADMIN_EMAIL or ADMIN_PASSWORD has an invalid value."
+    );
+  }
+
   const found = await sql`
     SELECT id, role
     FROM users
@@ -289,8 +319,7 @@ export async function ensureAdmin() {
     LIMIT 1
   `;
 
-  // Do not automatically promote an existing user.
-  if (found.length) {
+  if (found.length > 0) {
     if (found[0].role !== "admin") {
       console.error(
         "ADMIN_EMAIL already belongs to a non-admin account. Review the account role manually."
@@ -302,28 +331,32 @@ export async function ensureAdmin() {
     return true;
   }
 
-  // Create the initial administrator.
   const passwordHash = await bcrypt.hash(password, 12);
 
-  await sql`
-    INSERT INTO users (
-      name,
-      email,
-      password_hash,
-      role,
-      status
-    )
-    VALUES (
-      'Administrator',
-      ${email},
-      ${passwordHash},
-      'admin',
-      'active'
-    )
-    ON CONFLICT (email) DO NOTHING
-  `;
+  try {
+    await sql`
+      INSERT INTO users (
+        name,
+        email,
+        password_hash,
+        role,
+        status
+      )
+      VALUES (
+        'Administrator',
+        ${email},
+        ${passwordHash},
+        'admin',
+        'active'
+      )
+    `;
+  } catch (error) {
+    // Another request may have created the admin at the same time.
+    if (error.code !== "23505") {
+      throw error;
+    }
+  }
 
-  // Confirm that the administrator account exists.
   const confirmed = await sql`
     SELECT id, role
     FROM users
@@ -331,6 +364,8 @@ export async function ensureAdmin() {
     LIMIT 1
   `;
 
-  return confirmed.length > 0 &&
-    confirmed[0].role === "admin";
+  return (
+    confirmed.length > 0 &&
+    confirmed[0].role === "admin"
+  );
 }
