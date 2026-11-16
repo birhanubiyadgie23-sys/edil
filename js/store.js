@@ -1,867 +1,2381 @@
+
+"use strict";
+
+// ==========================================
+// GLOBAL STATE
+// ==========================================
+
 let cart = [];
+let storeBooks = new Map();
+let checkoutInProgress = false;
+
+let publicSettings = {};
+
 
 // ==========================================
 // API HELPERS
 // ==========================================
 
 async function requestJSON(url, options = {}) {
-  const response = await fetch(url, {
-    credentials: "same-origin",
-    cache: "no-store",
-    ...options,
-    headers: {
-      ...(options.headers || {}),
-      ...(options.body ? { "Content-Type": "application/json" } : {})
+
+    const response = await fetch(url, {
+        credentials: "same-origin",
+        cache: "no-store",
+        ...options,
+
+        headers: {
+            ...(options.headers || {}),
+
+            ...(options.body
+                ? { "Content-Type": "application/json" }
+                : {})
+        }
+    });
+
+    let data;
+
+    try {
+        data = await response.json();
+    } catch {
+        throw new Error(
+            `Invalid API response (${response.status}).`
+        );
     }
-  });
 
-  let data;
+    if (
+        !response.ok ||
+        !data ||
+        typeof data !== "object" ||
+        data.success === false
+    ) {
+        throw new Error(
+            data?.message ||
+            `Request failed (${response.status}).`
+        );
+    }
 
-  try {
-    data = await response.json();
-  } catch {
-    throw new Error(`Invalid API response from ${url} (${response.status}).`);
-  }
-
-  if (!response.ok || data.success === false) {
-    throw new Error(data.message || `Request failed (${response.status}).`);
-  }
-
-  return data;
+    return data;
 }
+
 
 // ==========================================
 // URL VALIDATION
 // ==========================================
 
 function safeImageUrl(value) {
-  if (!value) return "";
 
-  try {
-    const url = new URL(String(value).trim(), window.location.origin);
-
-    if (!["http:", "https:"].includes(url.protocol)) return "";
-
-    return url.href;
-  } catch {
-    return "";
-  }
-}
-
-function safeLinkUrl(value) {
-  if (!value) return "";
-
-  const input = String(value).trim();
-
-  if (
-    input.startsWith("#") ||
-    input.startsWith("/") ||
-    input.startsWith("./") ||
-    input.startsWith("../")
-  ) {
-    return input;
-  }
-
-  try {
-    const url = new URL(input);
-
-    if (!["http:", "https:", "mailto:", "tel:"].includes(url.protocol)) {
-      return "";
+    if (
+        typeof value !== "string" ||
+        !value.trim()
+    ) {
+        return "";
     }
 
-    return url.href;
-  } catch {
-    return "";
-  }
+    try {
+
+        const url = new URL(
+            value.trim(),
+            window.location.origin
+        );
+
+        if (
+            !["http:", "https:"].includes(url.protocol) ||
+            !url.hostname ||
+            url.username ||
+            url.password
+        ) {
+            return "";
+        }
+
+        return url.href;
+
+    } catch {
+        return "";
+    }
 }
+
+
+function safeLinkUrl(value) {
+
+    if (
+        typeof value !== "string" ||
+        !value.trim()
+    ) {
+        return "";
+    }
+
+    const input = value.trim();
+
+    // Internal page anchors.
+    if (input.startsWith("#")) {
+        return input;
+    }
+
+    // Relative paths. Reject protocol-relative URLs.
+    if (
+        input.startsWith("/") &&
+        !input.startsWith("//")
+    ) {
+        return input;
+    }
+
+    if (
+        input.startsWith("./") ||
+        input.startsWith("../")
+    ) {
+        return input;
+    }
+
+    try {
+
+        const url = new URL(input);
+
+        if (
+            !["https:", "http:", "mailto:", "tel:"].includes(
+                url.protocol
+            )
+        ) {
+            return "";
+        }
+
+        if (
+            ["http:", "https:"].includes(url.protocol) &&
+            (
+                !url.hostname ||
+                url.username ||
+                url.password
+            )
+        ) {
+            return "";
+        }
+
+        return url.href;
+
+    } catch {
+        return "";
+    }
+}
+
+
+// ==========================================
+// GENERAL HELPERS
+// ==========================================
+
+function getBookStock(book) {
+
+    const stock = Number(book?.stock);
+
+    if (
+        !Number.isSafeInteger(stock) ||
+        stock < 0
+    ) {
+        return 0;
+    }
+
+    return stock;
+}
+
+
+function getBookPrice(book) {
+
+    const price = Number(book?.price);
+
+    if (
+        !Number.isFinite(price) ||
+        price < 0 ||
+        Math.abs(price * 100 - Math.round(price * 100)) > 0.0000001
+    ) {
+        return null;
+    }
+
+    return price;
+}
+
+
+function setText(element, value) {
+
+    if (element) {
+        element.textContent = String(value ?? "");
+    }
+}
+
+
+function setCartDrawerOpen(open) {
+
+    const drawer = document.getElementById("cart-drawer");
+
+    if (!drawer) return;
+
+    if (open) {
+        drawer.classList.remove("translate-x-full");
+    } else {
+        drawer.classList.add("translate-x-full");
+    }
+}
+
+
+function updateBrandTitle(element, title, footer = false) {
+
+    if (!element) return;
+
+    element.replaceChildren();
+
+    if (title === "DevStackReads") {
+
+        const first = document.createTextNode("DevStack");
+
+        const second = document.createElement("span");
+
+        second.textContent = "Reads";
+
+        if (footer) {
+            second.className = "text-red-500";
+        } else {
+            second.style.color = "#e4472e";
+        }
+
+        element.append(first, second);
+
+        return;
+    }
+
+    element.textContent = title;
+}
+
 
 // ==========================================
 // INITIAL LOAD
 // ==========================================
 
-document.addEventListener("DOMContentLoaded", () => {
-  fetchStoreBooks();
-  loadPublicContent();
-  updateCartUI();
-});
+function initializeStore() {
+
+    fetchStoreBooks();
+
+    loadPublicContent();
+
+    updateCartUI();
+}
+
+if (document.readyState === "loading") {
+
+    document.addEventListener(
+        "DOMContentLoaded",
+        initializeStore,
+        { once: true }
+    );
+
+} else {
+
+    initializeStore();
+}
+
 
 // ==========================================
 // LOAD BOOKS
 // ==========================================
 
 async function fetchStoreBooks() {
-  const grid = document.getElementById("product-grid");
-  if (!grid) return;
 
-  grid.textContent = "መጽሐፍት በመጫን ላይ...";
+    const grid = document.getElementById("product-grid");
 
-  try {
-    const data = await requestJSON("/api/books");
-
-    grid.replaceChildren();
-
-    if (!Array.isArray(data.books) || data.books.length === 0) {
-      grid.textContent = "ምንም መጽሐፍ አልተገኘም።";
-      return;
+    if (grid) {
+        grid.textContent = "መጽሐፍት በመጫን ላይ...";
     }
 
-    data.books.forEach(book => {
-      const card = document.createElement("article");
-      card.className = "product-card";
+    try {
 
-      const imageBox = document.createElement("div");
-      imageBox.className = "product-cover";
+        const data = await requestJSON("/api/books");
 
-      const imageUrl = safeImageUrl(book.image_url);
+        if (!Array.isArray(data.books)) {
+            throw new Error("Invalid books response.");
+        }
 
-      if (imageUrl) {
-        const image = document.createElement("img");
-        image.src = imageUrl;
-        image.alt = `${book.title || "Book"} cover`;
-        image.loading = "lazy";
-        image.referrerPolicy = "no-referrer";
-        image.className = "w-full h-full object-cover";
+        storeBooks = new Map();
 
-        image.onerror = () => {
-          image.remove();
-          imageBox.innerHTML = '<i class="fa-solid fa-book"></i>';
-        };
+        data.books.forEach(book => {
 
-        imageBox.appendChild(image);
-      } else {
-        const icon = document.createElement("i");
-        icon.className = "fa-solid fa-book";
-        imageBox.appendChild(icon);
-      }
+            storeBooks.set(
+                String(book.id),
+                book
+            );
 
-      const info = document.createElement("div");
-      info.className = "p-5";
+        });
 
-      const category = document.createElement("div");
-      category.className = "text-[10px] font-black text-red-600 mb-2";
-      category.textContent = book.category || "DEVELOPMENT";
+        // Refresh available stock for existing cart items.
+        cart.forEach(item => {
 
-      const title = document.createElement("h3");
-      title.className = "font-extrabold text-sm";
-      title.textContent = book.title || "Untitled Book";
+            const latest = storeBooks.get(String(item.id));
 
-      const author = document.createElement("p");
-      author.className = "text-xs text-gray-500 mt-2";
-      author.textContent = book.author || "Unknown author";
+            item.stock = latest
+                ? getBookStock(latest)
+                : 0;
 
-      const description = document.createElement("p");
-      description.className = "text-xs text-gray-500 mt-2";
-      description.textContent = book.description || "";
+        });
 
-      const price = document.createElement("p");
-      price.className = "font-black text-sm text-red-600 mt-3";
-      price.textContent = `${Number(book.price || 0).toFixed(2)} ETB`;
+        updateCartUI();
 
-      const button = document.createElement("button");
-      button.type = "button";
-      button.className = "btn-primary w-full mt-4";
-      button.textContent = "Add to Cart";
-      button.addEventListener("click", () => addToCart(book));
+        if (!grid) return;
 
-      info.append(category, title, author);
+        grid.replaceChildren();
 
-      if (book.description) info.appendChild(description);
+        if (!data.books.length) {
 
-      info.append(price, button);
-      card.append(imageBox, info);
-      grid.appendChild(card);
-    });
+            grid.textContent = "ምንም መጽሐፍ አልተገኘም።";
 
-  } catch (error) {
-    console.error("Books loading failed:", error);
-    grid.textContent = "መጽሐፍትን መጫን አልተቻለም።";
-  }
+            return;
+        }
+
+        data.books.forEach(book => {
+
+            const card = document.createElement("article");
+
+            card.className = "product-card";
+
+            const imageBox = document.createElement("div");
+
+            imageBox.className = "product-cover";
+
+            const imageUrl = safeImageUrl(book.image_url);
+
+            if (imageUrl) {
+
+                const image = document.createElement("img");
+
+                image.src = imageUrl;
+
+                image.alt = `${book.title || "Book"} cover`;
+
+                image.loading = "lazy";
+
+                image.referrerPolicy = "no-referrer";
+
+                image.className = "w-full h-full object-cover";
+
+                image.onerror = () => {
+
+                    image.remove();
+
+                    const icon = document.createElement("i");
+
+                    icon.className = "fa-solid fa-book";
+
+                    imageBox.appendChild(icon);
+                };
+
+                imageBox.appendChild(image);
+
+            } else {
+
+                const icon = document.createElement("i");
+
+                icon.className = "fa-solid fa-book";
+
+                imageBox.appendChild(icon);
+            }
+
+
+            const info = document.createElement("div");
+
+            info.className = "p-5";
+
+
+            const category = document.createElement("div");
+
+            category.className =
+                "text-[10px] font-black text-red-600 mb-2";
+
+            category.textContent = "BOOK";
+
+
+            const title = document.createElement("h3");
+
+            title.className = "font-extrabold text-sm";
+
+            title.textContent =
+                book.title || "Untitled Book";
+
+
+            const author = document.createElement("p");
+
+            author.className =
+                "text-xs text-gray-500 mt-2";
+
+            author.textContent =
+                book.author || "Unknown author";
+
+
+            const description = document.createElement("p");
+
+            description.className =
+                "text-xs text-gray-500 mt-2";
+
+            description.textContent =
+                book.description || "";
+
+
+            const price = document.createElement("p");
+
+            price.className =
+                "font-black text-sm text-red-600 mt-3";
+
+            const bookPrice = getBookPrice(book);
+
+            price.textContent =
+                bookPrice === null
+                    ? "Price unavailable"
+                    : `${bookPrice.toFixed(2)} ETB`;
+
+
+            const stock = getBookStock(book);
+
+            const stockInfo = document.createElement("p");
+
+            stockInfo.className =
+                "text-xs mt-2 " +
+                (stock > 0 ? "text-green-700" : "text-red-600");
+
+            stockInfo.textContent =
+                stock > 0
+                    ? `Available: ${stock}`
+                    : "Out of stock";
+
+
+            const button = document.createElement("button");
+
+            button.type = "button";
+
+            button.className = "btn-primary w-full mt-4";
+
+            button.textContent =
+                stock > 0
+                    ? "Add to Cart"
+                    : "Out of Stock";
+
+            button.disabled =
+                stock <= 0 ||
+                bookPrice === null;
+
+            button.addEventListener("click", () => {
+                addToCart(book);
+            });
+
+
+            info.append(
+                category,
+                title,
+                author
+            );
+
+            if (book.description) {
+                info.appendChild(description);
+            }
+
+            info.append(
+                price,
+                stockInfo,
+                button
+            );
+
+            card.append(
+                imageBox,
+                info
+            );
+
+            grid.appendChild(card);
+        });
+
+    } catch (error) {
+
+        console.error("Books loading failed:", error);
+
+        if (grid) {
+            grid.textContent =
+                "መጽሐፍትን መጫን አልተቻለም።";
+        }
+    }
 }
+
 
 // ==========================================
 // SHOPPING CART
 // ==========================================
 
 function addToCart(book) {
-  if (!book || book.id == null) return;
 
-  const price = Number(book.price);
+    if (!book || book.id == null) {
+        return;
+    }
 
-  if (!Number.isFinite(price) || price < 0) {
-    alert("የመጽሐፉ ዋጋ ትክክል አይደለም።");
-    return;
-  }
+    const price = getBookPrice(book);
 
-  const found = cart.find(
-    item => Number(item.id) === Number(book.id)
-  );
+    if (price === null) {
 
-  if (found) {
-    found.quantity = Math.min(20, found.quantity + 1);
-  } else {
-    cart.push({
-      id: book.id,
-      title: book.title || "Untitled Book",
-      price,
-      quantity: 1
-    });
-  }
+        alert("የመጽሐፉ ዋጋ ትክክል አይደለም።");
 
-  updateCartUI();
-  alert(`"${book.title || "Book"}" ወደ ጋሪዎ ገብቷል!`);
+        return;
+    }
+
+    const stock = getBookStock(book);
+
+    if (stock <= 0) {
+
+        alert("ይህ መጽሐፍ አሁን ከStock ውጭ ነው።");
+
+        return;
+    }
+
+    const id = String(book.id);
+
+    const found = cart.find(
+        item => String(item.id) === id
+    );
+
+    if (found) {
+
+        if (
+            found.quantity >= 20 ||
+            found.quantity >= stock
+        ) {
+
+            alert(
+                `የሚገኘው Stock ${stock} ብቻ ነው።`
+            );
+
+            return;
+        }
+
+        found.quantity += 1;
+
+        found.stock = stock;
+
+    } else {
+
+        cart.push({
+            id: book.id,
+            title: book.title || "Untitled Book",
+            price,
+            stock,
+            quantity: 1
+        });
+    }
+
+    updateCartUI();
+
+    alert(
+        `"${book.title || "Book"}" ወደ ጋሪዎ ገብቷል!`
+    );
 }
+
+
+// ==========================================
+// CART UI
+// ==========================================
 
 function updateCartUI() {
-  const badge = document.getElementById("cart-badge");
-  const mobile = document.getElementById("cart-badge-mobile");
-  const container = document.getElementById("cart-items");
-  const totalEl = document.getElementById("cart-total");
 
-  const count = cart.reduce(
-    (sum, item) => sum + item.quantity,
-    0
-  );
+    const badge = document.getElementById("cart-badge");
 
-  const total = cart.reduce(
-    (sum, item) => sum + item.price * item.quantity,
-    0
-  );
+    const mobile = document.getElementById("cart-badge-mobile");
 
-  if (badge) badge.textContent = count;
-  if (mobile) mobile.textContent = count;
+    const container = document.getElementById("cart-items");
 
-  if (totalEl) {
-    totalEl.textContent = `${total.toFixed(2)} ETB`;
-  }
+    const totalEl = document.getElementById("cart-total");
 
-  if (!container) return;
 
-  container.replaceChildren();
+    const count = cart.reduce(
+        (sum, item) => sum + item.quantity,
+        0
+    );
 
-  if (!cart.length) {
-    const empty = document.createElement("p");
-    empty.className = "text-sm text-gray-400 text-center py-10";
-    empty.textContent = "Your cart is empty.";
-    container.appendChild(empty);
-    return;
-  }
+    const total = cart.reduce(
+        (sum, item) => sum + item.price * item.quantity,
+        0
+    );
 
-  cart.forEach((item, index) => {
-    const row = document.createElement("div");
-    row.className = "flex justify-between items-center border-b pb-3 mb-3 text-xs gap-3";
 
-    const info = document.createElement("div");
+    if (badge) {
+        badge.textContent = count;
+    }
 
-    const name = document.createElement("p");
-    name.className = "font-bold";
-    name.textContent = `${item.title} × ${item.quantity}`;
+    if (mobile) {
+        mobile.textContent = count;
+    }
 
-    const price = document.createElement("p");
-    price.className = "text-gray-500 mt-1";
-    price.textContent = `${(item.price * item.quantity).toFixed(2)} ETB`;
+    if (totalEl) {
+        totalEl.textContent =
+            `${total.toFixed(2)} ETB`;
+    }
 
-    info.append(name, price);
+    if (!container) return;
 
-    const remove = document.createElement("button");
-    remove.type = "button";
-    remove.className = "text-red-500 hover:underline";
-    remove.textContent = "Remove";
 
-    remove.addEventListener("click", () => {
-      cart.splice(index, 1);
-      updateCartUI();
+    container.replaceChildren();
+
+
+    if (!cart.length) {
+
+        const empty = document.createElement("p");
+
+        empty.className =
+            "text-sm text-gray-400 text-center py-10";
+
+        empty.textContent = "Your cart is empty.";
+
+        container.appendChild(empty);
+
+        return;
+    }
+
+
+    cart.forEach((item, index) => {
+
+        const row = document.createElement("div");
+
+        row.className =
+            "flex justify-between items-center border-b pb-3 mb-3 text-xs gap-3";
+
+
+        const info = document.createElement("div");
+
+        info.className = "min-w-0";
+
+
+        const name = document.createElement("p");
+
+        name.className = "font-bold";
+
+        name.textContent =
+            `${item.title} × ${item.quantity}`;
+
+
+        const price = document.createElement("p");
+
+        price.className = "text-gray-500 mt-1";
+
+        price.textContent =
+            `${(item.price * item.quantity).toFixed(2)} ETB`;
+
+
+        const stockInfo = document.createElement("p");
+
+        stockInfo.className =
+            "text-[10px] mt-1 " +
+            (
+                item.quantity > item.stock
+                    ? "text-red-600"
+                    : "text-gray-500"
+            );
+
+        stockInfo.textContent =
+            item.quantity > item.stock
+                ? `Only ${item.stock} available. Update quantity.`
+                : `Available stock: ${item.stock}`;
+
+
+        const controls = document.createElement("div");
+
+        controls.className =
+            "flex items-center gap-2 mt-2";
+
+
+        const decrease = document.createElement("button");
+
+        decrease.type = "button";
+
+        decrease.textContent = "−";
+
+        decrease.className =
+            "border rounded px-2 py-1";
+
+        decrease.setAttribute(
+            "aria-label",
+            "Decrease quantity"
+        );
+
+        decrease.addEventListener("click", () => {
+
+            if (item.quantity <= 1) {
+
+                cart.splice(index, 1);
+
+            } else {
+
+                item.quantity -= 1;
+            }
+
+            updateCartUI();
+        });
+
+
+        const quantity = document.createElement("span");
+
+        quantity.textContent = item.quantity;
+
+
+        const increase = document.createElement("button");
+
+        increase.type = "button";
+
+        increase.textContent = "+";
+
+        increase.className =
+            "border rounded px-2 py-1";
+
+        increase.setAttribute(
+            "aria-label",
+            "Increase quantity"
+        );
+
+        increase.disabled =
+            item.quantity >= 20 ||
+            item.quantity >= item.stock;
+
+        increase.addEventListener("click", () => {
+
+            if (
+                item.quantity >= 20 ||
+                item.quantity >= item.stock
+            ) {
+                alert(
+                    `የሚገኘው Stock ${item.stock} ብቻ ነው።`
+                );
+
+                return;
+            }
+
+            item.quantity += 1;
+
+            updateCartUI();
+        });
+
+
+        controls.append(
+            decrease,
+            quantity,
+            increase
+        );
+
+
+        info.append(
+            name,
+            price,
+            stockInfo,
+            controls
+        );
+
+
+        const remove = document.createElement("button");
+
+        remove.type = "button";
+
+        remove.className =
+            "text-red-500 hover:underline shrink-0";
+
+        remove.textContent = "Remove";
+
+        remove.addEventListener("click", () => {
+
+            cart.splice(index, 1);
+
+            updateCartUI();
+        });
+
+
+        row.append(
+            info,
+            remove
+        );
+
+        container.appendChild(row);
     });
-
-    row.append(info, remove);
-    container.appendChild(row);
-  });
 }
 
-// ==========================================
-// CHECKOUT
-// ==========================================
-
-async function openCheckout() {
-  if (!cart.length) {
-    alert("ጋሪዎ ባዶ ነው!");
-    return;
-  }
-
-  try {
-    const me = await requestJSON("/api/auth?action=me");
-
-    if (!me.user) {
-      alert("Please log in before checkout.");
-      toggleCart();
-      openAuthModal("login");
-      return;
-    }
-
-    const data = await requestJSON("/api/orders", {
-      method: "POST",
-      body: JSON.stringify({
-        items: cart.map(item => ({
-          id: item.id,
-          quantity: item.quantity
-        }))
-      })
-    });
-
-    if (data.telegram_url) {
-      const telegramUrl = safeLinkUrl(data.telegram_url);
-
-      if (telegramUrl) {
-        window.open(telegramUrl, "_blank", "noopener,noreferrer");
-      }
-    }
-
-    cart = [];
-    updateCartUI();
-    toggleCart();
-
-    if (data.order?.id) {
-      alert(`Order #${data.order.id} created.`);
-    } else {
-      alert("Order created successfully.");
-    }
-
-  } catch (error) {
-    console.error("Checkout failed:", error);
-    alert(error.message || "Could not complete checkout.");
-  }
-}
 
 // ==========================================
 // CART DRAWER
 // ==========================================
 
 function toggleCart() {
-  document
-    .getElementById("cart-drawer")
-    ?.classList.toggle("translate-x-full");
+
+    const drawer = document.getElementById("cart-drawer");
+
+    if (!drawer) return;
+
+    drawer.classList.toggle("translate-x-full");
 }
+
+
+// ==========================================
+// CHECKOUT
+// ==========================================
+
+async function openCheckout() {
+
+    if (checkoutInProgress) {
+        return;
+    }
+
+    if (!cart.length) {
+
+        alert("ጋሪዎ ባዶ ነው!");
+
+        return;
+    }
+
+    checkoutInProgress = true;
+
+
+    /*
+     * Open a temporary tab immediately during the user's click.
+     * This avoids most browser popup-blocking problems after
+     * the asynchronous authentication and order requests.
+     */
+
+    let telegramWindow = null;
+
+    try {
+
+        telegramWindow = window.open("about:blank", "_blank");
+
+        if (telegramWindow) {
+            telegramWindow.opener = null;
+        }
+
+    } catch {
+        telegramWindow = null;
+    }
+
+
+    try {
+
+        // Recheck current public stock before checkout.
+        await fetchStoreBooks();
+
+        const invalidItem = cart.find(
+            item =>
+                item.stock <= 0 ||
+                item.quantity > item.stock
+        );
+
+        if (invalidItem) {
+
+            throw new Error(
+                `Stock for "${invalidItem.title}" has changed. Please update your cart.`
+            );
+        }
+
+
+        // Verify current login session.
+        const me = await requestJSON(
+            "/api/auth?action=me"
+        );
+
+        if (!me.user) {
+
+            if (
+                telegramWindow &&
+                !telegramWindow.closed
+            ) {
+                telegramWindow.close();
+            }
+
+            setCartDrawerOpen(false);
+
+            if (typeof window.openAuthModal === "function") {
+                window.openAuthModal("login");
+            } else {
+                alert("Please log in before checkout.");
+            }
+
+            return;
+        }
+
+
+        // Create the order.
+        const data = await requestJSON(
+            "/api/orders",
+            {
+                method: "POST",
+
+                body: JSON.stringify({
+                    items: cart.map(item => ({
+                        id: item.id,
+                        quantity: item.quantity
+                    }))
+                })
+            }
+        );
+
+
+        // The server is authoritative for prices and stock.
+        const order = data.order || {};
+
+        const orderId = order.id;
+
+        const orderStatus = order.status || "pending";
+
+
+        // Validate the Telegram URL returned by the server.
+        const telegramUrl = safeLinkUrl(
+            data.telegram_url
+        );
+
+
+        // Clear cart only after the server confirms order creation.
+        cart = [];
+
+        updateCartUI();
+
+
+        let telegramOpened = false;
+
+        if (
+            telegramWindow &&
+            !telegramWindow.closed &&
+            telegramUrl
+        ) {
+
+            try {
+
+                telegramWindow.location.replace(telegramUrl);
+
+                telegramOpened = true;
+
+            } catch (error) {
+
+                console.warn(
+                    "Could not open Telegram window:",
+                    error
+                );
+            }
+        }
+
+
+        if (!telegramOpened) {
+
+            if (
+                telegramWindow &&
+                !telegramWindow.closed
+            ) {
+                telegramWindow.close();
+            }
+
+            // Show a clickable Telegram link if popup was blocked.
+            const container =
+                document.getElementById("cart-items");
+
+            if (container) {
+
+                container.replaceChildren();
+
+                const message = document.createElement("p");
+
+                message.className =
+                    "text-sm text-green-700 font-bold mb-3";
+
+                message.textContent =
+                    `Order #${orderId} created successfully.`;
+
+                const link = document.createElement("a");
+
+                link.href = telegramUrl || "#";
+
+                link.textContent =
+                    "Continue to Telegram";
+
+                link.target = "_blank";
+
+                link.rel = "noopener noreferrer";
+
+                link.className =
+                    "text-sm text-blue-600 underline";
+
+                if (!telegramUrl) {
+                    link.hidden = true;
+                }
+
+                container.append(
+                    message,
+                    link
+                );
+
+                setCartDrawerOpen(true);
+            }
+        } else {
+
+            setCartDrawerOpen(false);
+        }
+
+
+        alert(
+            `Order #${orderId} created successfully.\n` +
+            `Status: ${orderStatus}\n\n` +
+            `Payment is NOT confirmed yet.`
+        );
+
+    } catch (error) {
+
+        console.error(
+            "Checkout failed:",
+            error
+        );
+
+        if (
+            telegramWindow &&
+            !telegramWindow.closed
+        ) {
+            telegramWindow.close();
+        }
+
+        alert(
+            error.message ||
+            "Could not complete checkout."
+        );
+
+    } finally {
+
+        checkoutInProgress = false;
+    }
+}
+
 
 // ==========================================
 // LOAD PUBLIC CONTENT
 // ==========================================
 
 async function loadPublicContent() {
-  const results = await Promise.allSettled([
-    requestJSON("/api/articles"),
-    requestJSON("/api/events"),
-    requestJSON("/api/settings"),
-    requestJSON("/api/membership")
-  ]);
 
-  if (results[0].status === "fulfilled") {
-    displayPublicArticles(results[0].value);
-  } else {
-    console.warn("Articles loading failed:", results[0].reason);
-  }
+    const results = await Promise.allSettled([
 
-  if (results[1].status === "fulfilled") {
-    displayPublicEvents(results[1].value);
-  } else {
-    console.warn("Events loading failed:", results[1].reason);
-  }
+        requestJSON("/api/articles"),
 
-  if (results[2].status === "fulfilled") {
-    displayPublicSettings(results[2].value);
-  } else {
-    console.warn("Settings loading failed:", results[2].reason);
-  }
+        requestJSON("/api/events"),
 
-  if (results[3].status === "fulfilled") {
-    displayPublicMembership(results[3].value);
-  } else {
-    console.warn("Membership loading failed:", results[3].reason);
-  }
+        requestJSON("/api/settings"),
+
+        requestJSON("/api/membership")
+
+    ]);
+
+
+    if (results[0].status === "fulfilled") {
+
+        displayPublicArticles(
+            results[0].value
+        );
+
+    } else {
+
+        console.warn(
+            "Articles loading failed:",
+            results[0].reason
+        );
+    }
+
+
+    if (results[1].status === "fulfilled") {
+
+        displayPublicEvents(
+            results[1].value
+        );
+
+    } else {
+
+        console.warn(
+            "Events loading failed:",
+            results[1].reason
+        );
+    }
+
+
+    if (results[2].status === "fulfilled") {
+
+        displayPublicSettings(
+            results[2].value
+        );
+
+    } else {
+
+        console.warn(
+            "Settings loading failed:",
+            results[2].reason
+        );
+    }
+
+
+    if (results[3].status === "fulfilled") {
+
+        displayPublicMembership(
+            results[3].value
+        );
+
+    } else {
+
+        console.warn(
+            "Membership loading failed:",
+            results[3].reason
+        );
+    }
 }
+
 
 // ==========================================
 // DISPLAY PUBLIC ARTICLES
 // ==========================================
 
 function displayPublicArticles(data) {
-  const root = document.getElementById("articles-grid");
 
-  if (!root || !Array.isArray(data.articles)) return;
+    const root = document.getElementById("articles-grid");
 
-  root.replaceChildren();
-
-  if (!data.articles.length) {
-    root.textContent = "ምንም ጽሑፍ አልተገኘም።";
-    return;
-  }
-
-  data.articles.forEach(article => {
-    const card = document.createElement("article");
-    card.className = "space-y-4 bg-white p-6 rounded-2xl border border-gray-200 shadow-sm";
-
-    const imageUrl = safeImageUrl(article.image_url);
-
-    if (imageUrl) {
-      const image = document.createElement("img");
-      image.src = imageUrl;
-      image.alt = `${article.title || "Article"} image`;
-      image.loading = "lazy";
-      image.className = "w-full max-h-64 object-cover rounded-xl";
-      card.appendChild(image);
+    if (
+        !root ||
+        !Array.isArray(data.articles)
+    ) {
+        return;
     }
 
-    const category = document.createElement("p");
-    category.className = "text-xs text-[#d9381e] font-bold";
-    category.textContent = `${article.author || ""} · ${article.category || ""}`;
+    root.replaceChildren();
 
-    const title = document.createElement("h2");
-    title.className = "font-serif-custom text-2xl font-bold text-gray-900";
-    title.textContent = article.title || "Untitled Article";
+    if (!data.articles.length) {
 
-    const excerpt = document.createElement("p");
-    excerpt.className = "text-gray-700 text-sm leading-relaxed";
-    excerpt.textContent = article.excerpt || "";
+        root.textContent =
+            "ምንም ጽሑፍ አልተገኘም።";
 
-    const details = document.createElement("details");
+        return;
+    }
 
-    const summary = document.createElement("summary");
-    summary.className = "cursor-pointer text-[#d9381e] font-bold text-sm";
-    summary.textContent = "Read article";
 
-    const content = document.createElement("div");
-    content.className = "mt-4 text-sm leading-7 whitespace-pre-wrap";
-    content.textContent = article.content || "";
+    data.articles.forEach(article => {
 
-    details.append(summary, content);
-    card.append(category, title, excerpt, details);
-    root.appendChild(card);
-  });
+        const card = document.createElement("article");
+
+        card.className =
+            "space-y-4 bg-white p-6 rounded-2xl border border-gray-200 shadow-sm";
+
+
+        const imageUrl = safeImageUrl(
+            article.image_url
+        );
+
+        if (imageUrl) {
+
+            const image = document.createElement("img");
+
+            image.src = imageUrl;
+
+            image.alt =
+                `${article.title || "Article"} image`;
+
+            image.loading = "lazy";
+
+            image.className =
+                "w-full max-h-64 object-cover rounded-xl";
+
+            card.appendChild(image);
+        }
+
+
+        const category = document.createElement("p");
+
+        category.className =
+            "text-xs text-[#d9381e] font-bold";
+
+        category.textContent =
+            `${article.author || ""} · ${article.category || ""}`;
+
+
+        const title = document.createElement("h2");
+
+        title.className =
+            "font-serif-custom text-2xl font-bold text-gray-900";
+
+        title.textContent =
+            article.title || "Untitled Article";
+
+
+        const excerpt = document.createElement("p");
+
+        excerpt.className =
+            "text-gray-700 text-sm leading-relaxed";
+
+        excerpt.textContent =
+            article.excerpt || "";
+
+
+        const details = document.createElement("details");
+
+        const summary = document.createElement("summary");
+
+        summary.className =
+            "cursor-pointer text-[#d9381e] font-bold text-sm";
+
+        summary.textContent = "Read article";
+
+
+        const content = document.createElement("div");
+
+        content.className =
+            "mt-4 text-sm leading-7 whitespace-pre-wrap";
+
+        content.textContent =
+            article.content || "";
+
+
+        details.append(
+            summary,
+            content
+        );
+
+        card.append(
+            category,
+            title,
+            excerpt,
+            details
+        );
+
+        root.appendChild(card);
+    });
 }
+
 
 // ==========================================
 // DISPLAY PUBLIC EVENTS
 // ==========================================
 
 function displayPublicEvents(data) {
-  const root = document.getElementById("events-grid");
 
-  if (!root || !Array.isArray(data.events)) return;
+    const root = document.getElementById("events-grid");
 
-  root.replaceChildren();
-
-  if (!data.events.length) {
-    root.textContent = "ምንም የተመዘገበ Event የለም።";
-    return;
-  }
-
-  data.events.forEach(event => {
-    const card = document.createElement("article");
-    card.className = "bg-white p-5 rounded-xl border shadow-sm";
-
-    const imageUrl = safeImageUrl(event.image_url);
-
-    if (imageUrl) {
-      const image = document.createElement("img");
-      image.src = imageUrl;
-      image.alt = `${event.title || "Event"} image`;
-      image.loading = "lazy";
-      image.className = "w-full max-h-56 object-cover rounded-lg mb-3";
-      card.appendChild(image);
+    if (
+        !root ||
+        !Array.isArray(data.events)
+    ) {
+        return;
     }
 
-    const title = document.createElement("h3");
-    title.className = "font-bold text-gray-900";
-    title.textContent = event.title || "Untitled Event";
+    root.replaceChildren();
 
-    const description = document.createElement("p");
-    description.className = "text-sm text-gray-600 mt-2";
-    description.textContent = event.description || "";
+    if (!data.events.length) {
 
-    card.append(title, description);
+        root.textContent =
+            "ምንም የተመዘገበ Event የለም።";
 
-    if (event.location) {
-      const location = document.createElement("p");
-      location.className = "text-xs text-gray-500 mt-2";
-      location.textContent = event.location;
-      card.appendChild(location);
+        return;
     }
 
-    if (event.event_date) {
-      const date = document.createElement("p");
-      date.className = "text-xs text-gray-500 mt-1";
 
-      const parsedDate = new Date(event.event_date);
+    data.events.forEach(event => {
 
-      date.textContent = Number.isNaN(parsedDate.getTime())
-        ? String(event.event_date)
-        : parsedDate.toLocaleString();
+        const card = document.createElement("article");
 
-      card.appendChild(date);
-    }
+        card.className =
+            "bg-white p-5 rounded-xl border shadow-sm";
 
-    root.appendChild(card);
-  });
+
+        const imageUrl = safeImageUrl(
+            event.image_url
+        );
+
+        if (imageUrl) {
+
+            const image = document.createElement("img");
+
+            image.src = imageUrl;
+
+            image.alt =
+                `${event.title || "Event"} image`;
+
+            image.loading = "lazy";
+
+            image.className =
+                "w-full max-h-56 object-cover rounded-lg mb-3";
+
+            card.appendChild(image);
+        }
+
+
+        const title = document.createElement("h3");
+
+        title.className = "font-bold text-gray-900";
+
+        title.textContent =
+            event.title || "Untitled Event";
+
+
+        const description = document.createElement("p");
+
+        description.className =
+            "text-sm text-gray-600 mt-2";
+
+        description.textContent =
+            event.description || "";
+
+
+        card.append(
+            title,
+            description
+        );
+
+
+        if (event.location) {
+
+            const location = document.createElement("p");
+
+            location.className =
+                "text-xs text-gray-500 mt-2";
+
+            location.textContent =
+                event.location;
+
+            card.appendChild(location);
+        }
+
+
+        if (event.event_date) {
+
+            const date = document.createElement("p");
+
+            date.className =
+                "text-xs text-gray-500 mt-1";
+
+            const parsedDate = new Date(
+                event.event_date
+            );
+
+            date.textContent =
+                Number.isNaN(parsedDate.getTime())
+                    ? String(event.event_date)
+                    : parsedDate.toLocaleString();
+
+            card.appendChild(date);
+        }
+
+
+        root.appendChild(card);
+    });
 }
+
 
 // ==========================================
 // DISPLAY PUBLIC MEMBERSHIP
 // ==========================================
 
 function displayPublicMembership(data) {
-  const root = document.getElementById("membership-grid");
-  if (!root) return;
 
-  const plans =
-    data.plans ||
-    data.memberships ||
-    data.membership_plans;
+    const root = document.getElementById(
+        "membership-grid"
+    );
 
-  if (!Array.isArray(plans)) return;
+    if (!root) return;
 
-  root.replaceChildren();
 
-  if (!plans.length) {
-    root.textContent = "Membership plans are not available.";
-    return;
-  }
+    // Membership API returns { success, memberships }.
+    const plans = data.memberships;
 
-  plans.forEach(plan => {
-    const card = document.createElement("article");
-    card.className = "bg-white p-6 rounded-2xl border border-gray-200 shadow-sm";
+    if (!Array.isArray(plans)) {
 
-    const title = document.createElement("h3");
-    title.className = "text-xl font-bold";
-    title.textContent = plan.name || "Membership";
+        console.warn(
+            "Invalid membership response."
+        );
 
-    const description = document.createElement("p");
-    description.className = "text-sm text-gray-600 mt-2";
-    description.textContent = plan.description || "";
-
-    const price = document.createElement("p");
-    price.className = "text-2xl font-bold text-[#d9381e] mt-4";
-    price.textContent = `${Number(plan.price || 0).toFixed(2)} ETB`;
-
-    const features = document.createElement("ul");
-    features.className = "mt-4 space-y-2 text-sm text-gray-600";
-
-    let featureList = plan.features || [];
-
-    if (typeof featureList === "string") {
-      try {
-        featureList = JSON.parse(featureList);
-      } catch {
-        featureList = [];
-      }
+        return;
     }
 
-    if (Array.isArray(featureList)) {
-      featureList.forEach(feature => {
-        const item = document.createElement("li");
-        item.textContent = `✓ ${String(feature)}`;
-        features.appendChild(item);
-      });
+    root.replaceChildren();
+
+    if (!plans.length) {
+
+        root.textContent =
+            "Membership plans are not available.";
+
+        return;
     }
 
-    card.append(title, description, price, features);
-    root.appendChild(card);
-  });
+
+    plans.forEach(plan => {
+
+        const card = document.createElement("article");
+
+        card.className =
+            "bg-white p-6 rounded-2xl border border-gray-200 shadow-sm";
+
+
+        const title = document.createElement("h3");
+
+        title.className = "text-xl font-bold";
+
+        title.textContent =
+            plan.name || "Membership";
+
+
+        const description = document.createElement("p");
+
+        description.className =
+            "text-sm text-gray-600 mt-2";
+
+        description.textContent =
+            plan.description || "";
+
+
+        const price = document.createElement("p");
+
+        price.className =
+            "text-2xl font-bold text-[#d9381e] mt-4";
+
+        const planPrice = Number(plan.price);
+
+        price.textContent =
+            Number.isFinite(planPrice)
+                ? `${planPrice.toFixed(2)} ETB`
+                : "Price unavailable";
+
+
+        const duration = document.createElement("p");
+
+        duration.className =
+            "text-xs text-gray-500 mt-2";
+
+        duration.textContent =
+            `${Number(plan.duration_days || 0)} days`;
+
+
+        const features = document.createElement("ul");
+
+        features.className =
+            "mt-4 space-y-2 text-sm text-gray-600";
+
+
+        let featureList = plan.features || [];
+
+        if (typeof featureList === "string") {
+
+            try {
+                featureList = JSON.parse(featureList);
+            } catch {
+                featureList = [];
+            }
+        }
+
+
+        if (Array.isArray(featureList)) {
+
+            featureList.forEach(feature => {
+
+                if (typeof feature !== "string") {
+                    return;
+                }
+
+                const item = document.createElement("li");
+
+                item.textContent = `✓ ${feature}`;
+
+                features.appendChild(item);
+            });
+        }
+
+
+        card.append(
+            title,
+            description,
+            price,
+            duration,
+            features
+        );
+
+        root.appendChild(card);
+    });
 }
+
 
 // ==========================================
 // DISPLAY PUBLIC SETTINGS
 // ==========================================
 
 function displayPublicSettings(data) {
-  if (!data || typeof data !== "object") return;
 
-  const settings = data.settings || data;
-
-  if (!settings || typeof settings !== "object") return;
-
-  // ==========================================
-  // WEBSITE IDENTITY
-  // ==========================================
-
-  const siteTitle = String(settings.site_title || "DevStackReads");
-  const siteTagline = String(settings.site_tagline || "LEARN • BUILD • GROW");
-
-  document.title = `${siteTitle} — Learn. Build. Grow.`;
-
-  const headerTitle = document.getElementById("site-title");
-  if (headerTitle) headerTitle.textContent = siteTitle;
-
-  const footerTitle = document.getElementById("footer-site-title");
-  if (footerTitle) footerTitle.textContent = siteTitle;
-
-  const tagline = document.getElementById("site-tagline");
-  if (tagline) tagline.textContent = siteTagline;
-
-  // ==========================================
-  // META DESCRIPTION
-  // ==========================================
-
-  if (settings.site_description) {
-    let meta = document.querySelector('meta[name="description"]');
-
-    if (!meta) {
-      meta = document.createElement("meta");
-      meta.name = "description";
-      document.head.appendChild(meta);
+    if (
+        !data ||
+        typeof data !== "object"
+    ) {
+        return;
     }
 
-    meta.content = String(settings.site_description);
-  }
+    const settings =
+        data.settings || data;
 
-  // ==========================================
-  // LOGO
-  // ==========================================
-
-  if (settings.logo_url) {
-    const logoUrl = safeImageUrl(settings.logo_url);
-    const logo = document.getElementById("site-logo");
-
-    if (logo && logoUrl) {
-      logo.src = logoUrl;
-      logo.alt = `${siteTitle} logo`;
-    }
-  }
-
-  // ==========================================
-  // FAVICON
-  // ==========================================
-
-  if (settings.favicon_url) {
-    const faviconUrl = safeImageUrl(settings.favicon_url);
-
-    if (faviconUrl) {
-      let favicon = document.querySelector('link[rel~="icon"]');
-
-      if (!favicon) {
-        favicon = document.createElement("link");
-        favicon.rel = "icon";
-        document.head.appendChild(favicon);
-      }
-
-      favicon.href = faviconUrl;
-    }
-  }
-
-  // ==========================================
-  // HERO CONTENT
-  // ==========================================
-
-  const heroTitle = document.getElementById("hero-title");
-
-  if (heroTitle && settings.hero_title) {
-    heroTitle.textContent = String(settings.hero_title);
-  }
-
-  const heroSubtitle = document.getElementById("hero-subtitle");
-
-  if (heroSubtitle && settings.hero_subtitle) {
-    heroSubtitle.textContent = String(settings.hero_subtitle);
-  }
-
-  const primaryButton = document.getElementById("hero-primary-button");
-
-  if (primaryButton) {
-    if (settings.hero_primary_button_text) {
-      primaryButton.textContent = String(settings.hero_primary_button_text);
+    if (
+        !settings ||
+        typeof settings !== "object"
+    ) {
+        return;
     }
 
-    if (settings.hero_primary_button_url) {
-      const url = safeLinkUrl(settings.hero_primary_button_url);
-      if (url) primaryButton.href = url;
-    }
-  }
+    publicSettings = settings;
 
-  const secondaryButton = document.getElementById("hero-secondary-button");
 
-  if (secondaryButton) {
-    if (settings.hero_secondary_button_text) {
-      secondaryButton.textContent = String(settings.hero_secondary_button_text);
-    }
+    // ======================================
+    // WEBSITE IDENTITY
+    // ======================================
 
-    if (settings.hero_secondary_button_url) {
-      const url = safeLinkUrl(settings.hero_secondary_button_url);
-      if (url) secondaryButton.href = url;
-    }
-  }
-
-  // ==========================================
-  // THEME COLORS
-  // ==========================================
-
-  const colorSettings = {
-    "--primary": settings.primary_color,
-    "--primary-color": settings.primary_color,
-    "--secondary-color": settings.secondary_color,
-    "--accent-color": settings.accent_color,
-    "--site-background": settings.background_color,
-    "--site-text": settings.text_color
-  };
-
-  Object.entries(colorSettings).forEach(([key, value]) => {
-    if (typeof value === "string" && value.trim()) {
-      document.documentElement.style.setProperty(key, value.trim());
-    }
-  });
-
-  // ==========================================
-  // SEO SETTINGS
-  // ==========================================
-
-  const seo = settings.seo_settings || {};
-
-  if (seo.meta_title) {
-    document.title = String(seo.meta_title);
-  }
-
-  if (seo.meta_description) {
-    let description = document.querySelector('meta[name="description"]');
-
-    if (!description) {
-      description = document.createElement("meta");
-      description.name = "description";
-      document.head.appendChild(description);
-    }
-
-    description.content = String(seo.meta_description);
-  }
-
-  // ==========================================
-  // ANNOUNCEMENT BAR
-  // ==========================================
-
-  const announcement = settings.announcement_bar || {};
-  let bar = document.getElementById("site-announcement");
-
-  if (announcement.enabled && announcement.message) {
-    if (!bar) {
-      bar = document.createElement("div");
-      bar.id = "site-announcement";
-      bar.className = "bg-gray-900 text-white text-center text-sm p-3";
-      document.body.prepend(bar);
-    }
-
-    bar.textContent = String(announcement.message);
-    bar.hidden = false;
-  } else if (bar) {
-    bar.hidden = true;
-  }
-
-  // ==========================================
-  // MAINTENANCE MODE
-  // ==========================================
-
-  if (settings.maintenance_mode === true) {
-    console.warn(
-      "Maintenance mode is enabled. A public maintenance-page integration is still required."
+    const siteTitle = String(
+        settings.site_title || "DevStackReads"
     );
-  }
 
-  // ==========================================
-  // SOCIAL LINKS
-  // ==========================================
+    const siteTagline = String(
+        settings.site_tagline || "LEARN • BUILD • GROW"
+    );
 
-  renderPublicSocialLinks(settings.social_links);
+    document.title =
+        `${siteTitle} — Learn. Build. Grow.`;
 
-  // ==========================================
-  // CONTACT METHODS
-  // ==========================================
 
-  renderPublicContactMethods(settings.contact_methods);
+    updateBrandTitle(
+        document.getElementById("site-title"),
+        siteTitle
+    );
+
+    updateBrandTitle(
+        document.getElementById("footer-site-title"),
+        siteTitle,
+        true
+    );
+
+
+    setText(
+        document.getElementById("site-tagline"),
+        siteTagline
+    );
+
+
+    // ======================================
+    // LANGUAGE
+    // ======================================
+
+    if (
+        typeof settings.default_language === "string" &&
+        /^[a-z]{2}(-[A-Z]{2})?$/.test(
+            settings.default_language
+        )
+    ) {
+        document.documentElement.lang =
+            settings.default_language;
+    }
+
+
+    // ======================================
+    // META DESCRIPTION
+    // ======================================
+
+    if (settings.site_description) {
+
+        let meta = document.querySelector(
+            'meta[name="description"]'
+        );
+
+        if (!meta) {
+
+            meta = document.createElement("meta");
+
+            meta.name = "description";
+
+            document.head.appendChild(meta);
+        }
+
+        meta.content =
+            String(settings.site_description);
+    }
+
+
+    // ======================================
+    // LOGO
+    // ======================================
+
+    if (settings.logo_url) {
+
+        const logoUrl = safeImageUrl(
+            settings.logo_url
+        );
+
+        const logo =
+            document.getElementById("site-logo");
+
+        if (logo && logoUrl) {
+
+            logo.src = logoUrl;
+
+            logo.alt = `${siteTitle} logo`;
+        }
+    }
+
+
+    // ======================================
+    // FAVICON
+    // ======================================
+
+    if (settings.favicon_url) {
+
+        const faviconUrl = safeImageUrl(
+            settings.favicon_url
+        );
+
+        if (faviconUrl) {
+
+            let favicon = document.querySelector(
+                'link[rel~="icon"]'
+            );
+
+            if (!favicon) {
+
+                favicon = document.createElement("link");
+
+                favicon.rel = "icon";
+
+                document.head.appendChild(favicon);
+            }
+
+            favicon.href = faviconUrl;
+        }
+    }
+
+
+    // ======================================
+    // HERO CONTENT
+    // Supports existing IDs and hero classes.
+    // ======================================
+
+    const heroTitle =
+        document.getElementById("hero-title") ||
+        document.querySelector(".hero-title");
+
+    if (heroTitle && settings.hero_title) {
+
+        heroTitle.textContent =
+            String(settings.hero_title);
+    }
+
+
+    const heroSubtitle =
+        document.getElementById("hero-subtitle") ||
+        document.querySelector(".hero-subtitle");
+
+    if (heroSubtitle && settings.hero_subtitle) {
+
+        heroSubtitle.textContent =
+            String(settings.hero_subtitle);
+    }
+
+
+    const heroContainer =
+        heroTitle?.closest("section") ||
+        heroTitle?.parentElement;
+
+
+    const primaryButton =
+        document.getElementById("hero-primary-button") ||
+        heroContainer?.querySelector('a[href="#shop"]');
+
+    if (primaryButton) {
+
+        if (settings.hero_primary_button_text) {
+
+            primaryButton.textContent =
+                String(settings.hero_primary_button_text);
+        }
+
+        if (settings.hero_primary_button_url) {
+
+            const url = safeLinkUrl(
+                settings.hero_primary_button_url
+            );
+
+            if (url) {
+                primaryButton.href = url;
+            }
+        }
+    }
+
+
+    const secondaryButton =
+        document.getElementById("hero-secondary-button") ||
+        heroContainer?.querySelector('a[href="#articles"]');
+
+    if (secondaryButton) {
+
+        if (settings.hero_secondary_button_text) {
+
+            secondaryButton.textContent =
+                String(settings.hero_secondary_button_text);
+        }
+
+        if (settings.hero_secondary_button_url) {
+
+            const url = safeLinkUrl(
+                settings.hero_secondary_button_url
+            );
+
+            if (url) {
+                secondaryButton.href = url;
+            }
+        }
+    }
+
+
+    // ======================================
+    // THEME COLORS
+    // Match the CSS variables used by homepage.
+    // ======================================
+
+    const colorSettings = {
+
+        "--primary": settings.primary_color,
+
+        "--primary-color": settings.primary_color,
+
+        "--dark": settings.secondary_color,
+
+        "--secondary-color": settings.secondary_color,
+
+        "--accent-color": settings.accent_color,
+
+        "--surface": settings.background_color,
+
+        "--site-background": settings.background_color,
+
+        "--text-color": settings.text_color,
+
+        "--site-text": settings.text_color
+    };
+
+
+    Object.entries(colorSettings).forEach(
+        ([key, value]) => {
+
+            if (
+                typeof value === "string" &&
+                window.CSS &&
+                CSS.supports("color", value)
+            ) {
+
+                document.documentElement.style.setProperty(
+                    key,
+                    value
+                );
+            }
+        }
+    );
+
+
+    // ======================================
+    // THEME MODE
+    // ======================================
+
+    if (
+        ["light", "dark", "system"].includes(
+            settings.theme_mode
+        )
+    ) {
+
+        document.documentElement.dataset.theme =
+            settings.theme_mode;
+    }
+
+
+    // ======================================
+    // SEO SETTINGS
+    // ======================================
+
+    const seo = settings.seo_settings || {};
+
+    if (seo.meta_title) {
+
+        document.title =
+            String(seo.meta_title);
+    }
+
+    if (seo.meta_description) {
+
+        let description = document.querySelector(
+            'meta[name="description"]'
+        );
+
+        if (!description) {
+
+            description = document.createElement("meta");
+
+            description.name = "description";
+
+            document.head.appendChild(description);
+        }
+
+        description.content =
+            String(seo.meta_description);
+    }
+
+
+    if (seo.robots_index === false) {
+
+        let robots = document.querySelector(
+            'meta[name="robots"]'
+        );
+
+        if (!robots) {
+
+            robots = document.createElement("meta");
+
+            robots.name = "robots";
+
+            document.head.appendChild(robots);
+        }
+
+        robots.content = "noindex, nofollow";
+    }
+
+
+    // ======================================
+    // OPEN GRAPH IMAGE
+    // ======================================
+
+    if (seo.og_image_url) {
+
+        const imageUrl = safeImageUrl(
+            seo.og_image_url
+        );
+
+        if (imageUrl) {
+
+            let ogImage = document.querySelector(
+                'meta[property="og:image"]'
+            );
+
+            if (!ogImage) {
+
+                ogImage = document.createElement("meta");
+
+                ogImage.setAttribute(
+                    "property",
+                    "og:image"
+                );
+
+                document.head.appendChild(ogImage);
+            }
+
+            ogImage.content = imageUrl;
+        }
+    }
+
+
+    // ======================================
+    // ANNOUNCEMENT BAR
+    // Settings API uses "text", not "message".
+    // ======================================
+
+    const announcement =
+        settings.announcement_bar || {};
+
+    let bar = document.getElementById(
+        "site-announcement"
+    );
+
+    const announcementText = String(
+        announcement.text ??
+        announcement.message ??
+        ""
+    ).trim();
+
+
+    if (
+        announcement.enabled === true &&
+        announcementText
+    ) {
+
+        if (!bar) {
+
+            bar = document.createElement("div");
+
+            bar.id = "site-announcement";
+
+            bar.className =
+                "text-center text-sm p-3";
+
+            document.body.prepend(bar);
+        }
+
+        bar.replaceChildren();
+
+        bar.hidden = false;
+
+        bar.textContent = announcementText;
+
+
+        const linkText = String(
+            announcement.link_text || ""
+        ).trim();
+
+        const linkUrl = safeLinkUrl(
+            announcement.link_url
+        );
+
+        if (linkText && linkUrl) {
+
+            const link = document.createElement("a");
+
+            link.href = linkUrl;
+
+            link.textContent = ` ${linkText}`;
+
+            link.className =
+                "underline font-bold ml-2";
+
+            if (
+                linkUrl.startsWith("http://") ||
+                linkUrl.startsWith("https://")
+            ) {
+
+                link.target = "_blank";
+
+                link.rel = "noopener noreferrer";
+            }
+
+            bar.appendChild(link);
+        }
+
+
+        if (
+            typeof announcement.background_color === "string" &&
+            CSS.supports("color", announcement.background_color)
+        ) {
+
+            bar.style.backgroundColor =
+                announcement.background_color;
+        }
+
+        if (
+            typeof announcement.text_color === "string" &&
+            CSS.supports("color", announcement.text_color)
+        ) {
+
+            bar.style.color =
+                announcement.text_color;
+        }
+
+    } else if (bar) {
+
+        bar.hidden = true;
+    }
+
+
+    // ======================================
+    // HOMEPAGE SECTION VISIBILITY
+    // ======================================
+
+    if (Array.isArray(settings.homepage_sections)) {
+
+        settings.homepage_sections.forEach(section => {
+
+            if (
+                !section ||
+                typeof section.id !== "string"
+            ) {
+                return;
+            }
+
+            const element = document.getElementById(
+                section.id
+            );
+
+            if (element) {
+                element.hidden =
+                    section.enabled === false;
+            }
+        });
+    }
+
+
+    // ======================================
+    // SOCIAL LINKS
+    // ======================================
+
+    renderPublicSocialLinks(
+        settings.social_links
+    );
+
+
+    // ======================================
+    // CONTACT METHODS
+    // ======================================
+
+    renderPublicContactMethods(
+        settings.contact_methods
+    );
+
+
+    // ======================================
+    // DYNAMIC NAVIGATION
+    // Render only when a dedicated container exists.
+    // ======================================
+
+    renderPublicNavigation(
+        settings.navigation_items
+    );
+
+
+    // ======================================
+    // FEATURES
+    // ======================================
+
+    renderPublicFeatures(
+        settings.features
+    );
+
+
+    // ======================================
+    // TOPICS
+    // ======================================
+
+    renderPublicTopics(
+        settings.topics
+    );
+
+
+    // ======================================
+    // MAINTENANCE MODE
+    // ======================================
+
+    if (settings.maintenance_mode === true) {
+
+        console.warn(
+            "Maintenance mode is enabled, but the public maintenance-page integration is not yet implemented."
+        );
+    }
 }
+
 
 // ==========================================
 // SOCIAL MEDIA LINKS
 // ==========================================
 
 function renderPublicSocialLinks(items) {
-  if (!Array.isArray(items)) return;
 
-  let root = document.getElementById("dynamic-social-links");
+    if (!Array.isArray(items)) return;
 
-  if (!root) {
-    const footer = document.querySelector("footer");
-    if (!footer) return;
+    let root = document.getElementById(
+        "dynamic-social-links"
+    );
 
-    root = document.createElement("div");
-    root.id = "dynamic-social-links";
-    root.className = "flex flex-wrap gap-4 mt-4";
-    footer.appendChild(root);
-  }
+    if (!root) {
 
-  root.replaceChildren();
+        const footer = document.querySelector("footer");
 
-  items
-    .filter(item => item && item.visible !== false && item.url)
-    .forEach(item => {
-      const url = safeLinkUrl(item.url);
-      if (!url) return;
+        if (!footer) return;
 
-      const link = document.createElement("a");
-      link.href = url;
-      link.textContent = item.name || item.platform || "Social media";
-      link.target = "_blank";
-      link.rel = "noopener noreferrer";
-      link.className = "text-sm hover:underline";
+        root = document.createElement("div");
 
-      root.appendChild(link);
-    });
+        root.id = "dynamic-social-links";
+
+        root.className =
+            "flex flex-wrap gap-4 mt-4";
+
+        footer.appendChild(root);
+    }
+
+    root.replaceChildren();
+
+
+    items
+        .filter(item =>
+            item &&
+            item.enabled !== false &&
+            item.url
+        )
+        .forEach(item => {
+
+            const url = safeLinkUrl(item.url);
+
+            if (!url) return;
+
+            const link = document.createElement("a");
+
+            link.href = url;
+
+            link.className =
+                "text-sm hover:underline";
+
+            link.textContent =
+                item.label ||
+                item.platform ||
+                "Social media";
+
+
+            if (
+                url.startsWith("https://") ||
+                url.startsWith("http://")
+            ) {
+
+                link.target = "_blank";
+
+                link.rel = "noopener noreferrer";
+            }
+
+
+            if (item.icon) {
+
+                const icon = document.createElement("i");
+
+                icon.className =
+                    `${String(item.icon)} mr-2`;
+
+                link.prepend(icon);
+            }
+
+            root.appendChild(link);
+        });
 }
+
 
 // ==========================================
 // CONTACT METHODS
 // ==========================================
 
 function renderPublicContactMethods(items) {
-  if (!Array.isArray(items)) return;
 
-  let root = document.getElementById("dynamic-contact-methods");
+    if (!Array.isArray(items)) return;
 
-  if (!root) {
-    const footer = document.querySelector("footer");
-    if (!footer) return;
+    let root = document.getElementById(
+        "dynamic-contact-methods"
+    );
 
-    root = document.createElement("div");
-    root.id = "dynamic-contact-methods";
-    root.className = "flex flex-col gap-2 mt-4";
-    footer.appendChild(root);
-  }
+    if (!root) {
 
-  root.replaceChildren();
+        const footer = document.querySelector("footer");
 
-  items
-    .filter(item => item && item.visible !== false && item.value)
-    .forEach(item => {
-      const line = document.createElement("p");
-      line.className = "text-sm text-gray-500";
+        if (!footer) return;
 
-      const label = document.createElement("strong");
-      label.textContent = item.label || item.type || "Contact";
+        root = document.createElement("div");
 
-      const value = document.createElement("span");
-      value.textContent = `: ${item.value}`;
+        root.id = "dynamic-contact-methods";
 
-      line.append(label, value);
-      root.appendChild(line);
-    });
+        root.className =
+            "flex flex-col gap-2 mt-4";
+
+        footer.appendChild(root);
+    }
+
+    root.replaceChildren();
+
+
+    items
+        .filter(item =>
+            item &&
+            item.enabled !== false &&
+            item.value
+        )
+        .forEach(item => {
+
+            const line = document.createElement("p");
+
+            line.className =
+                "text-sm text-gray-500";
+
+
+            const label = document.createElement("strong");
+
+            label.textContent =
+                item.label ||
+                item.type ||
+                "Contact";
+
+
+            const rawUrl = item.url ||
+                (
+                    String(item.type).toLowerCase() === "email"
+                        ? `mailto:${item.value}`
+                        : String(item.type).toLowerCase() === "phone"
+                            ? `tel:${item.value}`
+                            : ""
+                );
+
+
+            const url = safeLinkUrl(rawUrl);
+
+            const value = document.createElement(
+                url ? "a" : "span"
+            );
+
+            value.textContent =
+                `: ${item.value}`;
+
+            if (url) {
+
+                value.href = url;
+
+                if (
+                    url.startsWith("https://") ||
+                    url.startsWith("http://")
+                ) {
+
+                    value.target = "_blank";
+
+                    value.rel = "noopener noreferrer";
+                }
+            }
+
+            line.append(label, value);
+
+            root.appendChild(line);
+        });
 }
 
+
 // ==========================================
-// HTML ESCAPING HELPERS
+// DYNAMIC NAVIGATION
+// Requires #dynamic-navigation in homepage HTML.
 // ==========================================
 
-function escapeHtml(value) {
-  return String(value ?? "").replace(/[&<>"']/g, char => ({
-    "&": "&amp;",
-    "<": "&lt;",
-    ">": "&gt;",
-    '"': "&quot;",
-    "'": "&#39;"
-  })[char]);
+function renderPublicNavigation(items) {
+
+    if (!Array.isArray(items)) return;
+
+    const root = document.getElementById(
+        "dynamic-navigation"
+    );
+
+    if (!root) return;
+
+    root.replaceChildren();
+
+
+    items
+        .filter(item =>
+            item &&
+            item.enabled !== false &&
+            item.label &&
+            item.url
+        )
+        .forEach(item => {
+
+            const url = safeLinkUrl(item.url);
+
+            if (!url) return;
+
+            const link = document.createElement("a");
+
+            link.href = url;
+
+            link.textContent = item.label;
+
+            link.className =
+                "text-sm font-semibold hover:underline";
+
+            root.appendChild(link);
+        });
 }
 
-function escapeAttr(value) {
-  return escapeHtml(value);
+
+// ==========================================
+// DYNAMIC FEATURE CARDS
+// Requires #features-grid in homepage HTML.
+// ==========================================
+
+function renderPublicFeatures(items) {
+
+    if (!Array.isArray(items)) return;
+
+    const root = document.getElementById(
+        "features-grid"
+    );
+
+    if (!root) return;
+
+    root.replaceChildren();
+
+
+    items
+        .filter(item =>
+            item &&
+            item.enabled !== false
+        )
+        .forEach(item => {
+
+            const card = document.createElement("article");
+
+            card.className =
+                "bg-white p-5 rounded-xl border shadow-sm";
+
+
+            const title = document.createElement("h3");
+
+            title.className = "font-bold";
+
+            title.textContent =
+                item.title || "Feature";
+
+
+            const description = document.createElement("p");
+
+            description.className =
+                "text-sm text-gray-600 mt-2";
+
+            description.textContent =
+                item.description || "";
+
+
+            const icon = document.createElement("i");
+
+            icon.className =
+                `${item.icon || "fa-solid fa-star"} text-[#d9381e] text-xl mb-3`;
+
+
+            card.append(
+                icon,
+                title,
+                description
+            );
+
+            root.appendChild(card);
+        });
+}
+
+
+// ==========================================
+// DYNAMIC TOPICS
+// Requires #topics-list in homepage HTML.
+// ==========================================
+
+function renderPublicTopics(items) {
+
+    if (!Array.isArray(items)) return;
+
+    const root = document.getElementById(
+        "topics-list"
+    );
+
+    if (!root) return;
+
+    root.replaceChildren();
+
+
+    items
+        .filter(item =>
+            item &&
+            item.enabled !== false &&
+            item.name &&
+            item.url
+        )
+        .forEach(item => {
+
+            const url = safeLinkUrl(item.url);
+
+            if (!url) return;
+
+            const link = document.createElement("a");
+
+            link.href = url;
+
+            link.textContent = item.name;
+
+            link.className =
+                "inline-flex items-center rounded-full border px-3 py-2 text-xs font-semibold";
+
+            root.appendChild(link);
+        });
 }
