@@ -24,9 +24,12 @@ function normalizeEmail(value) {
 }
 
 function validEmail(email) {
-  if (!email || email.length > 254) return false;
-
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  return (
+    typeof email === "string" &&
+    email.length > 0 &&
+    email.length <= 255 &&
+    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
+  );
 }
 
 function validPassword(password) {
@@ -41,7 +44,7 @@ function validName(name) {
   return (
     typeof name === "string" &&
     name.trim().length > 0 &&
-    name.trim().length <= 100
+    name.trim().length <= 150
   );
 }
 
@@ -50,7 +53,9 @@ function validName(name) {
 // ==========================================
 
 export default async function handler(req, res) {
-  const action = String(req.query?.action || "").toLowerCase();
+  const action = String(
+    req.query?.action || ""
+  ).toLowerCase();
 
   // ========================================
   // LOGIN
@@ -82,7 +87,7 @@ export default async function handler(req, res) {
           role,
           status
         FROM users
-        WHERE lower(email) = ${email}
+        WHERE LOWER(email) = ${email}
         LIMIT 1
       `;
 
@@ -148,7 +153,7 @@ export default async function handler(req, res) {
     if (!validName(name)) {
       return json(res, 400, {
         success: false,
-        message: "Name is required and must not exceed 100 characters."
+        message: "Name is required and must not exceed 150 characters."
       });
     }
 
@@ -171,10 +176,12 @@ export default async function handler(req, res) {
     }
 
     try {
+      // Check existing email without case sensitivity.
+
       const existing = await sql`
         SELECT id
         FROM users
-        WHERE lower(email) = ${email}
+        WHERE LOWER(email) = ${email}
         LIMIT 1
       `;
 
@@ -202,10 +209,18 @@ export default async function handler(req, res) {
           'user',
           'active'
         )
-        RETURNING id, name, email, role
+        RETURNING
+          id,
+          name,
+          email,
+          role
       `;
 
       const user = rows[0];
+
+      if (!user) {
+        throw new Error("User registration returned no account.");
+      }
 
       await createSession(user.id, res);
 
@@ -215,7 +230,9 @@ export default async function handler(req, res) {
       });
 
     } catch (error) {
-      if (error.code === "23505") {
+      // PostgreSQL unique constraint violation.
+
+      if (error?.code === "23505") {
         return json(res, 409, {
           success: false,
           message: "This email is already registered."
