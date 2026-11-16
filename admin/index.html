@@ -1567,64 +1567,807 @@ async function loadNewsletter() {
     `);
 }
 
-/* SETTINGS */
+   ADVANCED WEBSITE SETTINGS MANAGER
+========================================== */
+
 async function loadSettings() {
+    const data = await api(`${API.settings}?admin=1`);
+    const existing = data.settings || {};
 
-    const data = await api(API.settings);
+    const defaults = {
+        site_title: "DevStackReads",
+        site_tagline: "Learn. Build. Grow.",
+        logo_url: "",
+        favicon_url: "",
+        site_description: "",
+        default_language: "en",
+        currency: "ETB",
+        timezone: "Africa/Addis_Ababa",
 
-    const settings = data.settings || {};
+        hero_title: "Learn Skills. Build Your Future.",
+        hero_subtitle: "",
+        hero_image_url: "",
+        hero_video_url: "",
+        hero_primary_button_text: "Explore Books",
+        hero_primary_button_url: "#shop",
+        hero_secondary_button_text: "Read Articles",
+        hero_secondary_button_url: "#articles",
 
-    setContent(`
-        <div class="panel space-y-3">
+        primary_color: "#e4472e",
+        secondary_color: "#101827",
+        accent_color: "#ff8069",
+        background_color: "#ffffff",
+        text_color: "#101827",
+        font_heading: "Inter",
+        font_body: "Inter",
+        theme_mode: "light",
 
-            <h2 class="font-bold">
-                Website Settings
-            </h2>
+        social_links: [],
+        contact_methods: [],
+        navigation_items: [],
 
-            <p class="text-xs text-gray-500">
-                Manage basic public website identity and hero text.
-            </p>
+        homepage_sections: [
+            { id: "articles", title: "Articles", type: "articles", enabled: true, position: 1 },
+            { id: "features", title: "Features", type: "features", enabled: true, position: 2 },
+            { id: "shop", title: "Book Store", type: "books", enabled: true, position: 3 },
+            { id: "events", title: "Events", type: "events", enabled: true, position: 4 },
+            { id: "membership", title: "Membership", type: "membership", enabled: true, position: 5 },
+            { id: "newsletter", title: "Newsletter", type: "newsletter", enabled: true, position: 6 }
+        ],
 
-            <input
-                id="s-title"
-                class="field"
-                placeholder="Site title"
-                value="${esc(settings.site_title || "DevStackReads")}"
-            >
+        topics: [],
+        features: [],
 
-            <input
-                id="s-hero"
-                class="field"
-                placeholder="Hero headline"
-                value="${esc(settings.hero_title || "")}"
-            >
+        footer_settings: {
+            description: "",
+            copyright_text: "All rights reserved."
+        },
 
-            ${btn("Save Settings", "s-save")}
+        seo_settings: {
+            meta_title: "",
+            meta_description: "",
+            keywords: "",
+            og_image_url: "",
+            robots_index: true
+        },
 
-        </div>
-    `);
+        announcement_bar: {
+            enabled: false,
+            text: "",
+            link_text: "",
+            link_url: "",
+            background_color: "#101827",
+            text_color: "#ffffff"
+        },
 
-    $("#s-save").onclick = async () => {
+        affiliate_disclosure:
+            "As an Amazon Associate I earn from qualifying purchases.",
+        affiliate_enabled: false,
+        affiliate_marketplace: "US",
+        maintenance_mode: false
+    };
 
-        try {
+    const settings = {
+        ...defaults,
+        ...existing
+    };
 
-            await api(API.settings, {
-                method: "PUT",
+    settings.footer_settings = {
+        ...defaults.footer_settings,
+        ...(existing.footer_settings || {})
+    };
 
-                body: JSON.stringify({
-                    settings: {
-                        site_title: $("#s-title").value,
-                        hero_title: $("#s-hero").value
-                    }
-                })
-            });
+    settings.seo_settings = {
+        ...defaults.seo_settings,
+        ...(existing.seo_settings || {})
+    };
 
-            alert("Settings saved successfully.");
+    settings.announcement_bar = {
+        ...defaults.announcement_bar,
+        ...(existing.announcement_bar || {})
+    };
 
-        } catch (error) {
-            alert(error.message);
+    const arrayKeys = [
+        "social_links",
+        "contact_methods",
+        "navigation_items",
+        "homepage_sections",
+        "topics",
+        "features"
+    ];
+
+    arrayKeys.forEach(key => {
+        if (!Array.isArray(settings[key])) {
+            settings[key] = defaults[key] || [];
+        }
+    });
+
+    let activeTab = "general";
+
+    const root = $("#content");
+
+    const tabs = [
+        ["general", "General", "fa-globe"],
+        ["homepage", "Homepage", "fa-house"],
+        ["appearance", "Appearance", "fa-palette"],
+        ["social", "Social Media", "fa-share-nodes"],
+        ["contact", "Contact", "fa-address-book"],
+        ["navigation", "Navigation", "fa-bars"],
+        ["sections", "Sections", "fa-layer-group"],
+        ["footer", "Footer & SEO", "fa-window-maximize"],
+        ["affiliate", "Affiliate", "fa-link"]
+    ];
+
+    // ======================================
+    // FIELD HELPERS
+    // ======================================
+
+    function field(key, label, type = "text", hint = "") {
+        const value = settings[key] ?? "";
+
+        if (type === "textarea") {
+            return `
+                <label class="block text-xs font-bold text-gray-600">
+                    ${esc(label)}
+                    <textarea
+                        class="field mt-1"
+                        rows="3"
+                        data-setting-key="${esc(key)}"
+                    >${esc(value)}</textarea>
+                    ${hint ? `<span class="block text-[10px] text-gray-400 mt-1">${esc(hint)}</span>` : ""}
+                </label>
+            `;
+        }
+
+        return `
+            <label class="block text-xs font-bold text-gray-600">
+                ${esc(label)}
+                <input
+                    class="field mt-1"
+                    type="${esc(type)}"
+                    data-setting-key="${esc(key)}"
+                    value="${esc(value)}"
+                >
+                ${hint ? `<span class="block text-[10px] text-gray-400 mt-1">${esc(hint)}</span>` : ""}
+            </label>
+        `;
+    }
+
+    function objectField(group, key, label, type = "text") {
+        const value = settings[group]?.[key] ?? "";
+
+        if (type === "checkbox") {
+            return `
+                <label class="flex items-center gap-2 text-xs font-semibold text-gray-600">
+                    <input
+                        type="checkbox"
+                        data-object-key="${esc(group)}"
+                        data-object-field="${esc(key)}"
+                        ${value ? "checked" : ""}
+                    >
+                    ${esc(label)}
+                </label>
+            `;
+        }
+
+        if (type === "textarea") {
+            return `
+                <label class="block text-xs font-bold text-gray-600">
+                    ${esc(label)}
+                    <textarea
+                        rows="3"
+                        class="field mt-1"
+                        data-object-key="${esc(group)}"
+                        data-object-field="${esc(key)}"
+                    >${esc(value)}</textarea>
+                </label>
+            `;
+        }
+
+        return `
+            <label class="block text-xs font-bold text-gray-600">
+                ${esc(label)}
+                <input
+                    class="field mt-1"
+                    type="${esc(type)}"
+                    data-object-key="${esc(group)}"
+                    data-object-field="${esc(key)}"
+                    value="${esc(value)}"
+                >
+            </label>
+        `;
+    }
+
+    function toggleField(key, label) {
+        return `
+            <label class="flex items-center gap-2 text-xs font-semibold text-gray-600">
+                <input
+                    type="checkbox"
+                    data-setting-key="${esc(key)}"
+                    ${settings[key] ? "checked" : ""}
+                >
+                ${esc(label)}
+            </label>
+        `;
+    }
+
+    // ======================================
+    // DYNAMIC ARRAY EDITOR
+    // ======================================
+
+    function renderArrayEditor(title, key, fields, addText) {
+        const items = settings[key];
+
+        return `
+            <div class="panel space-y-4">
+
+                <div class="flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                        <h3 class="font-bold">${esc(title)}</h3>
+                        <p class="text-[11px] text-gray-500 mt-1">
+                            ${items.length} registered item(s)
+                        </p>
+                    </div>
+
+                    <button
+                        type="button"
+                        data-add-array="${esc(key)}"
+                        class="bg-[#d9381e] text-white px-3 py-2 rounded-lg text-xs font-bold"
+                    >
+                        <i class="fa fa-plus mr-1"></i>
+                        ${esc(addText)}
+                    </button>
+                </div>
+
+                ${items.length
+                    ? items.map((item, index) => `
+                        <div class="border border-gray-200 rounded-xl p-4 space-y-3">
+
+                            <div class="flex justify-between items-center">
+                                <b class="text-xs">
+                                    ${esc(title)} #${index + 1}
+                                </b>
+
+                                <button
+                                    type="button"
+                                    data-remove-array="${esc(key)}"
+                                    data-index="${index}"
+                                    class="text-red-600 text-xs font-bold"
+                                >
+                                    <i class="fa fa-trash mr-1"></i>
+                                    Remove
+                                </button>
+                            </div>
+
+                            <div class="grid md:grid-cols-2 gap-3">
+
+                                ${fields.map(f => {
+                                    const value = item[f.key] ?? "";
+
+                                    if (f.type === "checkbox") {
+                                        return `
+                                            <label class="flex items-center gap-2 text-xs font-semibold text-gray-600">
+                                                <input
+                                                    type="checkbox"
+                                                    data-array-key="${esc(key)}"
+                                                    data-index="${index}"
+                                                    data-field="${esc(f.key)}"
+                                                    ${value ? "checked" : ""}
+                                                >
+                                                ${esc(f.label)}
+                                            </label>
+                                        `;
+                                    }
+
+                                    if (f.type === "textarea") {
+                                        return `
+                                            <label class="block text-xs font-bold text-gray-600 md:col-span-2">
+                                                ${esc(f.label)}
+                                                <textarea
+                                                    rows="2"
+                                                    class="field mt-1"
+                                                    data-array-key="${esc(key)}"
+                                                    data-index="${index}"
+                                                    data-field="${esc(f.key)}"
+                                                >${esc(value)}</textarea>
+                                            </label>
+                                        `;
+                                    }
+
+                                    return `
+                                        <label class="block text-xs font-bold text-gray-600">
+                                            ${esc(f.label)}
+                                            <input
+                                                type="${esc(f.type || "text")}"
+                                                class="field mt-1"
+                                                data-array-key="${esc(key)}"
+                                                data-index="${index}"
+                                                data-field="${esc(f.key)}"
+                                                value="${esc(value)}"
+                                            >
+                                        </label>
+                                    `;
+                                }).join("")}
+
+                            </div>
+                        </div>
+                    `).join("")
+                    : `
+                        <div class="border border-dashed rounded-xl p-7 text-center">
+                            <i class="fa fa-folder-open text-2xl text-gray-300"></i>
+                            <p class="text-xs text-gray-500 mt-2">
+                                No ${esc(title.toLowerCase())} added yet.
+                            </p>
+                        </div>
+                    `
+                }
+
+            </div>
+        `;
+    }
+
+    function makeEmptyItem(key) {
+        const definitions = {
+            social_links: {
+                platform: "Custom",
+                label: "",
+                url: "",
+                icon: "",
+                position: "footer",
+                enabled: true
+            },
+            contact_methods: {
+                type: "email",
+                label: "",
+                value: "",
+                url: "",
+                enabled: true
+            },
+            navigation_items: {
+                label: "",
+                url: "",
+                location: "header",
+                enabled: true
+            },
+            homepage_sections: {
+                id: `custom-${Date.now()}`,
+                title: "",
+                type: "custom",
+                enabled: true,
+                position: settings.homepage_sections.length + 1
+            },
+            topics: {
+                name: "",
+                url: "#articles",
+                enabled: true
+            },
+            features: {
+                icon: "fa-solid fa-star",
+                title: "",
+                description: "",
+                enabled: true
+            }
+        };
+
+        return definitions[key]
+            ? { ...definitions[key] }
+            : {};
+    }
+
+    // ======================================
+    // TAB CONTENT
+    // ======================================
+
+    function renderTabContent() {
+        switch (activeTab) {
+
+            case "general":
+                return `
+                    <div class="panel space-y-4">
+                        <div>
+                            <h3 class="font-bold">Website Identity</h3>
+                            <p class="text-xs text-gray-500 mt-1">
+                                Configure the name, branding and default website information.
+                            </p>
+                        </div>
+
+                        <div class="grid md:grid-cols-2 gap-4">
+                            ${field("site_title", "Website Name")}
+                            ${field("site_tagline", "Tagline")}
+                            ${field("logo_url", "Logo Image URL", "url")}
+                            ${field("favicon_url", "Favicon URL", "url")}
+                            ${field("default_language", "Default Language")}
+                            ${field("currency", "Currency")}
+                            ${field("timezone", "Time Zone")}
+                        </div>
+
+                        ${field("site_description", "Website Description", "textarea")}
+                    </div>
+
+                    <div class="panel space-y-3">
+                        <h3 class="font-bold">Website Availability</h3>
+                        ${toggleField("maintenance_mode", "Enable maintenance mode")}
+                        <p class="text-[11px] text-gray-500">
+                            This setting is stored for future maintenance-page integration.
+                        </p>
+                    </div>
+                `;
+
+            case "homepage":
+                return `
+                    <div class="panel space-y-4">
+                        <h3 class="font-bold">Hero Section</h3>
+
+                        <div class="grid md:grid-cols-2 gap-4">
+                            ${field("hero_title", "Main Heading")}
+                            ${field("hero_subtitle", "Subtitle", "text")}
+                            ${field("hero_image_url", "Hero Background Image", "url")}
+                            ${field("hero_video_url", "Hero Background Video", "url")}
+                            ${field("hero_primary_button_text", "Primary Button Text")}
+                            ${field("hero_primary_button_url", "Primary Button Link", "text")}
+                            ${field("hero_secondary_button_text", "Secondary Button Text")}
+                            ${field("hero_secondary_button_url", "Secondary Button Link", "text")}
+                        </div>
+                    </div>
+
+                    <div class="panel space-y-3">
+                        <h3 class="font-bold">Announcement Bar</h3>
+
+                        ${objectField("announcement_bar", "enabled", "Show announcement bar", "checkbox")}
+
+                        ${objectField("announcement_bar", "text", "Announcement Text", "textarea")}
+
+                        <div class="grid md:grid-cols-2 gap-3">
+                            ${objectField("announcement_bar", "link_text", "Button Text")}
+                            ${objectField("announcement_bar", "link_url", "Button Link")}
+                            ${objectField("announcement_bar", "background_color", "Background Color", "color")}
+                            ${objectField("announcement_bar", "text_color", "Text Color", "color")}
+                        </div>
+                    </div>
+                `;
+
+            case "appearance":
+                return `
+                    <div class="panel space-y-4">
+                        <h3 class="font-bold">Colors & Theme</h3>
+
+                        <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                            ${field("primary_color", "Primary Color", "color")}
+                            ${field("secondary_color", "Secondary Color", "color")}
+                            ${field("accent_color", "Accent Color", "color")}
+                            ${field("background_color", "Background Color", "color")}
+                            ${field("text_color", "Text Color", "color")}
+                            ${field("font_heading", "Heading Font")}
+                            ${field("font_body", "Body Font")}
+                        </div>
+
+                        <label class="block text-xs font-bold text-gray-600">
+                            Theme Mode
+                            <select class="field mt-1" data-setting-key="theme_mode">
+                                <option value="light" ${settings.theme_mode === "light" ? "selected" : ""}>Light</option>
+                                <option value="dark" ${settings.theme_mode === "dark" ? "selected" : ""}>Dark</option>
+                                <option value="system" ${settings.theme_mode === "system" ? "selected" : ""}>System</option>
+                            </select>
+                        </label>
+                    </div>
+                `;
+
+            case "social":
+                return renderArrayEditor(
+                    "Social Media Accounts",
+                    "social_links",
+                    [
+                        { key: "platform", label: "Platform Name" },
+                        { key: "label", label: "Display Name" },
+                        { key: "url", label: "Profile URL", type: "url" },
+                        { key: "icon", label: "Icon Class" },
+                        { key: "position", label: "Display Position" },
+                        { key: "enabled", label: "Enabled", type: "checkbox" }
+                    ],
+                    "Add Social Platform"
+                );
+
+            case "contact":
+                return renderArrayEditor(
+                    "Contact Methods",
+                    "contact_methods",
+                    [
+                        { key: "type", label: "Type (Email, Phone, WhatsApp...)" },
+                        { key: "label", label: "Display Label" },
+                        { key: "value", label: "Contact Value" },
+                        { key: "url", label: "Contact Link", type: "url" },
+                        { key: "enabled", label: "Enabled", type: "checkbox" }
+                    ],
+                    "Add Contact Method"
+                );
+
+            case "navigation":
+                return renderArrayEditor(
+                    "Navigation Links",
+                    "navigation_items",
+                    [
+                        { key: "label", label: "Menu Label" },
+                        { key: "url", label: "Link URL" },
+                        { key: "location", label: "Location (header, footer, mobile)" },
+                        { key: "enabled", label: "Visible", type: "checkbox" }
+                    ],
+                    "Add Navigation Link"
+                ) + renderArrayEditor(
+                    "Homepage Topics",
+                    "topics",
+                    [
+                        { key: "name", label: "Topic Name" },
+                        { key: "url", label: "Link URL" },
+                        { key: "enabled", label: "Visible", type: "checkbox" }
+                    ],
+                    "Add Topic"
+                );
+
+            case "sections":
+                return renderArrayEditor(
+                    "Homepage Sections",
+                    "homepage_sections",
+                    [
+                        { key: "id", label: "Section ID" },
+                        { key: "title", label: "Section Title" },
+                        { key: "type", label: "Section Type" },
+                        { key: "position", label: "Display Order", type: "number" },
+                        { key: "enabled", label: "Visible", type: "checkbox" }
+                    ],
+                    "Add Homepage Section"
+                ) + renderArrayEditor(
+                    "Feature Cards",
+                    "features",
+                    [
+                        { key: "icon", label: "Icon Class" },
+                        { key: "title", label: "Feature Title" },
+                        { key: "description", label: "Description", type: "textarea" },
+                        { key: "enabled", label: "Visible", type: "checkbox" }
+                    ],
+                    "Add Feature"
+                );
+
+            case "footer":
+                return `
+                    <div class="panel space-y-4">
+                        <h3 class="font-bold">Footer Settings</h3>
+                        ${objectField("footer_settings", "description", "Footer Description", "textarea")}
+                        ${objectField("footer_settings", "copyright_text", "Copyright Text")}
+                    </div>
+
+                    <div class="panel space-y-4">
+                        <h3 class="font-bold">SEO Settings</h3>
+                        ${objectField("seo_settings", "meta_title", "Meta Title")}
+                        ${objectField("seo_settings", "meta_description", "Meta Description", "textarea")}
+                        ${objectField("seo_settings", "keywords", "Keywords")}
+                        ${objectField("seo_settings", "og_image_url", "Social Sharing Image URL", "url")}
+                        ${objectField("seo_settings", "robots_index", "Allow Search Engine Indexing", "checkbox")}
+                    </div>
+                `;
+
+            case "affiliate":
+                return `
+                    <div class="panel space-y-4">
+                        <h3 class="font-bold">Affiliate Configuration</h3>
+
+                        ${toggleField("affiliate_enabled", "Enable Affiliate Book Listings")}
+
+                        ${field("affiliate_marketplace", "Amazon Marketplace", "text", "Use the marketplace code approved for your Associates account.")}
+
+                        ${field("affiliate_disclosure", "Affiliate Disclosure", "textarea")}
+
+                        <div class="bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs text-amber-900">
+                            <b>Important:</b>
+                            Amazon API credentials must be stored as Vercel Environment Variables, not in public website settings.
+                            Amazon product images and content must be used only according to the applicable Associates permissions.
+                        </div>
+                    </div>
+                `;
+
+            default:
+                return `<div class="panel">Unknown settings tab.</div>`;
+        }
+    }
+
+    // ======================================
+    // RENDER SETTINGS PAGE
+    // ======================================
+
+    function renderSettings() {
+        root.innerHTML = `
+            <div class="space-y-5">
+
+                <div class="panel">
+                    <div class="flex flex-wrap justify-between items-center gap-3">
+                        <div>
+                            <h2 class="text-xl font-black">Website Control Center</h2>
+                            <p class="text-xs text-gray-500 mt-1">
+                                Manage your website content, appearance and integrations.
+                            </p>
+                        </div>
+
+                        <span class="text-xs bg-green-50 text-green-700 px-3 py-2 rounded-lg font-bold">
+                            Advanced Settings
+                        </span>
+                    </div>
+                </div>
+
+                <div class="panel">
+                    <div class="flex flex-wrap gap-2">
+                        ${tabs.map(([id, label, icon]) => `
+                            <button
+                                type="button"
+                                data-settings-tab="${id}"
+                                class="px-3 py-2 rounded-lg text-xs font-bold border ${
+                                    activeTab === id
+                                        ? "bg-[#d9381e] text-white border-[#d9381e]"
+                                        : "bg-white text-gray-600 border-gray-200"
+                                }"
+                            >
+                                <i class="fa ${icon} mr-1"></i>
+                                ${label}
+                            </button>
+                        `).join("")}
+                    </div>
+                </div>
+
+                <div class="space-y-4">
+                    ${renderTabContent()}
+                </div>
+
+                <div class="panel flex flex-wrap justify-between items-center gap-3">
+                    <p class="text-xs text-gray-500">
+                        Changes are saved to the website settings database.
+                    </p>
+
+                    <button
+                        type="button"
+                        id="settings-save"
+                        class="bg-[#d9381e] text-white rounded-xl px-6 py-3 text-xs font-bold"
+                    >
+                        <i class="fa fa-floppy-disk mr-2"></i>
+                        Save All Settings
+                    </button>
+                </div>
+
+            </div>
+        `;
+    }
+
+    // ======================================
+    // FORM STATE UPDATES
+    // ======================================
+
+    function updateSettingValue(target) {
+        if (target.dataset.settingKey) {
+            const key = target.dataset.settingKey;
+
+            settings[key] = target.type === "checkbox"
+                ? target.checked
+                : target.value;
+
+            return;
+        }
+
+        if (target.dataset.objectKey) {
+            const group = target.dataset.objectKey;
+            const key = target.dataset.objectField;
+
+            if (!settings[group]) settings[group] = {};
+
+            settings[group][key] = target.type === "checkbox"
+                ? target.checked
+                : target.value;
+
+            return;
+        }
+
+        if (target.dataset.arrayKey) {
+            const key = target.dataset.arrayKey;
+            const index = Number(target.dataset.index);
+            const fieldName = target.dataset.field;
+
+            if (
+                Array.isArray(settings[key]) &&
+                settings[key][index]
+            ) {
+                settings[key][index][fieldName] =
+                    target.type === "checkbox"
+                        ? target.checked
+                        : target.value;
+            }
+        }
+    }
+
+    root.oninput = event => {
+        updateSettingValue(event.target);
+    };
+
+    root.onchange = event => {
+        updateSettingValue(event.target);
+    };
+
+    // ======================================
+    // BUTTON ACTIONS
+    // ======================================
+
+    root.onclick = async event => {
+        const tab = event.target.closest("[data-settings-tab]");
+
+        const add = event.target.closest("[data-add-array]");
+
+        const remove = event.target.closest("[data-remove-array]");
+
+        const save = event.target.closest("#settings-save");
+
+        if (tab) {
+            activeTab = tab.dataset.settingsTab;
+            renderSettings();
+            return;
+        }
+
+        if (add) {
+            const key = add.dataset.addArray;
+
+            if (Array.isArray(settings[key])) {
+                if (settings[key].length >= 500) {
+                    alert("Maximum of 500 items reached.");
+                    return;
+                }
+
+                settings[key].push(makeEmptyItem(key));
+                renderSettings();
+            }
+
+            return;
+        }
+
+        if (remove) {
+            const key = remove.dataset.removeArray;
+            const index = Number(remove.dataset.index);
+
+            if (
+                Array.isArray(settings[key]) &&
+                Number.isInteger(index) &&
+                index >= 0 &&
+                index < settings[key].length
+            ) {
+                if (confirm("Remove this item?")) {
+                    settings[key].splice(index, 1);
+                    renderSettings();
+                }
+            }
+
+            return;
+        }
+
+        if (save) {
+            save.disabled = true;
+            save.textContent = "Saving...";
+
+            try {
+                const result = await api(API.settings, {
+                    method: "PUT",
+                    body: JSON.stringify({ settings })
+                });
+
+                alert(
+                    result.message ||
+                    "Website settings saved successfully."
+                );
+
+            } catch (error) {
+                alert(error.message || "Could not save settings.");
+
+            } finally {
+                save.disabled = false;
+                save.innerHTML =
+                    '<i class="fa fa-floppy-disk mr-2"></i> Save All Settings';
+            }
         }
     };
+
+    renderSettings();
 }
 
 /* MAIN PAGE LOADER */
