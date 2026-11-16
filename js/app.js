@@ -8,6 +8,10 @@
 
   const $ = (id) => document.getElementById(id);
 
+  // ==========================================
+  // AUTH MESSAGES
+  // ==========================================
+
   function showAuthMessage(message, type = "error") {
     const element = $("auth-message");
 
@@ -17,6 +21,7 @@
     }
 
     element.textContent = message;
+
     element.classList.remove(
       "hidden",
       "text-red-500",
@@ -24,7 +29,9 @@
     );
 
     element.classList.add(
-      type === "success" ? "text-green-500" : "text-red-500"
+      type === "success"
+        ? "text-green-500"
+        : "text-red-500"
     );
   }
 
@@ -34,9 +41,17 @@
     if (element) {
       element.textContent = "";
       element.classList.add("hidden");
-      element.classList.remove("text-red-500", "text-green-500");
+
+      element.classList.remove(
+        "text-red-500",
+        "text-green-500"
+      );
     }
   }
+
+  // ==========================================
+  // API RESPONSE HANDLER
+  // ==========================================
 
   async function readResponse(response) {
     let data;
@@ -44,12 +59,15 @@
     try {
       data = await response.json();
     } catch {
-      throw new Error("The server returned an invalid response.");
+      throw new Error(
+        "The server returned an invalid response."
+      );
     }
 
     if (!response.ok || data.success !== true) {
       throw new Error(
-        data.message || `Request failed (${response.status}).`
+        data.message ||
+        `Request failed (${response.status}).`
       );
     }
 
@@ -61,7 +79,10 @@
   // ==========================================
 
   function openAuthModal(mode = "login") {
-    authMode = mode === "register" ? "register" : "login";
+    authMode =
+      mode === "register"
+        ? "register"
+        : "login";
 
     const modal = $("auth-modal");
     const title = $("auth-title");
@@ -71,10 +92,13 @@
     const button = $("auth-btn");
 
     clearAuthMessage();
+
     modal?.classList.remove("hidden");
 
     if (authMode === "register") {
-      if (title) title.textContent = "Create an Account";
+      if (title) {
+        title.textContent = "Create an Account";
+      }
 
       nameField?.classList.remove("hidden");
 
@@ -86,9 +110,13 @@
         passwordInput.autocomplete = "new-password";
       }
 
-      if (button) button.textContent = "Sign Up";
+      if (button) {
+        button.textContent = "Sign Up";
+      }
     } else {
-      if (title) title.textContent = "Log In to Your Account";
+      if (title) {
+        title.textContent = "Log In to Your Account";
+      }
 
       nameField?.classList.add("hidden");
 
@@ -100,7 +128,9 @@
         passwordInput.autocomplete = "current-password";
       }
 
-      if (button) button.textContent = "Log In";
+      if (button) {
+        button.textContent = "Log In";
+      }
     }
   }
 
@@ -110,6 +140,7 @@
 
   function closeAuthModal() {
     $("auth-modal")?.classList.add("hidden");
+
     clearAuthMessage();
 
     const form = $("auth-form");
@@ -128,39 +159,71 @@
 
     if (authSubmitting) return;
 
-    const email = $("auth-email")?.value.trim() || "";
-    const password = $("auth-password")?.value || "";
-    const name = $("auth-name")?.value.trim() || "";
+    const email =
+      $("auth-email")?.value.trim() || "";
+
+    const password =
+      $("auth-password")?.value || "";
+
+    const name =
+      $("auth-name")?.value.trim() || "";
+
     const button = $("auth-btn");
 
+    // Basic validation
+
     if (!email || !password) {
-      showAuthMessage("Email and password are required.");
+      showAuthMessage(
+        "Email and password are required."
+      );
       return;
     }
 
-    if (authMode === "register" && !name) {
-      showAuthMessage("Please enter your name.");
+    if (
+      authMode === "register" &&
+      !name
+    ) {
+      showAuthMessage(
+        "Please enter your name."
+      );
       return;
     }
 
-    if (authMode === "register" && name.length > 100) {
-      showAuthMessage("Name must not exceed 100 characters.");
+    // Match API name limit: 150 characters
+
+    if (
+      authMode === "register" &&
+      name.length > 150
+    ) {
+      showAuthMessage(
+        "Name must not exceed 150 characters."
+      );
       return;
     }
 
-    if (email.length > 254) {
-      showAuthMessage("Email address is too long.");
+    if (email.length > 255) {
+      showAuthMessage(
+        "Email address is too long."
+      );
       return;
     }
 
-    if (authMode === "register" && password.length < 10) {
-      showAuthMessage("Password must contain at least 10 characters.");
+    if (
+      authMode === "register" &&
+      password.length < 10
+    ) {
+      showAuthMessage(
+        "Password must contain at least 10 characters."
+      );
       return;
     }
+
+    // Prevent duplicate submissions
 
     authSubmitting = true;
 
-    const originalText = button?.textContent || "Submit";
+    const originalText =
+      button?.textContent || "Submit";
 
     if (button) {
       button.disabled = true;
@@ -171,27 +234,34 @@
 
     try {
       const action =
-        authMode === "register" ? "register" : "login";
+        authMode === "register"
+          ? "register"
+          : "login";
 
-      const response = await fetch(`/api/auth?action=${action}`, {
-        method: "POST",
-        credentials: "same-origin",
-        cache: "no-store",
-        headers: {
-          "Content-Type": "application/json",
-          "Accept": "application/json"
-        },
-        body: JSON.stringify({
-          name,
-          email,
-          password
-        })
-      });
+      const response = await fetch(
+        `/api/auth?action=${action}`,
+        {
+          method: "POST",
+          credentials: "same-origin",
+          cache: "no-store",
+          headers: {
+            "Content-Type": "application/json",
+            "Accept": "application/json"
+          },
+          body: JSON.stringify({
+            name,
+            email,
+            password
+          })
+        }
+      );
 
       const data = await readResponse(response);
 
       if (!data.user) {
-        throw new Error("User information was not returned by the server.");
+        throw new Error(
+          "User information was not returned by the server."
+        );
       }
 
       const successMessage =
@@ -200,16 +270,22 @@
           : "Logged in successfully!";
 
       closeAuthModal();
+
       await checkUserSession();
 
       alert(successMessage);
 
     } catch (error) {
-      console.error("Authentication error:", error);
+      console.error(
+        "Authentication error:",
+        error
+      );
 
       showAuthMessage(
-        error.message || "Authentication failed."
+        error.message ||
+        "Authentication failed."
       );
+
     } finally {
       authSubmitting = false;
 
@@ -226,16 +302,20 @@
 
   async function checkUserSession() {
     try {
-      const response = await fetch("/api/auth?action=me", {
-        method: "GET",
-        credentials: "same-origin",
-        cache: "no-store",
-        headers: {
-          "Accept": "application/json"
+      const response = await fetch(
+        "/api/auth?action=me",
+        {
+          method: "GET",
+          credentials: "same-origin",
+          cache: "no-store",
+          headers: {
+            "Accept": "application/json"
+          }
         }
-      });
+      );
 
       const data = await readResponse(response);
+
       const user = data.user || null;
 
       const authArea = $("user-auth-area");
@@ -248,7 +328,9 @@
 
         if (username) {
           username.textContent =
-            user.name || user.email || "User";
+            user.name ||
+            user.email ||
+            "User";
         }
       } else {
         authArea?.classList.remove("hidden");
@@ -262,7 +344,11 @@
       return user;
 
     } catch (error) {
-      console.error("Session check failed:", error);
+      console.error(
+        "Session check failed:",
+        error
+      );
+
       return null;
     }
   }
@@ -277,23 +363,35 @@
     logoutSubmitting = true;
 
     try {
-      const response = await fetch("/api/auth?action=logout", {
-        method: "POST",
-        credentials: "same-origin",
-        cache: "no-store",
-        headers: {
-          "Accept": "application/json"
+      const response = await fetch(
+        "/api/auth?action=logout",
+        {
+          method: "POST",
+          credentials: "same-origin",
+          cache: "no-store",
+          headers: {
+            "Accept": "application/json"
+          }
         }
-      });
+      );
 
       await readResponse(response);
+
       await checkUserSession();
 
       alert("Logged out successfully!");
 
     } catch (error) {
-      console.error("Logout error:", error);
-      alert(error.message || "Logout failed.");
+      console.error(
+        "Logout error:",
+        error
+      );
+
+      alert(
+        error.message ||
+        "Logout failed."
+      );
+
     } finally {
       logoutSubmitting = false;
     }
@@ -310,7 +408,7 @@
   window.logoutUser = logoutUser;
 
   // ==========================================
-  // INITIALIZE
+  // INITIALIZE SESSION
   // ==========================================
 
   if (document.readyState === "loading") {
@@ -322,4 +420,5 @@
   } else {
     checkUserSession();
   }
+
 })();
