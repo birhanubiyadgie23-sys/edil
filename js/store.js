@@ -1360,95 +1360,63 @@ function displayPublicEvents(data) {
 // DISPLAY PUBLIC MEMBERSHIP
 // ==========================================
 
-function displayPublicMembership(data) {
 
-    const root = document.getElementById(
-        "membership-grid"
-    );
+function displayPublicMembership(data) {
+    const root = document.getElementById("membership-grid");
 
     if (!root) return;
 
-
-    // Membership API returns { success, memberships }.
     const plans = data.memberships;
 
     if (!Array.isArray(plans)) {
-
-        console.warn(
-            "Invalid membership response."
-        );
-
+        console.warn("Invalid membership response.");
         return;
     }
 
     root.replaceChildren();
 
     if (!plans.length) {
-
-        root.textContent =
-            "Membership plans are not available.";
-
+        root.textContent = "Membership plans are not available.";
         return;
     }
 
-
     plans.forEach(plan => {
-
         const card = document.createElement("article");
 
         card.className =
             "bg-white p-6 rounded-2xl border border-gray-200 shadow-sm";
 
-
         const title = document.createElement("h3");
-
         title.className = "text-xl font-bold";
-
-        title.textContent =
-            plan.name || "Membership";
-
+        title.textContent = plan.name || "Membership";
 
         const description = document.createElement("p");
-
-        description.className =
-            "text-sm text-gray-600 mt-2";
-
-        description.textContent =
-            plan.description || "";
-
+        description.className = "text-sm text-gray-600 mt-2";
+        description.textContent = plan.description || "";
 
         const price = document.createElement("p");
-
         price.className =
             "text-2xl font-bold text-[#d9381e] mt-4";
 
         const planPrice = Number(plan.price);
 
         price.textContent =
-            Number.isFinite(planPrice)
+            Number.isFinite(planPrice) && planPrice >= 0
                 ? `${planPrice.toFixed(2)} ETB`
                 : "Price unavailable";
 
-
         const duration = document.createElement("p");
-
-        duration.className =
-            "text-xs text-gray-500 mt-2";
-
+        duration.className = "text-xs text-gray-500 mt-2";
         duration.textContent =
             `${Number(plan.duration_days || 0)} days`;
 
-
         const features = document.createElement("ul");
-
         features.className =
             "mt-4 space-y-2 text-sm text-gray-600";
-
 
         let featureList = plan.features || [];
 
         if (typeof featureList === "string") {
-
             try {
                 featureList = JSON.parse(featureList);
             } catch {
@@ -1456,34 +1424,379 @@ function displayPublicMembership(data) {
             }
         }
 
-
         if (Array.isArray(featureList)) {
-
             featureList.forEach(feature => {
-
-                if (typeof feature !== "string") {
-                    return;
-                }
+                if (typeof feature !== "string") return;
 
                 const item = document.createElement("li");
-
                 item.textContent = `✓ ${feature}`;
-
                 features.appendChild(item);
             });
         }
 
+        const button = document.createElement("button");
+
+        button.type = "button";
+        button.className =
+            "btn-primary w-full mt-6";
+
+        button.textContent =
+            planPrice === 0
+                ? "Activate Free Membership"
+                : "Choose Membership";
+
+        button.disabled =
+            !Number.isFinite(planPrice) ||
+            planPrice < 0 ||
+            !Number.isSafeInteger(Number(plan.duration_days)) ||
+            Number(plan.duration_days) < 1;
+
+        button.addEventListener("click", () => {
+            startMembershipPurchase(plan);
+        });
 
         card.append(
             title,
             description,
             price,
             duration,
-            features
+            features,
+            button
         );
 
         root.appendChild(card);
     });
+}
+
+// ==========================================
+// MEMBERSHIP PURCHASE
+// ==========================================
+
+let membershipPurchaseInProgress = false;
+
+
+// ==========================================
+// START MEMBERSHIP PURCHASE
+// ==========================================
+
+async function startMembershipPurchase(plan) {
+    if (membershipPurchaseInProgress) return;
+
+    if (!plan || plan.id == null) {
+        alert("Invalid membership plan.");
+        return;
+    }
+
+    const price = Number(plan.price);
+
+    if (!Number.isFinite(price) || price < 0) {
+        alert("Invalid membership price.");
+        return;
+    }
+
+    // Check login session.
+    try {
+        const me = await requestJSON("/api/auth?action=me");
+
+        if (!me.user) {
+            if (typeof window.openAuthModal === "function") {
+                window.openAuthModal("login");
+            } else {
+                alert("Please log in first.");
+            }
+
+            return;
+        }
+    } catch (error) {
+        console.error("Membership login check failed:", error);
+        alert(error.message || "Please log in first.");
+        return;
+    }
+
+    // Free membership: activate immediately.
+    if (price === 0) {
+        const confirmed = confirm(
+            `Activate ${plan.name || "Free Membership"}?`
+        );
+
+        if (!confirmed) return;
+
+        await submitMembershipRequest({
+            plan_id: plan.id
+        });
+
+        return;
+    }
+
+    // Paid membership: show payment form.
+    showMembershipPaymentForm(plan);
+}
+
+
+// ==========================================
+// MEMBERSHIP PAYMENT FORM
+// ==========================================
+
+function showMembershipPaymentForm(plan) {
+    const existing = document.getElementById(
+        "membership-payment-modal"
+    );
+
+    if (existing) existing.remove();
+
+    const overlay = document.createElement("div");
+
+    overlay.id = "membership-payment-modal";
+
+    overlay.className =
+        "fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 p-4";
+
+    const panel = document.createElement("div");
+
+    panel.className =
+        "bg-white w-full max-w-md rounded-2xl p-6 shadow-2xl max-h-[90vh] overflow-y-auto";
+
+    const heading = document.createElement("h2");
+
+    heading.className = "text-xl font-bold";
+
+    heading.textContent = "Complete Membership Payment";
+
+
+    const planName = document.createElement("p");
+
+    planName.className = "text-sm text-gray-600 mt-3";
+
+    planName.textContent =
+        `Plan: ${plan.name || "Membership"}`;
+
+
+    const amount = document.createElement("p");
+
+    amount.className =
+        "text-2xl font-black text-red-600 mt-2";
+
+    amount.textContent =
+        `${Number(plan.price).toFixed(2)} ETB`;
+
+
+    const methodLabel = document.createElement("label");
+
+    methodLabel.className =
+        "block text-sm font-bold mt-5";
+
+    methodLabel.textContent = "Payment Method";
+
+
+    const methodSelect = document.createElement("select");
+
+    methodSelect.className =
+        "w-full border rounded-lg p-3 mt-2";
+
+    methodSelect.required = true;
+
+
+    const telebirrOption = document.createElement("option");
+
+    telebirrOption.value = "telebirr";
+
+    telebirrOption.textContent = "Telebirr";
+
+
+    const bankOption = document.createElement("option");
+
+    bankOption.value = "bank";
+
+    bankOption.textContent = "Bank Transfer";
+
+
+    methodSelect.append(
+        telebirrOption,
+        bankOption
+    );
+
+
+    const referenceLabel = document.createElement("label");
+
+    referenceLabel.className =
+        "block text-sm font-bold mt-5";
+
+    referenceLabel.textContent =
+        "Payment Reference / Transaction ID";
+
+
+    const referenceInput = document.createElement("input");
+
+    referenceInput.type = "text";
+
+    referenceInput.className =
+        "w-full border rounded-lg p-3 mt-2";
+
+    referenceInput.placeholder =
+        "Enter your transaction reference";
+
+    referenceInput.maxLength = 150;
+
+    referenceInput.required = true;
+
+
+    const note = document.createElement("p");
+
+    note.className =
+        "text-xs text-gray-500 mt-3";
+
+    note.textContent =
+        "Your membership will remain pending until an administrator verifies your payment. Do not submit a reference for a payment you have not made.";
+
+
+    const error = document.createElement("p");
+
+    error.className =
+        "text-sm text-red-600 mt-3";
+
+    error.hidden = true;
+
+
+    const buttons = document.createElement("div");
+
+    buttons.className =
+        "flex gap-3 mt-6";
+
+
+    const cancelButton = document.createElement("button");
+
+    cancelButton.type = "button";
+
+    cancelButton.className =
+        "w-1/2 border rounded-lg p-3 font-bold";
+
+    cancelButton.textContent = "Cancel";
+
+    cancelButton.addEventListener("click", () => {
+        overlay.remove();
+    });
+
+
+    const submitButton = document.createElement("button");
+
+    submitButton.type = "button";
+
+    submitButton.className =
+        "w-1/2 bg-red-600 text-white rounded-lg p-3 font-bold";
+
+    submitButton.textContent = "Submit Payment";
+
+
+    submitButton.addEventListener("click", async () => {
+        const reference = referenceInput.value.trim();
+
+        if (reference.length < 3 || reference.length > 150) {
+            error.textContent =
+                "Enter a valid transaction reference.";
+
+            error.hidden = false;
+
+            return;
+        }
+
+        error.hidden = true;
+
+        submitButton.disabled = true;
+
+        submitButton.textContent = "Submitting...";
+
+        const result = await submitMembershipRequest({
+            plan_id: plan.id,
+            payment_method: methodSelect.value,
+            payment_reference: reference
+        });
+
+        if (result) {
+            overlay.remove();
+        } else {
+            submitButton.disabled = false;
+            submitButton.textContent = "Submit Payment";
+        }
+    });
+
+
+    buttons.append(
+        cancelButton,
+        submitButton
+    );
+
+
+    panel.append(
+        heading,
+        planName,
+        amount,
+        methodLabel,
+        methodSelect,
+        referenceLabel,
+        referenceInput,
+        note,
+        error,
+        buttons
+    );
+
+
+    overlay.appendChild(panel);
+
+
+    overlay.addEventListener("click", event => {
+        if (event.target === overlay) {
+            overlay.remove();
+        }
+    });
+
+
+    document.body.appendChild(overlay);
+
+    referenceInput.focus();
+}
+
+
+// ==========================================
+// SUBMIT MEMBERSHIP REQUEST
+// ==========================================
+
+async function submitMembershipRequest(payload) {
+    if (membershipPurchaseInProgress) return false;
+
+    membershipPurchaseInProgress = true;
+
+    try {
+        const result = await requestJSON(
+            "/api/membership",
+            {
+                method: "POST",
+                body: JSON.stringify(payload)
+            }
+        );
+
+        alert(
+            result.message ||
+            "Membership request submitted successfully."
+        );
+
+        return true;
+
+    } catch (error) {
+        console.error(
+            "Membership submission failed:",
+            error
+        );
+
+        alert(
+            error.message ||
+            "Could not submit membership request."
+        );
+
+        return false;
+
+    } finally {
+        membershipPurchaseInProgress = false;
+    }
 }
 
 
