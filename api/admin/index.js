@@ -6,333 +6,410 @@ import {
   audit
 } from "../_db.js";
 
+// ==========================================
+// ALLOWED SETTINGS
+// ==========================================
+
+const ALLOWED_SETTINGS = new Set([
+  // General and branding
+  "site_title",
+  "site_tagline",
+  "logo_url",
+  "favicon_url",
+  "site_description",
+  "default_language",
+  "currency",
+  "timezone",
+
+  // Homepage hero
+  "hero_title",
+  "hero_subtitle",
+  "hero_image_url",
+  "hero_video_url",
+  "hero_primary_button_text",
+  "hero_primary_button_url",
+  "hero_secondary_button_text",
+  "hero_secondary_button_url",
+
+  // Appearance
+  "primary_color",
+  "secondary_color",
+  "accent_color",
+  "background_color",
+  "text_color",
+  "font_heading",
+  "font_body",
+  "theme_mode",
+
+  // Dynamic collections
+  "social_links",
+  "contact_methods",
+  "navigation_items",
+  "homepage_sections",
+  "topics",
+  "features",
+
+  // Footer
+  "footer_settings",
+
+  // SEO
+  "seo_settings",
+
+  // Announcements
+  "announcement_bar",
+
+  // Affiliate public settings
+  "affiliate_disclosure",
+  "affiliate_enabled",
+  "affiliate_marketplace",
+
+  // Website status
+  "maintenance_mode"
+]);
+
+// ==========================================
+// PUBLIC SETTINGS
+// ==========================================
+
+const PUBLIC_SETTINGS = [
+  "site_title",
+  "site_tagline",
+  "logo_url",
+  "favicon_url",
+  "site_description",
+  "default_language",
+  "currency",
+  "timezone",
+
+  "hero_title",
+  "hero_subtitle",
+  "hero_image_url",
+  "hero_video_url",
+  "hero_primary_button_text",
+  "hero_primary_button_url",
+  "hero_secondary_button_text",
+  "hero_secondary_button_url",
+
+  "primary_color",
+  "secondary_color",
+  "accent_color",
+  "background_color",
+  "text_color",
+  "font_heading",
+  "font_body",
+  "theme_mode",
+
+  "social_links",
+  "contact_methods",
+  "navigation_items",
+  "homepage_sections",
+  "topics",
+  "features",
+
+  "footer_settings",
+  "seo_settings",
+  "announcement_bar",
+
+  "affiliate_disclosure",
+  "affiliate_enabled",
+  "affiliate_marketplace",
+
+  "maintenance_mode"
+];
+
+// ==========================================
+// SETTINGS VALUE TYPES
+// ==========================================
+
+const ARRAY_SETTINGS = new Set([
+  "social_links",
+  "contact_methods",
+  "navigation_items",
+  "homepage_sections",
+  "topics",
+  "features"
+]);
+
+const OBJECT_SETTINGS = new Set([
+  "footer_settings",
+  "seo_settings",
+  "announcement_bar"
+]);
+
+const BOOLEAN_SETTINGS = new Set([
+  "affiliate_enabled",
+  "maintenance_mode"
+]);
+
+// ==========================================
+// SAFE JSON PARSER
+// Supports old plain-text values too.
+// ==========================================
+
+function parseSettingValue(value) {
+  if (typeof value !== "string") {
+    return value;
+  }
+
+  try {
+    return JSON.parse(value);
+  } catch {
+    return value;
+  }
+}
+
+// ==========================================
+// VALIDATE SETTINGS
+// ==========================================
+
+function validateSetting(key, value) {
+  if (!ALLOWED_SETTINGS.has(key)) {
+    return `Setting "${key}" is not allowed.`;
+  }
+
+  if (value === undefined) {
+    return `Invalid value for "${key}".`;
+  }
+
+  if (ARRAY_SETTINGS.has(key) && !Array.isArray(value)) {
+    return `"${key}" must be an array.`;
+  }
+
+  if (
+    OBJECT_SETTINGS.has(key) &&
+    (
+      value === null ||
+      typeof value !== "object" ||
+      Array.isArray(value)
+    )
+  ) {
+    return `"${key}" must be an object.`;
+  }
+
+  if (
+    BOOLEAN_SETTINGS.has(key) &&
+    typeof value !== "boolean"
+  ) {
+    return `"${key}" must be true or false.`;
+  }
+
+  if (
+    ["social_links", "contact_methods", "navigation_items",
+     "homepage_sections", "topics", "features"].includes(key) &&
+    value.length > 500
+  ) {
+    return `"${key}" cannot contain more than 500 items.`;
+  }
+
+  return null;
+}
+
+// ==========================================
+// API HANDLER
+// ==========================================
+
 export default async function handler(req, res) {
-  const view = String(req.query?.view || "manage");
+  if (!method(req, res, ["GET", "PUT"])) {
+    return;
+  }
 
-  // =====================================
-  // DASHBOARD OVERVIEW
-  // GET /api/admin?view=overview
-  // =====================================
+  try {
+    // ======================================
+    // ADMIN SETTINGS
+    // GET /api/settings?admin=1
+    // ======================================
 
-  if (view === "overview") {
-    if (!method(req, res, ["GET"])) return;
-
-    try {
+    if (
+      req.method === "GET" &&
+      req.query?.admin === "1"
+    ) {
       const admin = await requireSuperAdmin(req, res);
       if (!admin) return;
 
-      const [
-        users,
-        books,
-        articles,
-        orders,
-        revenue,
-        subscribers
-      ] = await Promise.all([
-        sql`
-          SELECT COUNT(*)::int AS count
-          FROM users
-        `,
-        sql`
-          SELECT COUNT(*)::int AS count
-          FROM books
-          WHERE active = TRUE
-        `,
-        sql`
-          SELECT COUNT(*)::int AS count
-          FROM articles
-        `,
-        sql`
-          SELECT COUNT(*)::int AS count
-          FROM orders
-        `,
-        sql`
-          SELECT COALESCE(SUM(total), 0)::numeric AS total
-          FROM orders
-          WHERE status IN ('paid', 'processing', 'completed')
-        `,
-        sql`
-          SELECT COUNT(*)::int AS count
-          FROM newsletter_subscribers
-          WHERE status = 'active'
-        `
-      ]);
+      const rows = await sql`
+        SELECT key, value, updated_at
+        FROM settings
+        ORDER BY key ASC
+      `;
+
+      const settings = Object.fromEntries(
+        rows.map(row => [
+          row.key,
+          parseSettingValue(row.value)
+        ])
+      );
 
       return json(res, 200, {
         success: true,
-        stats: {
-          users: users[0].count,
-          books: books[0].count,
-          articles: articles[0].count,
-          orders: orders[0].count,
-          revenue: revenue[0].total,
-          subscribers: subscribers[0].count
-        }
-      });
-
-    } catch (error) {
-      console.error("Admin overview error:", error);
-
-      return json(res, 500, {
-        success: false,
-        message: "Could not load dashboard."
+        settings
       });
     }
-  }
 
-  // =====================================
-  // ADMIN MANAGEMENT
-  // GET /api/admin?view=manage
-  // PATCH /api/admin?view=manage
-  // =====================================
+    // ======================================
+    // PUBLIC SETTINGS
+    // GET /api/settings
+    // ======================================
 
-  if (view === "manage") {
-    if (!method(req, res, ["GET", "PATCH"])) return;
+    if (req.method === "GET") {
+      const rows = await sql`
+        SELECT key, value
+        FROM settings
+        WHERE key IN (
+          'site_title',
+          'site_tagline',
+          'logo_url',
+          'favicon_url',
+          'site_description',
+          'default_language',
+          'currency',
+          'timezone',
+          'hero_title',
+          'hero_subtitle',
+          'hero_image_url',
+          'hero_video_url',
+          'hero_primary_button_text',
+          'hero_primary_button_url',
+          'hero_secondary_button_text',
+          'hero_secondary_button_url',
+          'primary_color',
+          'secondary_color',
+          'accent_color',
+          'background_color',
+          'text_color',
+          'font_heading',
+          'font_body',
+          'theme_mode',
+          'social_links',
+          'contact_methods',
+          'navigation_items',
+          'homepage_sections',
+          'topics',
+          'features',
+          'footer_settings',
+          'seo_settings',
+          'announcement_bar',
+          'affiliate_disclosure',
+          'affiliate_enabled',
+          'affiliate_marketplace',
+          'maintenance_mode'
+        )
+      `;
 
-    try {
+      const settings = Object.fromEntries(
+        rows.map(row => [
+          row.key,
+          parseSettingValue(row.value)
+        ])
+      );
+
+      return json(res, 200, {
+        success: true,
+        settings
+      });
+    }
+
+    // ======================================
+    // SAVE SETTINGS
+    // PUT /api/settings
+    // ======================================
+
+    if (req.method === "PUT") {
       const admin = await requireSuperAdmin(req, res);
       if (!admin) return;
 
-      // GET USERS, ORDERS AND AUDIT LOGS
-      if (req.method === "GET") {
-        const [users, orders, logs] = await Promise.all([
-          sql`
-            SELECT
-              id,
-              name,
-              email,
-              role,
-              status,
-              created_at
-            FROM users
-            ORDER BY created_at DESC
-            LIMIT 300
-          `,
-          sql`
-            SELECT
-              id,
-              customer_name,
-              customer_email,
-              items,
-              total,
-              status,
-              created_at
-            FROM orders
-            ORDER BY created_at DESC
-            LIMIT 300
-          `,
-          sql`
-            SELECT
-              id,
-              action,
-              target_type,
-              target_id,
-              details,
-              created_at
-            FROM audit_logs
-            ORDER BY created_at DESC
-            LIMIT 100
-          `
-        ]);
+      const { settings } = req.body || {};
 
-        return json(res, 200, {
-          success: true,
-          users,
-          orders,
-          logs
-        });
-      }
-
-      // =====================================
-      // UPDATE USER OR ORDER
-      // =====================================
-
-      const {
-        user_id,
-        role,
-        status,
-        order_id,
-        order_status
-      } = req.body || {};
-
-      const hasUserUpdate = user_id !== undefined;
-      const hasOrderUpdate = order_id !== undefined;
-
-      if (hasUserUpdate === hasOrderUpdate) {
+      if (
+        !settings ||
+        typeof settings !== "object" ||
+        Array.isArray(settings)
+      ) {
         return json(res, 400, {
           success: false,
-          message: "Provide either a user update or an order update."
+          message: "A valid settings object is required."
         });
       }
 
-      // =====================================
-      // UPDATE USER
-      // =====================================
+      const entries = Object.entries(settings);
 
-      if (hasUserUpdate) {
-        const id = Number(user_id);
+      if (!entries.length) {
+        return json(res, 400, {
+          success: false,
+          message: "No settings supplied."
+        });
+      }
 
-        if (!Number.isSafeInteger(id) || id < 1) {
+      // Validate every setting before writing anything.
+      for (const [key, value] of entries) {
+        const error = validateSetting(key, value);
+
+        if (error) {
           return json(res, 400, {
             success: false,
-            message: "Invalid user ID."
+            message: error
           });
         }
 
-        if (id === Number(admin.id)) {
+        let serialized;
+
+        try {
+          serialized = JSON.stringify(value);
+        } catch {
           return json(res, 400, {
             success: false,
-            message: "You cannot change your own account here."
-          });
-        }
-
-        const allowedRoles = [
-          "user",
-          "editor",
-          "admin"
-        ];
-
-        const allowedStatuses = [
-          "active",
-          "inactive",
-          "suspended"
-        ];
-
-        if (
-          role !== undefined &&
-          !allowedRoles.includes(role)
-        ) {
-          return json(res, 400, {
-            success: false,
-            message: "Invalid user role."
+            message: `Could not serialize "${key}".`
           });
         }
 
         if (
-          status !== undefined &&
-          !allowedStatuses.includes(status)
+          serialized === undefined ||
+          serialized.length > 100000
         ) {
           return json(res, 400, {
             success: false,
-            message: "Invalid user status."
+            message: `"${key}" is too large or invalid.`
           });
         }
+      }
 
-        if (role === undefined && status === undefined) {
-          return json(res, 400, {
-            success: false,
-            message: "No user changes supplied."
-          });
-        }
+      // Save validated settings.
+      for (const [key, value] of entries) {
+        const serialized = JSON.stringify(value);
 
-        const rows = await sql`
-          UPDATE users
-          SET
-            role = COALESCE(${role ?? null}, role),
-            status = COALESCE(${status ?? null}, status),
+        await sql`
+          INSERT INTO settings (key, value)
+          VALUES (${key}, ${serialized})
+          ON CONFLICT (key)
+          DO UPDATE SET
+            value = EXCLUDED.value,
             updated_at = NOW()
-          WHERE id = ${id}
-          RETURNING id
         `;
-
-        if (!rows.length) {
-          return json(res, 404, {
-            success: false,
-            message: "User not found."
-          });
-        }
-
-        await audit(
-          admin.id,
-          "user.update",
-          "user",
-          id,
-          {
-            role: role ?? null,
-            status: status ?? null
-          }
-        );
-
-        return json(res, 200, {
-          success: true,
-          message: "User updated successfully."
-        });
       }
 
-      // =====================================
-      // UPDATE ORDER
-      // =====================================
-
-      if (hasOrderUpdate) {
-        const id = Number(order_id);
-
-        const allowedStatuses = [
-          "pending",
-          "paid",
-          "processing",
-          "completed",
-          "cancelled"
-        ];
-
-        if (
-          !Number.isSafeInteger(id) ||
-          id < 1 ||
-          !allowedStatuses.includes(order_status)
-        ) {
-          return json(res, 400, {
-            success: false,
-            message: "Invalid order update."
-          });
+      // Record the change.
+      await audit(
+        admin.id,
+        "settings.update",
+        "settings",
+        null,
+        {
+          keys: entries.map(([key]) => key)
         }
+      );
 
-        const rows = await sql`
-          UPDATE orders
-          SET
-            status = ${order_status},
-            updated_at = NOW()
-          WHERE id = ${id}
-          RETURNING id
-        `;
-
-        if (!rows.length) {
-          return json(res, 404, {
-            success: false,
-            message: "Order not found."
-          });
-        }
-
-        await audit(
-          admin.id,
-          "order.update",
-          "order",
-          id,
-          {
-            status: order_status
-          }
-        );
-
-        return json(res, 200, {
-          success: true,
-          message: "Order updated successfully."
-        });
-      }
-
-    } catch (error) {
-      console.error("Admin management error:", error);
-
-      return json(res, 500, {
-        success: false,
-        message: "Admin operation failed."
+      return json(res, 200, {
+        success: true,
+        message: "Website settings saved successfully.",
+        updated: entries.map(([key]) => key)
       });
     }
+
+  } catch (error) {
+    console.error("Settings API error:", error);
+
+    return json(res, 500, {
+      success: false,
+      message: "Website settings operation failed."
+    });
   }
-
-  // =====================================
-  // UNKNOWN VIEW
-  // =====================================
-
-  return json(res, 404, {
-    success: false,
-    message: "Unknown admin action."
-  });
 }
