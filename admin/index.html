@@ -1,8 +1,10 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
 <title>DevStackReads — Admin Control Center</title>
 
 <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
@@ -12,72 +14,104 @@
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Inter:wght@400;500;600;700&display=swap');
 
-body { font-family: Inter, sans-serif; }
-.font-serif-custom { font-family: 'Playfair Display', serif; }
+body {
+    font-family: Inter, sans-serif;
+}
+
+.font-serif-custom {
+    font-family: 'Playfair Display', serif;
+}
 
 .navbtn {
-    display:flex;
-    gap:.7rem;
-    align-items:center;
-    width:100%;
-    padding:.7rem .85rem;
-    border-radius:.7rem;
-    text-align:left;
-    font-size:.82rem;
-    font-weight:700;
-    color:#4b5563;
+    display: flex;
+    gap: .7rem;
+    align-items: center;
+    width: 100%;
+    padding: .7rem .85rem;
+    border-radius: .7rem;
+    text-align: left;
+    font-size: .82rem;
+    font-weight: 700;
+    color: #4b5563;
 }
 
 .navbtn.active,
 .navbtn:hover {
-    background:#fff1ed;
-    color:#d9381e;
+    background: #fff1ed;
+    color: #d9381e;
 }
 
 .field {
-    width:100%;
-    border:1px solid #e5e7eb;
-    border-radius:.65rem;
-    padding:.65rem .75rem;
-    font-size:.85rem;
-    background:white;
+    width: 100%;
+    border: 1px solid #e5e7eb;
+    border-radius: .65rem;
+    padding: .65rem .75rem;
+    font-size: .85rem;
+    background: white;
 }
 
 .panel {
-    background:white;
-    border:1px solid #e5e7eb;
-    border-radius:1rem;
-    padding:1.2rem;
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 1rem;
+    padding: 1.2rem;
 }
 
-button:disabled {
-    opacity:.6;
-    cursor:not-allowed;
+button:disabled,
+select:disabled {
+    opacity: .6;
+    cursor: not-allowed;
 }
 
 .table-cell {
-    padding:.75rem .6rem;
-    border-top:1px solid #e5e7eb;
-    vertical-align:top;
+    padding: .75rem .6rem;
+    border-top: 1px solid #e5e7eb;
+    vertical-align: top;
 }
 
 .small-select {
-    border:1px solid #e5e7eb;
-    border-radius:.45rem;
-    padding:.35rem;
-    font-size:.75rem;
-    background:white;
+    border: 1px solid #e5e7eb;
+    border-radius: .45rem;
+    padding: .35rem;
+    font-size: .75rem;
+    background: white;
+    max-width: 150px;
+}
+
+.status-badge {
+    display: inline-block;
+    border-radius: 999px;
+    padding: .2rem .55rem;
+    font-size: .65rem;
+    font-weight: 700;
+}
+
+@media (max-width: 1023px) {
+    #sidebar {
+        position: fixed;
+        z-index: 40;
+        top: 60px;
+        bottom: 0;
+        left: 0;
+        overflow-y: auto;
+        width: 260px;
+        box-shadow: 0 10px 30px rgba(0,0,0,.08);
+    }
 }
 </style>
 </head>
 
 <body class="bg-gray-50 min-h-screen">
 
-<!-- ADMIN LOGIN -->
+<!-- ======================================
+     ADMIN LOGIN
+====================================== -->
 <section id="login-section" class="min-h-screen flex items-center justify-center p-4">
+
     <div class="bg-white p-8 rounded-2xl border max-w-md w-full shadow-sm">
 
         <div class="text-center mb-6">
+
             <span class="bg-[#d9381e] text-white text-xs font-black px-3 py-2 rounded-lg">
                 RESTRICTED
             </span>
@@ -89,13 +123,16 @@ button:disabled {
             <p class="text-xs text-gray-500 mt-2">
                 Sign in to manage DevStackReads.
             </p>
+
         </div>
 
         <form id="login-form" class="space-y-3">
+
             <input
                 id="email"
                 type="email"
                 required
+                maxlength="254"
                 autocomplete="username"
                 class="field"
                 placeholder="Admin email"
@@ -117,6 +154,7 @@ button:disabled {
             >
                 Login to Dashboard
             </button>
+
         </form>
 
         <p
@@ -129,15 +167,20 @@ button:disabled {
         <a href="../" class="block text-center mt-5 text-xs text-gray-500">
             ← Back to Storefront
         </a>
+
     </div>
 </section>
 
-<!-- ADMIN APPLICATION -->
+
+<!-- ======================================
+     ADMIN APPLICATION
+====================================== -->
 <div id="app" class="hidden min-h-screen">
 
     <header class="bg-white border-b px-4 lg:px-8 py-3 flex justify-between items-center sticky top-0 z-30">
 
         <div class="flex items-center gap-3">
+
             <button
                 id="mobile-menu"
                 class="lg:hidden"
@@ -154,9 +197,11 @@ button:disabled {
             <b class="font-serif-custom text-lg">
                 DevStackReads Control Center
             </b>
+
         </div>
 
         <div class="flex items-center gap-3 text-xs">
+
             <span id="admin-name" class="font-bold"></span>
 
             <button
@@ -166,12 +211,16 @@ button:disabled {
             >
                 Logout
             </button>
+
         </div>
     </header>
 
+
     <div class="max-w-[1500px] mx-auto flex">
 
-        <!-- SIDEBAR -->
+        <!-- ======================================
+             SIDEBAR
+        ====================================== -->
         <aside
             id="sidebar"
             class="hidden lg:block w-60 shrink-0 p-4 min-h-[calc(100vh-60px)] bg-white border-r"
@@ -238,13 +287,19 @@ button:disabled {
             <a href="../" class="block text-xs text-gray-500 mt-8 px-3">
                 ↗ View website
             </a>
+
         </aside>
 
-        <!-- MAIN CONTENT -->
+
+        <!-- ======================================
+             MAIN CONTENT
+        ====================================== -->
         <main class="flex-1 min-w-0 p-4 lg:p-8">
 
             <div class="flex items-center justify-between mb-6">
+
                 <div>
+
                     <p class="text-xs text-gray-400">
                         DEVSTACKREADS / ADMIN
                     </p>
@@ -255,6 +310,7 @@ button:disabled {
                     >
                         Overview
                     </h1>
+
                 </div>
 
                 <button
@@ -265,16 +321,23 @@ button:disabled {
                     <i class="fa fa-rotate"></i>
                     Refresh
                 </button>
+
             </div>
 
             <div id="content" class="space-y-5"></div>
 
         </main>
+
     </div>
 </div>
 
+
 <script>
 "use strict";
+
+// ==========================================
+// GLOBAL HELPERS AND STATE
+// ==========================================
 
 const $ = selector => document.querySelector(selector);
 
@@ -298,7 +361,74 @@ const API = {
     settings: "/api/settings"
 };
 
-/* API HELPER */
+
+// ==========================================
+// ORDER STATUS TRANSITIONS
+// Must match api/admin/index.js
+// ==========================================
+
+const ORDER_TRANSITIONS = {
+    pending: [
+        "paid",
+        "cancelled"
+    ],
+
+    paid: [
+        "processing",
+        "cancelled",
+        "refunded"
+    ],
+
+    processing: [
+        "shipped",
+        "cancelled",
+        "refunded"
+    ],
+
+    shipped: [
+        "completed",
+        "refunded"
+    ],
+
+    completed: [
+        "refunded"
+    ],
+
+    cancelled: [],
+
+    refunded: []
+};
+
+function getOrderStatuses(currentStatus) {
+
+    const current = String(currentStatus || "")
+        .trim()
+        .toLowerCase();
+
+    if (!Object.prototype.hasOwnProperty.call(
+        ORDER_TRANSITIONS,
+        current
+    )) {
+        return current ? [current] : ["pending"];
+    }
+
+    return [
+        current,
+        ...ORDER_TRANSITIONS[current]
+    ];
+}
+
+function isTerminalOrderStatus(status) {
+    return ["cancelled", "refunded"].includes(
+        String(status || "").toLowerCase()
+    );
+}
+
+
+// ==========================================
+// API HELPER
+// ==========================================
+
 async function api(url, options = {}) {
 
     const response = await fetch(url, {
@@ -334,7 +464,11 @@ async function api(url, options = {}) {
     return data;
 }
 
-/* HELPERS */
+
+// ==========================================
+// GENERAL HELPERS
+// ==========================================
+
 function esc(value) {
     return String(value ?? "").replace(/[&<>"']/g, char => ({
         "&": "&amp;",
@@ -362,6 +496,7 @@ function formField(label, id, type = "text", value = "") {
     return `
         <label class="block text-xs font-bold text-gray-600">
             ${esc(label)}
+
             <input
                 id="${esc(id)}"
                 type="${esc(type)}"
@@ -401,6 +536,7 @@ function showLogin(message = "") {
 }
 
 function showApp(user) {
+
     currentAdminId = user.id;
 
     $("#login-section").classList.add("hidden");
@@ -410,7 +546,11 @@ function showApp(user) {
         user.email || user.name || "Administrator";
 }
 
-/* AUTHENTICATION */
+
+// ==========================================
+// AUTHENTICATION
+// ==========================================
+
 async function boot() {
 
     let data;
@@ -423,6 +563,7 @@ async function boot() {
     }
 
     if (!data.user || data.user.role !== "admin") {
+
         showLogin(
             "Administrator access is required. Please sign in with an admin account."
         );
@@ -437,7 +578,11 @@ async function boot() {
     return true;
 }
 
-/* ADMIN LOGIN */
+
+// ==========================================
+// ADMIN LOGIN
+// ==========================================
+
 $("#login-form").addEventListener("submit", async event => {
 
     event.preventDefault();
@@ -495,7 +640,11 @@ $("#login-form").addEventListener("submit", async event => {
     }
 });
 
-/* LOGOUT */
+
+// ==========================================
+// LOGOUT
+// ==========================================
+
 $("#logout").addEventListener("click", async () => {
 
     try {
@@ -512,7 +661,11 @@ $("#logout").addEventListener("click", async () => {
     }
 });
 
-/* NAVIGATION */
+
+// ==========================================
+// NAVIGATION
+// ==========================================
+
 $("#nav").addEventListener("click", event => {
 
     const button = event.target.closest("[data-page]");
@@ -534,7 +687,11 @@ $("#refresh").addEventListener("click", () => {
     loadPage(activePage);
 });
 
-/* OVERVIEW */
+
+// ==========================================
+// OVERVIEW
+// ==========================================
+
 async function loadOverview() {
 
     const data = await api(API.adminOverview);
@@ -559,6 +716,7 @@ async function loadOverview() {
 
             ${cards.map(item => `
                 <div class="panel">
+
                     <i class="fa ${item[2]} text-[#d9381e]"></i>
 
                     <p class="text-xs text-gray-500 mt-3">
@@ -568,23 +726,30 @@ async function loadOverview() {
                     <b class="text-2xl">
                         ${esc(item[1] ?? 0)}
                     </b>
+
                 </div>
             `).join("")}
 
         </div>
 
         <div class="panel">
+
             <b>Administration status</b>
 
             <p class="text-xs text-gray-500 mt-2">
                 Your website content and business records are stored in Neon.
                 Use the navigation to manage each area.
             </p>
+
         </div>
     `);
 }
 
-/* ARTICLES */
+
+// ==========================================
+// ARTICLES
+// ==========================================
+
 async function loadArticles() {
 
     const data = await api(`${API.articles}?admin=1`);
@@ -643,7 +808,9 @@ async function loadArticles() {
             ></textarea>
 
             <div class="flex flex-wrap gap-2">
+
                 ${btn("Save Draft", "a-draft")}
+
                 ${btn("Publish Article", "a-publish")}
 
                 <button
@@ -653,6 +820,7 @@ async function loadArticles() {
                 >
                     Clear
                 </button>
+
             </div>
 
         </div>
@@ -685,7 +853,10 @@ async function loadArticles() {
                                 </td>
 
                                 <td class="pr-3">
-                                    ${esc(article.status || (article.active ? "published" : "draft"))}
+                                    ${esc(
+                                        article.status ||
+                                        (article.active ? "published" : "draft")
+                                    )}
                                 </td>
 
                                 <td class="text-right whitespace-nowrap py-3">
@@ -720,12 +891,14 @@ async function loadArticles() {
                                     }
 
                                 </td>
+
                             </tr>
                         `).join("")}
 
                     </tbody>
 
                 </table>
+
             </div>
 
             <p class="text-[11px] text-gray-500 mt-3">
@@ -780,12 +953,95 @@ async function loadArticles() {
     $("#a-clear").onclick = () => loadArticles();
 }
 
-/* BOOKS */
+
+// ==========================================
+// BOOKS
+// ==========================================
+
 async function loadBooks() {
 
-    const data = await api(API.books);
+    // IMPORTANT:
+    // Admin endpoint returns both active and archived books.
+    const data = await api(`${API.books}?admin=1`);
 
-    cache.books = data.books || [];
+    cache.books = Array.isArray(data.books)
+        ? data.books
+        : [];
+
+    const activeBooks = cache.books.filter(
+        book => book.active === true
+    );
+
+    const archivedBooks = cache.books.filter(
+        book => book.active !== true
+    );
+
+    function renderBook(book, archived = false) {
+
+        return `
+            <div class="border-t py-3 flex flex-wrap justify-between gap-3 text-xs">
+
+                <div class="min-w-0">
+
+                    <b>${esc(book.title)}</b>
+
+                    <span class="${
+                        archived
+                            ? "text-gray-500 bg-gray-100"
+                            : "text-green-700 bg-green-50"
+                    } rounded px-2 py-1 ml-2 text-[10px]">
+                        ${archived ? "Archived" : "Active"}
+                    </span>
+
+                    <p class="text-gray-500 mt-1">
+                        ${esc(book.author)} ·
+                        ${esc(book.price)} ETB ·
+                        Stock ${esc(book.stock)}
+                    </p>
+
+                    <p class="text-gray-500 mt-1">
+                        ${esc(book.description || "")}
+                    </p>
+
+                </div>
+
+                <div class="flex items-start gap-3 whitespace-nowrap">
+
+                    <button
+                        type="button"
+                        class="text-blue-600"
+                        data-book-edit="${esc(book.id)}"
+                    >
+                        Edit
+                    </button>
+
+                    ${
+                        archived
+                            ? `
+                                <button
+                                    type="button"
+                                    class="text-green-700 font-bold"
+                                    data-book-restore="${esc(book.id)}"
+                                >
+                                    Restore
+                                </button>
+                            `
+                            : `
+                                <button
+                                    type="button"
+                                    class="text-red-600"
+                                    data-book-delete="${esc(book.id)}"
+                                >
+                                    Archive
+                                </button>
+                            `
+                    }
+
+                </div>
+
+            </div>
+        `;
+    }
 
     setContent(`
         <div class="panel space-y-3">
@@ -830,66 +1086,54 @@ async function loadBooks() {
                 </button>
 
             </div>
+
         </div>
 
         <div class="panel">
 
             <h2 class="font-bold mb-3">
-                Active Catalog (${cache.books.length})
+                Active Books (${activeBooks.length})
             </h2>
 
-            ${cache.books.length
-                ? cache.books.map(book => `
-                    <div class="border-t py-3 flex flex-wrap justify-between gap-3 text-xs">
+            ${
+                activeBooks.length
+                    ? activeBooks.map(book => renderBook(book)).join("")
+                    : `
+                        <p class="text-xs text-gray-500">
+                            No active books found.
+                        </p>
+                    `
+            }
 
-                        <div class="min-w-0">
+        </div>
 
-                            <b>${esc(book.title)}</b>
+        <div class="panel">
 
-                            <p class="text-gray-500">
-                                ${esc(book.author)} ·
-                                ${esc(book.price)} ETB ·
-                                stock ${esc(book.stock)}
-                            </p>
+            <h2 class="font-bold mb-3">
+                Archived Books (${archivedBooks.length})
+            </h2>
 
-                            <p class="text-gray-500 mt-1">
-                                ${esc(book.description || "")}
-                            </p>
+            <p class="text-xs text-gray-500 mb-3">
+                Archived books are hidden from the public catalog.
+                Restore a book to make it available again.
+            </p>
 
-                        </div>
-
-                        <div class="flex items-start gap-3 whitespace-nowrap">
-
-                            <button
-                                type="button"
-                                class="text-blue-600"
-                                data-book-edit="${esc(book.id)}"
-                            >
-                                Edit
-                            </button>
-
-                            <button
-                                type="button"
-                                class="text-red-600"
-                                data-book-delete="${esc(book.id)}"
-                            >
-                                Archive
-                            </button>
-
-                        </div>
-
-                    </div>
-                `).join("")
-                : `
-                    <p class="text-xs text-gray-500">
-                        No active books found.
-                    </p>
-                `
+            ${
+                archivedBooks.length
+                    ? archivedBooks
+                        .map(book => renderBook(book, true))
+                        .join("")
+                    : `
+                        <p class="text-xs text-gray-500">
+                            No archived books found.
+                        </p>
+                    `
             }
 
         </div>
     `);
 
+    // SAVE / UPDATE BOOK
     $("#b-save").onclick = async () => {
 
         const id = $("#b-id").value;
@@ -897,18 +1141,41 @@ async function loadBooks() {
         const body = {
             title: $("#b-title").value.trim(),
             author: $("#b-author").value.trim(),
-            price: $("#b-price").value,
-            stock: $("#b-stock").value,
+            price: $("#b-price").value.trim(),
+            stock: $("#b-stock").value.trim(),
             image_url: $("#b-image").value.trim(),
             description: $("#b-description").value
         };
 
-        if (id) body.id = id;
-
-        if (!body.title || !body.author || body.price === "") {
-            alert("Book title, author, and price are required.");
+        if (!body.title || !body.author) {
+            alert("Book title and author are required.");
             return;
         }
+
+        if (
+            !/^\d+(?:\.\d{1,2})?$/.test(body.price) ||
+            !Number.isFinite(Number(body.price))
+        ) {
+            alert("Enter a valid price with up to two decimal places.");
+            return;
+        }
+
+        if (
+            !/^\d+$/.test(body.stock) ||
+            Number(body.stock) > 1000000
+        ) {
+            alert("Stock must be a whole number between 0 and 1,000,000.");
+            return;
+        }
+
+        if (id) {
+            body.id = id;
+        }
+
+        const saveButton = $("#b-save");
+
+        saveButton.disabled = true;
+        saveButton.textContent = "Saving...";
 
         try {
 
@@ -926,19 +1193,34 @@ async function loadBooks() {
             await loadBooks();
 
         } catch (error) {
+
             alert(error.message);
+
+            saveButton.disabled = false;
+
+            saveButton.textContent = id
+                ? "Update Book"
+                : "Save Book";
         }
     };
 
     $("#b-clear").onclick = () => loadBooks();
 }
 
-/* ORDERS / USERS / AUDIT LOGS */
+
+// ==========================================
+// ORDERS / USERS / AUDIT LOGS
+// ==========================================
+
 async function loadManagement(page) {
 
     const data = await api(API.adminManage);
 
     cache.manage = data;
+
+    // ======================================
+    // ORDERS
+    // ======================================
 
     if (page === "orders") {
 
@@ -947,9 +1229,15 @@ async function loadManagement(page) {
         setContent(`
             <div class="panel overflow-x-auto">
 
-                <h2 class="font-bold mb-3">
+                <h2 class="font-bold mb-2">
                     Orders (${orders.length})
                 </h2>
+
+                <p class="text-xs text-gray-500 mb-4">
+                    Order status changes follow the order workflow.
+                    Cancelling or refunding an eligible order can restore
+                    book stock automatically.
+                </p>
 
                 <table class="w-full text-xs">
 
@@ -974,6 +1262,23 @@ async function loadManagement(page) {
                                 ).join(", ")
                                 : "—";
 
+                            const currentStatus = String(
+                                item.status || "pending"
+                            ).toLowerCase();
+
+                            const availableStatuses =
+                                getOrderStatuses(currentStatus);
+
+                            const unknownStatus =
+                                !Object.prototype.hasOwnProperty.call(
+                                    ORDER_TRANSITIONS,
+                                    currentStatus
+                                );
+
+                            const terminalStatus =
+                                isTerminalOrderStatus(currentStatus) ||
+                                unknownStatus;
+
                             return `
                                 <tr>
 
@@ -993,7 +1298,7 @@ async function loadManagement(page) {
                                         ${esc(itemText)}
                                     </td>
 
-                                    <td class="table-cell">
+                                    <td class="table-cell whitespace-nowrap">
                                         ${esc(item.total)} ETB
                                     </td>
 
@@ -1001,27 +1306,36 @@ async function loadManagement(page) {
 
                                         <select
                                             data-order="${esc(item.id)}"
+                                            data-current-status="${esc(currentStatus)}"
                                             class="small-select"
+                                            ${terminalStatus ? "disabled" : ""}
+                                            aria-label="Change order status"
                                         >
-                                            ${[
-                                                "pending",
-                                                "paid",
-                                                "processing",
-                                                "completed",
-                                                "cancelled"
-                                            ].map(status => `
+
+                                            ${availableStatuses.map(status => `
                                                 <option
-                                                    value="${status}"
-                                                    ${item.status === status ? "selected" : ""}
+                                                    value="${esc(status)}"
+                                                    ${currentStatus === status ? "selected" : ""}
                                                 >
-                                                    ${status}
+                                                    ${esc(status.toUpperCase())}
                                                 </option>
                                             `).join("")}
+
                                         </select>
+
+                                        ${
+                                            unknownStatus
+                                                ? `
+                                                    <p class="text-red-600 text-[10px] mt-1">
+                                                        Unknown status. Manual review required.
+                                                    </p>
+                                                `
+                                                : ""
+                                        }
 
                                     </td>
 
-                                    <td class="table-cell">
+                                    <td class="table-cell whitespace-nowrap">
                                         ${esc(formatDate(item.created_at))}
                                     </td>
 
@@ -1031,12 +1345,28 @@ async function loadManagement(page) {
                         }).join("")}
 
                     </tbody>
+
                 </table>
+
+                ${
+                    orders.length === 0
+                        ? `
+                            <p class="text-xs text-gray-500 py-5 text-center">
+                                No orders found.
+                            </p>
+                        `
+                        : ""
+                }
+
             </div>
         `);
 
         return;
     }
+
+    // ======================================
+    // USERS
+    // ======================================
 
     if (page === "users") {
 
@@ -1080,14 +1410,15 @@ async function loadManagement(page) {
                                             ${esc(item.email)}
                                         </span>
 
-                                        ${ownAccount
-                                            ? `
-                                                <br>
-                                                <span class="text-[10px] text-amber-700">
-                                                    Current admin account
-                                                </span>
-                                            `
-                                            : ""
+                                        ${
+                                            ownAccount
+                                                ? `
+                                                    <br>
+                                                    <span class="text-[10px] text-amber-700">
+                                                        Current admin account
+                                                    </span>
+                                                `
+                                                : ""
                                         }
 
                                     </td>
@@ -1144,12 +1475,18 @@ async function loadManagement(page) {
                         }).join("")}
 
                     </tbody>
+
                 </table>
+
             </div>
         `);
 
         return;
     }
+
+    // ======================================
+    // AUDIT LOGS
+    // ======================================
 
     const logs = data.logs || [];
 
@@ -1205,12 +1542,18 @@ async function loadManagement(page) {
                     `).join("")}
 
                 </tbody>
+
             </table>
+
         </div>
     `);
 }
 
-/* EVENTS */
+
+// ==========================================
+// EVENTS
+// ==========================================
+
 async function loadEvents() {
 
     const data = await api(`${API.events}?admin=1`);
@@ -1269,50 +1612,55 @@ async function loadEvents() {
                 Events (${cache.events.length})
             </h2>
 
-            ${cache.events.length
-                ? cache.events.map(item => `
-                    <div class="border-t py-3 flex flex-wrap justify-between gap-3 text-xs">
+            ${
+                cache.events.length
+                    ? cache.events.map(item => `
+                        <div class="border-t py-3 flex flex-wrap justify-between gap-3 text-xs">
 
-                        <div>
+                            <div>
 
-                            <b>${esc(item.title)}</b>
+                                <b>${esc(item.title)}</b>
 
-                            <p class="text-gray-500">
-                                ${esc(item.status || (item.active ? "published" : "draft"))}
-                                · ${esc(formatDate(item.event_date))}
-                                · ${esc(item.location || "No location")}
-                            </p>
+                                <p class="text-gray-500">
+                                    ${esc(
+                                        item.status ||
+                                        (item.active ? "published" : "draft")
+                                    )}
+                                    · ${esc(formatDate(item.event_date))}
+                                    · ${esc(item.location || "No location")}
+                                </p>
 
-                            <p class="mt-1 text-gray-500">
-                                ${esc(item.description || "")}
-                            </p>
+                                <p class="mt-1 text-gray-500">
+                                    ${esc(item.description || "")}
+                                </p>
+
+                            </div>
+
+                            ${
+                                item.active
+                                    ? `
+                                        <button
+                                            type="button"
+                                            class="text-red-600"
+                                            data-event-archive="${esc(item.id)}"
+                                        >
+                                            Archive
+                                        </button>
+                                    `
+                                    : `
+                                        <span class="text-gray-500">
+                                            Archived
+                                        </span>
+                                    `
+                            }
 
                         </div>
-
-                        ${item.active
-                            ? `
-                                <button
-                                    type="button"
-                                    class="text-red-600"
-                                    data-event-archive="${esc(item.id)}"
-                                >
-                                    Archive
-                                </button>
-                            `
-                            : `
-                                <span class="text-gray-500">
-                                    Archived
-                                </span>
-                            `
-                        }
-
-                    </div>
-                `).join("")
-                : `
-                    <p class="text-xs text-gray-500">
-                        No events found.
-                    </p>
-                `
+                    `).join("")
+                    : `
+                        <p class="text-xs text-gray-500">
+                            No events found.
+                        </p>
+                    `
             }
 
         </div>
@@ -1320,14 +1668,25 @@ async function loadEvents() {
 
     $("#e-save").onclick = async () => {
 
+        const dateValue = $("#e-date").value;
+
+        let eventDate = null;
+
+        if (dateValue) {
+            const parsedDate = new Date(dateValue);
+
+            if (Number.isNaN(parsedDate.getTime())) {
+                alert("Enter a valid event date.");
+                return;
+            }
+
+            eventDate = parsedDate.toISOString();
+        }
+
         const body = {
             title: $("#e-title").value.trim(),
             description: $("#e-desc").value,
-
-            event_date: $("#e-date").value
-                ? new Date($("#e-date").value).toISOString()
-                : null,
-
+            event_date: eventDate,
             location: $("#e-location").value.trim(),
             image_url: $("#e-image").value.trim(),
             status: "published"
@@ -1355,7 +1714,11 @@ async function loadEvents() {
     };
 }
 
-/* MEMBERSHIP PLANS */
+
+// ==========================================
+// MEMBERSHIP PLANS
+// ==========================================
+
 async function loadMemberships() {
 
     const data = await api(`${API.memberships}?admin=1`);
@@ -1407,62 +1770,64 @@ async function loadMemberships() {
                 Membership Plans (${cache.memberships.length})
             </h2>
 
-            ${cache.memberships.length
-                ? cache.memberships.map(item => {
+            ${
+                cache.memberships.length
+                    ? cache.memberships.map(item => {
 
-                    const features = Array.isArray(item.features)
-                        ? item.features.join(" · ")
-                        : "";
+                        const features = Array.isArray(item.features)
+                            ? item.features.join(" · ")
+                            : "";
 
-                    return `
-                        <div class="border-t py-3 flex flex-wrap justify-between gap-3 text-xs">
+                        return `
+                            <div class="border-t py-3 flex flex-wrap justify-between gap-3 text-xs">
 
-                            <div>
+                                <div>
 
-                                <b>${esc(item.name)}</b>
+                                    <b>${esc(item.name)}</b>
 
-                                <p class="text-gray-500">
-                                    ${esc(item.price)} ETB ·
-                                    ${esc(item.duration_days)} days ·
-                                    ${item.active ? "Active" : "Archived"}
-                                </p>
+                                    <p class="text-gray-500">
+                                        ${esc(item.price)} ETB ·
+                                        ${esc(item.duration_days)} days ·
+                                        ${item.active ? "Active" : "Archived"}
+                                    </p>
 
-                                <p class="text-gray-500 mt-1">
-                                    ${esc(item.description || "")}
-                                </p>
+                                    <p class="text-gray-500 mt-1">
+                                        ${esc(item.description || "")}
+                                    </p>
 
-                                <p class="text-gray-500 mt-1">
-                                    ${esc(features)}
-                                </p>
+                                    <p class="text-gray-500 mt-1">
+                                        ${esc(features)}
+                                    </p>
+
+                                </div>
+
+                                ${
+                                    item.active
+                                        ? `
+                                            <button
+                                                type="button"
+                                                class="text-red-600"
+                                                data-membership-archive="${esc(item.id)}"
+                                            >
+                                                Archive
+                                            </button>
+                                        `
+                                        : `
+                                            <span class="text-gray-500">
+                                                Archived
+                                            </span>
+                                        `
+                                }
 
                             </div>
+                        `;
 
-                            ${item.active
-                                ? `
-                                    <button
-                                        type="button"
-                                        class="text-red-600"
-                                        data-membership-archive="${esc(item.id)}"
-                                    >
-                                        Archive
-                                    </button>
-                                `
-                                : `
-                                    <span class="text-gray-500">
-                                        Archived
-                                    </span>
-                                `
-                            }
-
-                        </div>
-                    `;
-
-                }).join("")
-                : `
-                    <p class="text-xs text-gray-500">
-                        No membership plans found.
-                    </p>
-                `
+                    }).join("")
+                    : `
+                        <p class="text-xs text-gray-500">
+                            No membership plans found.
+                        </p>
+                    `
             }
 
         </div>
@@ -1507,7 +1872,11 @@ async function loadMemberships() {
     };
 }
 
-/* NEWSLETTER */
+
+// ==========================================
+// NEWSLETTER
+// ==========================================
+
 async function loadNewsletter() {
 
     const data = await api(API.newsletter);
@@ -1521,57 +1890,63 @@ async function loadNewsletter() {
                 Newsletter Subscribers (${subscribers.length})
             </h2>
 
-            ${subscribers.length
-                ? `
-                    <table class="w-full text-xs">
+            ${
+                subscribers.length
+                    ? `
+                        <table class="w-full text-xs">
 
-                        <thead>
-                            <tr class="text-left text-gray-500">
-                                <th class="pb-2">Email</th>
-                                <th class="pb-2">Status</th>
-                                <th class="pb-2">Subscribed</th>
-                            </tr>
-                        </thead>
-
-                        <tbody>
-
-                            ${subscribers.map(item => `
-                                <tr>
-
-                                    <td class="table-cell">
-                                        ${esc(item.email)}
-                                    </td>
-
-                                    <td class="table-cell">
-                                        ${esc(item.status)}
-                                    </td>
-
-                                    <td class="table-cell">
-                                        ${esc(formatDate(item.created_at))}
-                                    </td>
-
+                            <thead>
+                                <tr class="text-left text-gray-500">
+                                    <th class="pb-2">Email</th>
+                                    <th class="pb-2">Status</th>
+                                    <th class="pb-2">Subscribed</th>
                                 </tr>
-                            `).join("")}
+                            </thead>
 
-                        </tbody>
-                    </table>
-                `
-                : `
-                    <p class="text-xs text-gray-500">
-                        No subscribers found.
-                    </p>
-                `
+                            <tbody>
+
+                                ${subscribers.map(item => `
+                                    <tr>
+
+                                        <td class="table-cell">
+                                            ${esc(item.email)}
+                                        </td>
+
+                                        <td class="table-cell">
+                                            ${esc(item.status)}
+                                        </td>
+
+                                        <td class="table-cell">
+                                            ${esc(formatDate(item.created_at))}
+                                        </td>
+
+                                    </tr>
+                                `).join("")}
+
+                            </tbody>
+
+                        </table>
+                    `
+                    : `
+                        <p class="text-xs text-gray-500">
+                            No subscribers found.
+                        </p>
+                    `
             }
 
         </div>
     `);
 }
+
+
 /* ==========================================
    ADVANCED WEBSITE SETTINGS MANAGER
 ========================================== */
 
 async function loadSettings() {
+
     const data = await api(`${API.settings}?admin=1`);
+
     const existing = data.settings || {};
 
     const defaults = {
@@ -1607,12 +1982,48 @@ async function loadSettings() {
         navigation_items: [],
 
         homepage_sections: [
-            { id: "articles", title: "Articles", type: "articles", enabled: true, position: 1 },
-            { id: "features", title: "Features", type: "features", enabled: true, position: 2 },
-            { id: "shop", title: "Book Store", type: "books", enabled: true, position: 3 },
-            { id: "events", title: "Events", type: "events", enabled: true, position: 4 },
-            { id: "membership", title: "Membership", type: "membership", enabled: true, position: 5 },
-            { id: "newsletter", title: "Newsletter", type: "newsletter", enabled: true, position: 6 }
+            {
+                id: "articles",
+                title: "Articles",
+                type: "articles",
+                enabled: true,
+                position: 1
+            },
+            {
+                id: "features",
+                title: "Features",
+                type: "features",
+                enabled: true,
+                position: 2
+            },
+            {
+                id: "shop",
+                title: "Book Store",
+                type: "books",
+                enabled: true,
+                position: 3
+            },
+            {
+                id: "events",
+                title: "Events",
+                type: "events",
+                enabled: true,
+                position: 4
+            },
+            {
+                id: "membership",
+                title: "Membership",
+                type: "membership",
+                enabled: true,
+                position: 5
+            },
+            {
+                id: "newsletter",
+                title: "Newsletter",
+                type: "newsletter",
+                enabled: true,
+                position: 6
+            }
         ],
 
         topics: [],
@@ -1642,6 +2053,7 @@ async function loadSettings() {
 
         affiliate_disclosure:
             "As an Amazon Associate I earn from qualifying purchases.",
+
         affiliate_enabled: false,
         affiliate_marketplace: "US",
         maintenance_mode: false
@@ -1677,9 +2089,11 @@ async function loadSettings() {
     ];
 
     arrayKeys.forEach(key => {
+
         if (!Array.isArray(settings[key])) {
             settings[key] = defaults[key] || [];
         }
+
     });
 
     let activeTab = "general";
@@ -1698,54 +2112,85 @@ async function loadSettings() {
         ["affiliate", "Affiliate", "fa-link"]
     ];
 
+
     // ======================================
     // FIELD HELPERS
     // ======================================
 
     function field(key, label, type = "text", hint = "") {
+
         const value = settings[key] ?? "";
 
         if (type === "textarea") {
             return `
                 <label class="block text-xs font-bold text-gray-600">
+
                     ${esc(label)}
+
                     <textarea
                         class="field mt-1"
                         rows="3"
                         data-setting-key="${esc(key)}"
                     >${esc(value)}</textarea>
-                    ${hint ? `<span class="block text-[10px] text-gray-400 mt-1">${esc(hint)}</span>` : ""}
+
+                    ${
+                        hint
+                            ? `
+                                <span class="block text-[10px] text-gray-400 mt-1">
+                                    ${esc(hint)}
+                                </span>
+                            `
+                            : ""
+                    }
+
                 </label>
             `;
         }
 
         return `
             <label class="block text-xs font-bold text-gray-600">
+
                 ${esc(label)}
+
                 <input
                     class="field mt-1"
                     type="${esc(type)}"
                     data-setting-key="${esc(key)}"
                     value="${esc(value)}"
                 >
-                ${hint ? `<span class="block text-[10px] text-gray-400 mt-1">${esc(hint)}</span>` : ""}
+
+                ${
+                    hint
+                        ? `
+                            <span class="block text-[10px] text-gray-400 mt-1">
+                                ${esc(hint)}
+                            </span>
+                        `
+                        : ""
+                }
+
             </label>
         `;
     }
 
+
     function objectField(group, key, label, type = "text") {
+
         const value = settings[group]?.[key] ?? "";
 
         if (type === "checkbox") {
             return `
                 <label class="flex items-center gap-2 text-xs font-semibold text-gray-600">
+
                     <input
                         type="checkbox"
                         data-object-key="${esc(group)}"
                         data-object-field="${esc(key)}"
                         ${value ? "checked" : ""}
                     >
+
                     ${esc(label)}
+
                 </label>
             `;
         }
@@ -1753,20 +2198,25 @@ async function loadSettings() {
         if (type === "textarea") {
             return `
                 <label class="block text-xs font-bold text-gray-600">
+
                     ${esc(label)}
+
                     <textarea
                         rows="3"
                         class="field mt-1"
                         data-object-key="${esc(group)}"
                         data-object-field="${esc(key)}"
                     >${esc(value)}</textarea>
+
                 </label>
             `;
         }
 
         return `
             <label class="block text-xs font-bold text-gray-600">
+
                 ${esc(label)}
+
                 <input
                     class="field mt-1"
                     type="${esc(type)}"
@@ -1774,39 +2224,52 @@ async function loadSettings() {
                     data-object-field="${esc(key)}"
                     value="${esc(value)}"
                 >
+
             </label>
         `;
     }
 
+
     function toggleField(key, label) {
         return `
             <label class="flex items-center gap-2 text-xs font-semibold text-gray-600">
+
                 <input
                     type="checkbox"
                     data-setting-key="${esc(key)}"
                     ${settings[key] ? "checked" : ""}
                 >
+
                 ${esc(label)}
+
             </label>
         `;
     }
+
 
     // ======================================
     // DYNAMIC ARRAY EDITOR
     // ======================================
 
     function renderArrayEditor(title, key, fields, addText) {
+
         const items = settings[key];
 
         return `
             <div class="panel space-y-4">
 
                 <div class="flex flex-wrap items-center justify-between gap-3">
+
                     <div>
-                        <h3 class="font-bold">${esc(title)}</h3>
+
+                        <h3 class="font-bold">
+                            ${esc(title)}
+                        </h3>
+
                         <p class="text-[11px] text-gray-500 mt-1">
                             ${items.length} registered item(s)
                         </p>
+
                     </div>
 
                     <button
@@ -1817,97 +2280,119 @@ async function loadSettings() {
                         <i class="fa fa-plus mr-1"></i>
                         ${esc(addText)}
                     </button>
+
                 </div>
 
-                ${items.length
-                    ? items.map((item, index) => `
-                        <div class="border border-gray-200 rounded-xl p-4 space-y-3">
+                ${
+                    items.length
+                        ? items.map((item, index) => `
+                            <div class="border border-gray-200 rounded-xl p-4 space-y-3">
 
-                            <div class="flex justify-between items-center">
-                                <b class="text-xs">
-                                    ${esc(title)} #${index + 1}
-                                </b>
+                                <div class="flex justify-between items-center">
 
-                                <button
-                                    type="button"
-                                    data-remove-array="${esc(key)}"
-                                    data-index="${index}"
-                                    class="text-red-600 text-xs font-bold"
-                                >
-                                    <i class="fa fa-trash mr-1"></i>
-                                    Remove
-                                </button>
-                            </div>
+                                    <b class="text-xs">
+                                        ${esc(title)} #${index + 1}
+                                    </b>
 
-                            <div class="grid md:grid-cols-2 gap-3">
+                                    <button
+                                        type="button"
+                                        data-remove-array="${esc(key)}"
+                                        data-index="${index}"
+                                        class="text-red-600 text-xs font-bold"
+                                    >
+                                        <i class="fa fa-trash mr-1"></i>
+                                        Remove
+                                    </button>
 
-                                ${fields.map(f => {
-                                    const value = item[f.key] ?? "";
+                                </div>
 
-                                    if (f.type === "checkbox") {
+                                <div class="grid md:grid-cols-2 gap-3">
+
+                                    ${fields.map(f => {
+
+                                        const value = item[f.key] ?? "";
+
+                                        if (f.type === "checkbox") {
+                                            return `
+                                                <label class="flex items-center gap-2 text-xs font-semibold text-gray-600">
+
+                                                    <input
+                                                        type="checkbox"
+                                                        data-array-key="${esc(key)}"
+                                                        data-index="${index}"
+                                                        data-field="${esc(f.key)}"
+                                                        ${value ? "checked" : ""}
+                                                    >
+
+                                                    ${esc(f.label)}
+
+                                                </label>
+                                            `;
+                                        }
+
+                                        if (f.type === "textarea") {
+                                            return `
+                                                <label class="block text-xs font-bold text-gray-600 md:col-span-2">
+
+                                                    ${esc(f.label)}
+
+                                                    <textarea
+                                                        rows="2"
+                                                        class="field mt-1"
+                                                        data-array-key="${esc(key)}"
+                                                        data-index="${index}"
+                                                        data-field="${esc(f.key)}"
+                                                    >${esc(value)}</textarea>
+
+                                                </label>
+                                            `;
+                                        }
+
                                         return `
-                                            <label class="flex items-center gap-2 text-xs font-semibold text-gray-600">
+                                            <label class="block text-xs font-bold text-gray-600">
+
+                                                ${esc(f.label)}
+
                                                 <input
-                                                    type="checkbox"
-                                                    data-array-key="${esc(key)}"
-                                                    data-index="${index}"
-                                                    data-field="${esc(f.key)}"
-                                                    ${value ? "checked" : ""}
-                                                >
-                                                ${esc(f.label)}
-                                            </label>
-                                        `;
-                                    }
-
-                                    if (f.type === "textarea") {
-                                        return `
-                                            <label class="block text-xs font-bold text-gray-600 md:col-span-2">
-                                                ${esc(f.label)}
-                                                <textarea
-                                                    rows="2"
+                                                    type="${esc(f.type || "text")}"
                                                     class="field mt-1"
                                                     data-array-key="${esc(key)}"
                                                     data-index="${index}"
                                                     data-field="${esc(f.key)}"
-                                                >${esc(value)}</textarea>
+                                                    value="${esc(value)}"
+                                                >
+
                                             </label>
                                         `;
-                                    }
 
-                                    return `
-                                        <label class="block text-xs font-bold text-gray-600">
-                                            ${esc(f.label)}
-                                            <input
-                                                type="${esc(f.type || "text")}"
-                                                class="field mt-1"
-                                                data-array-key="${esc(key)}"
-                                                data-index="${index}"
-                                                data-field="${esc(f.key)}"
-                                                value="${esc(value)}"
-                                            >
-                                        </label>
-                                    `;
-                                }).join("")}
+                                    }).join("")}
+
+                                </div>
 
                             </div>
-                        </div>
-                    `).join("")
-                    : `
-                        <div class="border border-dashed rounded-xl p-7 text-center">
-                            <i class="fa fa-folder-open text-2xl text-gray-300"></i>
-                            <p class="text-xs text-gray-500 mt-2">
-                                No ${esc(title.toLowerCase())} added yet.
-                            </p>
-                        </div>
-                    `
+                        `).join("")
+                        : `
+                            <div class="border border-dashed rounded-xl p-7 text-center">
+
+                                <i class="fa fa-folder-open text-2xl text-gray-300"></i>
+
+                                <p class="text-xs text-gray-500 mt-2">
+                                    No ${esc(title.toLowerCase())} added yet.
+                                </p>
+
+                            </div>
+                        `
                 }
 
             </div>
         `;
     }
 
+
     function makeEmptyItem(key) {
+
         const definitions = {
+
             social_links: {
                 platform: "Custom",
                 label: "",
@@ -1916,6 +2401,7 @@ async function loadSettings() {
                 position: "footer",
                 enabled: true
             },
+
             contact_methods: {
                 type: "email",
                 label: "",
@@ -1923,12 +2409,14 @@ async function loadSettings() {
                 url: "",
                 enabled: true
             },
+
             navigation_items: {
                 label: "",
                 url: "",
                 location: "header",
                 enabled: true
             },
+
             homepage_sections: {
                 id: `custom-${Date.now()}`,
                 title: "",
@@ -1936,11 +2424,13 @@ async function loadSettings() {
                 enabled: true,
                 position: settings.homepage_sections.length + 1
             },
+
             topics: {
                 name: "",
                 url: "#articles",
                 enabled: true
             },
+
             features: {
                 icon: "fa-solid fa-star",
                 title: "",
@@ -1954,105 +2444,182 @@ async function loadSettings() {
             : {};
     }
 
+
     // ======================================
     // TAB CONTENT
     // ======================================
 
     function renderTabContent() {
+
         switch (activeTab) {
 
             case "general":
+
                 return `
                     <div class="panel space-y-4">
+
                         <div>
-                            <h3 class="font-bold">Website Identity</h3>
+
+                            <h3 class="font-bold">
+                                Website Identity
+                            </h3>
+
                             <p class="text-xs text-gray-500 mt-1">
                                 Configure the name, branding and default website information.
                             </p>
+
                         </div>
 
                         <div class="grid md:grid-cols-2 gap-4">
+
                             ${field("site_title", "Website Name")}
+
                             ${field("site_tagline", "Tagline")}
+
                             ${field("logo_url", "Logo Image URL", "url")}
+
                             ${field("favicon_url", "Favicon URL", "url")}
+
                             ${field("default_language", "Default Language")}
+
                             ${field("currency", "Currency")}
+
                             ${field("timezone", "Time Zone")}
+
                         </div>
 
                         ${field("site_description", "Website Description", "textarea")}
+
                     </div>
 
                     <div class="panel space-y-3">
-                        <h3 class="font-bold">Website Availability</h3>
+
+                        <h3 class="font-bold">
+                            Website Availability
+                        </h3>
+
                         ${toggleField("maintenance_mode", "Enable maintenance mode")}
+
                         <p class="text-[11px] text-gray-500">
                             This setting is stored for future maintenance-page integration.
                         </p>
+
                     </div>
                 `;
 
+
             case "homepage":
+
                 return `
                     <div class="panel space-y-4">
-                        <h3 class="font-bold">Hero Section</h3>
+
+                        <h3 class="font-bold">
+                            Hero Section
+                        </h3>
 
                         <div class="grid md:grid-cols-2 gap-4">
+
                             ${field("hero_title", "Main Heading")}
+
                             ${field("hero_subtitle", "Subtitle", "text")}
+
                             ${field("hero_image_url", "Hero Background Image", "url")}
+
                             ${field("hero_video_url", "Hero Background Video", "url")}
+
                             ${field("hero_primary_button_text", "Primary Button Text")}
+
                             ${field("hero_primary_button_url", "Primary Button Link", "text")}
+
                             ${field("hero_secondary_button_text", "Secondary Button Text")}
+
                             ${field("hero_secondary_button_url", "Secondary Button Link", "text")}
+
                         </div>
+
                     </div>
 
                     <div class="panel space-y-3">
-                        <h3 class="font-bold">Announcement Bar</h3>
+
+                        <h3 class="font-bold">
+                            Announcement Bar
+                        </h3>
 
                         ${objectField("announcement_bar", "enabled", "Show announcement bar", "checkbox")}
 
                         ${objectField("announcement_bar", "text", "Announcement Text", "textarea")}
 
                         <div class="grid md:grid-cols-2 gap-3">
+
                             ${objectField("announcement_bar", "link_text", "Button Text")}
+
                             ${objectField("announcement_bar", "link_url", "Button Link")}
+
                             ${objectField("announcement_bar", "background_color", "Background Color", "color")}
+
                             ${objectField("announcement_bar", "text_color", "Text Color", "color")}
+
                         </div>
+
                     </div>
                 `;
 
+
             case "appearance":
+
                 return `
                     <div class="panel space-y-4">
-                        <h3 class="font-bold">Colors & Theme</h3>
+
+                        <h3 class="font-bold">
+                            Colors & Theme
+                        </h3>
 
                         <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+
                             ${field("primary_color", "Primary Color", "color")}
+
                             ${field("secondary_color", "Secondary Color", "color")}
+
                             ${field("accent_color", "Accent Color", "color")}
+
                             ${field("background_color", "Background Color", "color")}
+
                             ${field("text_color", "Text Color", "color")}
+
                             ${field("font_heading", "Heading Font")}
+
                             ${field("font_body", "Body Font")}
+
                         </div>
 
                         <label class="block text-xs font-bold text-gray-600">
+
                             Theme Mode
+
                             <select class="field mt-1" data-setting-key="theme_mode">
-                                <option value="light" ${settings.theme_mode === "light" ? "selected" : ""}>Light</option>
-                                <option value="dark" ${settings.theme_mode === "dark" ? "selected" : ""}>Dark</option>
-                                <option value="system" ${settings.theme_mode === "system" ? "selected" : ""}>System</option>
+
+                                <option value="light" ${settings.theme_mode === "light" ? "selected" : ""}>
+                                    Light
+                                </option>
+
+                                <option value="dark" ${settings.theme_mode === "dark" ? "selected" : ""}>
+                                    Dark
+                                </option>
+
+                                <option value="system" ${settings.theme_mode === "system" ? "selected" : ""}>
+                                    System
+                                </option>
+
                             </select>
+
                         </label>
+
                     </div>
                 `;
 
+
             case "social":
+
                 return renderArrayEditor(
                     "Social Media Accounts",
                     "social_links",
@@ -2067,7 +2634,9 @@ async function loadSettings() {
                     "Add Social Platform"
                 );
 
+
             case "contact":
+
                 return renderArrayEditor(
                     "Contact Methods",
                     "contact_methods",
@@ -2081,7 +2650,9 @@ async function loadSettings() {
                     "Add Contact Method"
                 );
 
+
             case "navigation":
+
                 return renderArrayEditor(
                     "Navigation Links",
                     "navigation_items",
@@ -2103,7 +2674,9 @@ async function loadSettings() {
                     "Add Topic"
                 );
 
+
             case "sections":
+
                 return renderArrayEditor(
                     "Homepage Sections",
                     "homepage_sections",
@@ -2127,28 +2700,50 @@ async function loadSettings() {
                     "Add Feature"
                 );
 
+
             case "footer":
+
                 return `
                     <div class="panel space-y-4">
-                        <h3 class="font-bold">Footer Settings</h3>
+
+                        <h3 class="font-bold">
+                            Footer Settings
+                        </h3>
+
                         ${objectField("footer_settings", "description", "Footer Description", "textarea")}
+
                         ${objectField("footer_settings", "copyright_text", "Copyright Text")}
+
                     </div>
 
                     <div class="panel space-y-4">
-                        <h3 class="font-bold">SEO Settings</h3>
+
+                        <h3 class="font-bold">
+                            SEO Settings
+                        </h3>
+
                         ${objectField("seo_settings", "meta_title", "Meta Title")}
+
                         ${objectField("seo_settings", "meta_description", "Meta Description", "textarea")}
+
                         ${objectField("seo_settings", "keywords", "Keywords")}
+
                         ${objectField("seo_settings", "og_image_url", "Social Sharing Image URL", "url")}
+
                         ${objectField("seo_settings", "robots_index", "Allow Search Engine Indexing", "checkbox")}
+
                     </div>
                 `;
 
+
             case "affiliate":
+
                 return `
                     <div class="panel space-y-4">
-                        <h3 class="font-bold">Affiliate Configuration</h3>
+
+                        <h3 class="font-bold">
+                            Affiliate Configuration
+                        </h3>
 
                         ${toggleField("affiliate_enabled", "Enable Affiliate Book Listings")}
 
@@ -2157,43 +2752,66 @@ async function loadSettings() {
                         ${field("affiliate_disclosure", "Affiliate Disclosure", "textarea")}
 
                         <div class="bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs text-amber-900">
+
                             <b>Important:</b>
+
                             Amazon API credentials must be stored as Vercel Environment Variables, not in public website settings.
                             Amazon product images and content must be used only according to the applicable Associates permissions.
+
                         </div>
+
                     </div>
                 `;
 
+
             default:
-                return `<div class="panel">Unknown settings tab.</div>`;
+
+                return `
+                    <div class="panel">
+                        Unknown settings tab.
+                    </div>
+                `;
         }
     }
+
 
     // ======================================
     // RENDER SETTINGS PAGE
     // ======================================
 
     function renderSettings() {
+
         root.innerHTML = `
             <div class="space-y-5">
 
                 <div class="panel">
+
                     <div class="flex flex-wrap justify-between items-center gap-3">
+
                         <div>
-                            <h2 class="text-xl font-black">Website Control Center</h2>
+
+                            <h2 class="text-xl font-black">
+                                Website Control Center
+                            </h2>
+
                             <p class="text-xs text-gray-500 mt-1">
                                 Manage your website content, appearance and integrations.
                             </p>
+
                         </div>
 
                         <span class="text-xs bg-green-50 text-green-700 px-3 py-2 rounded-lg font-bold">
                             Advanced Settings
                         </span>
+
                     </div>
+
                 </div>
 
                 <div class="panel">
+
                     <div class="flex flex-wrap gap-2">
+
                         ${tabs.map(([id, label, icon]) => `
                             <button
                                 type="button"
@@ -2208,7 +2826,9 @@ async function loadSettings() {
                                 ${label}
                             </button>
                         `).join("")}
+
                     </div>
+
                 </div>
 
                 <div class="space-y-4">
@@ -2216,6 +2836,7 @@ async function loadSettings() {
                 </div>
 
                 <div class="panel flex flex-wrap justify-between items-center gap-3">
+
                     <p class="text-xs text-gray-500">
                         Changes are saved to the website settings database.
                     </p>
@@ -2228,18 +2849,22 @@ async function loadSettings() {
                         <i class="fa fa-floppy-disk mr-2"></i>
                         Save All Settings
                     </button>
+
                 </div>
 
             </div>
         `;
     }
 
+
     // ======================================
     // FORM STATE UPDATES
     // ======================================
 
     function updateSettingValue(target) {
+
         if (target.dataset.settingKey) {
+
             const key = target.dataset.settingKey;
 
             settings[key] = target.type === "checkbox"
@@ -2250,10 +2875,13 @@ async function loadSettings() {
         }
 
         if (target.dataset.objectKey) {
+
             const group = target.dataset.objectKey;
             const key = target.dataset.objectField;
 
-            if (!settings[group]) settings[group] = {};
+            if (!settings[group]) {
+                settings[group] = {};
+            }
 
             settings[group][key] = target.type === "checkbox"
                 ? target.checked
@@ -2263,6 +2891,7 @@ async function loadSettings() {
         }
 
         if (target.dataset.arrayKey) {
+
             const key = target.dataset.arrayKey;
             const index = Number(target.dataset.index);
             const fieldName = target.dataset.field;
@@ -2271,6 +2900,7 @@ async function loadSettings() {
                 Array.isArray(settings[key]) &&
                 settings[key][index]
             ) {
+
                 settings[key][index][fieldName] =
                     target.type === "checkbox"
                         ? target.checked
@@ -2278,6 +2908,7 @@ async function loadSettings() {
             }
         }
     }
+
 
     root.oninput = event => {
         updateSettingValue(event.target);
@@ -2287,11 +2918,13 @@ async function loadSettings() {
         updateSettingValue(event.target);
     };
 
+
     // ======================================
-    // BUTTON ACTIONS
+    // SETTINGS BUTTON ACTIONS
     // ======================================
 
     root.onclick = async event => {
+
         const tab = event.target.closest("[data-settings-tab]");
 
         const add = event.target.closest("[data-add-array]");
@@ -2300,29 +2933,39 @@ async function loadSettings() {
 
         const save = event.target.closest("#settings-save");
 
+
         if (tab) {
+
             activeTab = tab.dataset.settingsTab;
+
             renderSettings();
+
             return;
         }
 
+
         if (add) {
+
             const key = add.dataset.addArray;
 
             if (Array.isArray(settings[key])) {
+
                 if (settings[key].length >= 500) {
                     alert("Maximum of 500 items reached.");
                     return;
                 }
 
                 settings[key].push(makeEmptyItem(key));
+
                 renderSettings();
             }
 
             return;
         }
 
+
         if (remove) {
+
             const key = remove.dataset.removeArray;
             const index = Number(remove.dataset.index);
 
@@ -2332,8 +2975,11 @@ async function loadSettings() {
                 index >= 0 &&
                 index < settings[key].length
             ) {
+
                 if (confirm("Remove this item?")) {
+
                     settings[key].splice(index, 1);
+
                     renderSettings();
                 }
             }
@@ -2341,11 +2987,14 @@ async function loadSettings() {
             return;
         }
 
+
         if (save) {
+
             save.disabled = true;
             save.textContent = "Saving...";
 
             try {
+
                 const result = await api(API.settings, {
                     method: "PUT",
                     body: JSON.stringify({ settings })
@@ -2357,10 +3006,16 @@ async function loadSettings() {
                 );
 
             } catch (error) {
-                alert(error.message || "Could not save settings.");
+
+                alert(
+                    error.message ||
+                    "Could not save settings."
+                );
 
             } finally {
+
                 save.disabled = false;
+
                 save.innerHTML =
                     '<i class="fa fa-floppy-disk mr-2"></i> Save All Settings';
             }
@@ -2370,16 +3025,22 @@ async function loadSettings() {
     renderSettings();
 }
 
-/* MAIN PAGE LOADER */
+
+// ==========================================
+// MAIN PAGE LOADER
+// ==========================================
+
 async function loadPage(page) {
 
     activePage = page;
 
     document.querySelectorAll(".navbtn").forEach(button => {
+
         button.classList.toggle(
             "active",
             button.dataset.page === page
         );
+
     });
 
     $("#page-title").textContent =
@@ -2442,27 +3103,50 @@ async function loadPage(page) {
     }
 }
 
-/* SHARED CONTENT ACTIONS */
+
+// ==========================================
+// SHARED CONTENT ACTIONS
+// ==========================================
+
 $("#content").addEventListener("click", async event => {
 
-    const articleEdit = event.target.closest("[data-article-edit]");
-    const articleDraft = event.target.closest("[data-article-draft]");
-    const articlePublish = event.target.closest("[data-article-publish]");
+    const articleEdit =
+        event.target.closest("[data-article-edit]");
 
-    const bookEdit = event.target.closest("[data-book-edit]");
-    const bookArchive = event.target.closest("[data-book-delete]");
+    const articleDraft =
+        event.target.closest("[data-article-draft]");
 
-    const eventArchive = event.target.closest("[data-event-archive]");
+    const articlePublish =
+        event.target.closest("[data-article-publish]");
+
+    const bookEdit =
+        event.target.closest("[data-book-edit]");
+
+    const bookArchive =
+        event.target.closest("[data-book-delete]");
+
+    const bookRestore =
+        event.target.closest("[data-book-restore]");
+
+    const eventArchive =
+        event.target.closest("[data-event-archive]");
 
     const membershipArchive =
         event.target.closest("[data-membership-archive]");
 
+
     try {
+
+        // ==================================
+        // EDIT ARTICLE
+        // ==================================
 
         if (articleEdit) {
 
             const article = cache.articles?.find(
-                item => String(item.id) === String(articleEdit.dataset.articleEdit)
+                item =>
+                    String(item.id) ===
+                    String(articleEdit.dataset.articleEdit)
             );
 
             if (!article) {
@@ -2483,6 +3167,11 @@ $("#content").addEventListener("click", async event => {
             });
         }
 
+
+        // ==================================
+        // ARTICLE DRAFT / PUBLISH
+        // ==================================
+
         if (articleDraft || articlePublish) {
 
             const button = articleDraft || articlePublish;
@@ -2497,7 +3186,10 @@ $("#content").addEventListener("click", async event => {
 
             await api(API.articles, {
                 method: "PUT",
-                body: JSON.stringify({ id, status })
+                body: JSON.stringify({
+                    id,
+                    status
+                })
             });
 
             alert(
@@ -2509,10 +3201,17 @@ $("#content").addEventListener("click", async event => {
             await loadArticles();
         }
 
+
+        // ==================================
+        // EDIT BOOK
+        // ==================================
+
         if (bookEdit) {
 
             const book = cache.books?.find(
-                item => String(item.id) === String(bookEdit.dataset.bookEdit)
+                item =>
+                    String(item.id) ===
+                    String(bookEdit.dataset.bookEdit)
             );
 
             if (!book) {
@@ -2520,13 +3219,19 @@ $("#content").addEventListener("click", async event => {
             }
 
             $("#b-id").value = book.id;
-            $("#b-form-title").textContent = "Edit book";
+
+            $("#b-form-title").textContent =
+                book.active
+                    ? "Edit Active Book"
+                    : "Edit Archived Book";
+
             $("#b-title").value = book.title || "";
             $("#b-author").value = book.author || "";
             $("#b-price").value = book.price ?? "";
             $("#b-stock").value = book.stock ?? 0;
             $("#b-image").value = book.image_url || "";
             $("#b-description").value = book.description || "";
+
             $("#b-save").textContent = "Update Book";
 
             window.scrollTo({
@@ -2535,22 +3240,65 @@ $("#content").addEventListener("click", async event => {
             });
         }
 
+
+        // ==================================
+        // ARCHIVE BOOK
+        // ==================================
+
         if (bookArchive) {
 
             const id = bookArchive.dataset.bookDelete;
 
-            if (confirm("Archive this book? It will no longer appear in the public catalog.")) {
+            const confirmed = confirm(
+                "Archive this book? It will be hidden from the public catalog. Existing order records will remain unchanged."
+            );
+
+            if (confirmed) {
 
                 await api(API.books, {
                     method: "DELETE",
                     body: JSON.stringify({ id })
                 });
 
-                alert("Book archived.");
+                alert("Book archived successfully.");
 
                 await loadBooks();
             }
         }
+
+
+        // ==================================
+        // RESTORE BOOK
+        // ==================================
+
+        if (bookRestore) {
+
+            const id = bookRestore.dataset.bookRestore;
+
+            const confirmed = confirm(
+                "Restore this book? It will become visible in the public catalog again."
+            );
+
+            if (confirmed) {
+
+                await api(API.books, {
+                    method: "PATCH",
+                    body: JSON.stringify({
+                        id,
+                        active: true
+                    })
+                });
+
+                alert("Book restored successfully.");
+
+                await loadBooks();
+            }
+        }
+
+
+        // ==================================
+        // ARCHIVE EVENT
+        // ==================================
 
         if (eventArchive) {
 
@@ -2569,9 +3317,15 @@ $("#content").addEventListener("click", async event => {
             }
         }
 
+
+        // ==================================
+        // ARCHIVE MEMBERSHIP PLAN
+        // ==================================
+
         if (membershipArchive) {
 
-            const id = membershipArchive.dataset.membershipArchive;
+            const id =
+                membershipArchive.dataset.membershipArchive;
 
             if (confirm("Archive this membership plan?")) {
 
@@ -2587,32 +3341,109 @@ $("#content").addEventListener("click", async event => {
         }
 
     } catch (error) {
+
         alert(error.message);
     }
 });
 
-/* MANAGEMENT UPDATES */
+
+// ==========================================
+// MANAGEMENT UPDATES
+// ==========================================
+
 $("#content").addEventListener("change", async event => {
 
     const target = event.target;
 
     try {
 
+        // ==================================
+        // ORDER STATUS UPDATE
+        // ==================================
+
         if (target.dataset.order) {
 
-            await api(API.adminManage, {
+            const orderId = target.dataset.order;
+
+            const oldStatus = String(
+                target.dataset.currentStatus || ""
+            ).toLowerCase();
+
+            const newStatus = String(
+                target.value || ""
+            ).toLowerCase();
+
+            if (oldStatus === newStatus) {
+                return;
+            }
+
+            const shouldRestoreStock =
+                ["pending", "paid", "processing"].includes(oldStatus) &&
+                ["cancelled", "refunded"].includes(newStatus);
+
+
+            // Confirm stock restoration.
+            if (shouldRestoreStock) {
+
+                const confirmed = confirm(
+                    "This status change will restore the ordered book quantities to inventory. Continue?"
+                );
+
+                if (!confirmed) {
+                    await loadManagement("orders");
+                    return;
+                }
+            }
+
+
+            // Shipped/completed orders are not automatically restocked.
+            const physicalReturnRequired =
+                ["shipped", "completed"].includes(oldStatus) &&
+                newStatus === "refunded";
+
+            if (physicalReturnRequired) {
+
+                const confirmed = confirm(
+                    "This order has already been shipped or completed. Stock will NOT be automatically restored. Verify any physical return separately. Continue?"
+                );
+
+                if (!confirmed) {
+                    await loadManagement("orders");
+                    return;
+                }
+            }
+
+
+            target.disabled = true;
+
+            const result = await api(API.adminManage, {
                 method: "PATCH",
 
                 body: JSON.stringify({
-                    order_id: target.dataset.order,
-                    order_status: target.value
+                    order_id: orderId,
+                    order_status: newStatus
                 })
             });
 
-            alert("Order status updated.");
+            alert(
+                result.message ||
+                "Order status updated successfully."
+            );
+
+            // Reload orders to show the correct next transitions.
+            await loadManagement("orders");
+
+            return;
         }
 
+
+        // ==================================
+        // USER ROLE UPDATE
+        // ==================================
+
         if (target.dataset.userRole) {
+
+            target.disabled = true;
 
             await api(API.adminManage, {
                 method: "PATCH",
@@ -2624,9 +3455,20 @@ $("#content").addEventListener("change", async event => {
             });
 
             alert("User role updated.");
+
+            await loadManagement("users");
+
+            return;
         }
 
+
+        // ==================================
+        // USER ACCOUNT STATUS UPDATE
+        // ==================================
+
         if (target.dataset.userStatus) {
+
+            target.disabled = true;
 
             await api(API.adminManage, {
                 method: "PATCH",
@@ -2638,6 +3480,10 @@ $("#content").addEventListener("change", async event => {
             });
 
             alert("User account status updated.");
+
+            await loadManagement("users");
+
+            return;
         }
 
     } catch (error) {
@@ -2648,7 +3494,11 @@ $("#content").addEventListener("change", async event => {
     }
 });
 
-/* START APPLICATION */
+
+// ==========================================
+// START APPLICATION
+// ==========================================
+
 boot();
 
 </script>
