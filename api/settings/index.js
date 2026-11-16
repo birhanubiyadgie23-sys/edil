@@ -1,4 +1,3 @@
-
 import {
   sql,
   json,
@@ -65,6 +64,10 @@ const ALLOWED_SETTINGS = [
   "maintenance_mode"
 ];
 
+// ==========================================
+// VALUE TYPES
+// ==========================================
+
 const ARRAY_SETTINGS = [
   "social_links",
   "contact_methods",
@@ -89,8 +92,52 @@ const BOOLEAN_SETTINGS = [
 // PUBLIC SETTINGS
 // ==========================================
 
+// Only settings intended for public website display.
+// Never add passwords, API keys, tokens or private credentials here.
+
 const PUBLIC_SETTINGS = [
-  ...ALLOWED_SETTINGS
+  "site_title",
+  "site_tagline",
+  "logo_url",
+  "favicon_url",
+  "site_description",
+  "default_language",
+  "currency",
+  "timezone",
+
+  "hero_title",
+  "hero_subtitle",
+  "hero_image_url",
+  "hero_video_url",
+  "hero_primary_button_text",
+  "hero_primary_button_url",
+  "hero_secondary_button_text",
+  "hero_secondary_button_url",
+
+  "primary_color",
+  "secondary_color",
+  "accent_color",
+  "background_color",
+  "text_color",
+  "font_heading",
+  "font_body",
+  "theme_mode",
+
+  "social_links",
+  "contact_methods",
+  "navigation_items",
+  "homepage_sections",
+  "topics",
+  "features",
+
+  "footer_settings",
+  "seo_settings",
+  "announcement_bar",
+
+  "affiliate_disclosure",
+  "affiliate_enabled",
+  "affiliate_marketplace",
+  "maintenance_mode"
 ];
 
 // ==========================================
@@ -105,6 +152,7 @@ function parseSettingValue(value) {
   try {
     return JSON.parse(value);
   } catch {
+    // Support older settings stored as plain text.
     return value;
   }
 }
@@ -114,6 +162,10 @@ function parseSettingValue(value) {
 // ==========================================
 
 function validateSetting(key, value) {
+  if (!ALLOWED_SETTINGS.includes(key)) {
+    return false;
+  }
+
   if (ARRAY_SETTINGS.includes(key)) {
     return Array.isArray(value) && value.length <= 500;
   }
@@ -130,10 +182,36 @@ function validateSetting(key, value) {
     return typeof value === "boolean";
   }
 
-  return (
-    typeof value === "string" ||
-    typeof value === "number"
-  );
+  if (typeof value === "number") {
+    return Number.isFinite(value);
+  }
+
+  return typeof value === "string";
+}
+
+// ==========================================
+// SERIALIZATION VALIDATION
+// ==========================================
+
+function serializeSetting(key, value) {
+  let serialized;
+
+  try {
+    serialized = JSON.stringify(value);
+  } catch {
+    throw new Error(`Could not serialize setting "${key}".`);
+  }
+
+  if (
+    serialized === undefined ||
+    serialized.length > 100000
+  ) {
+    throw new Error(
+      `Setting "${key}" is too large or invalid.`
+    );
+  }
+
+  return serialized;
 }
 
 // ==========================================
@@ -143,6 +221,7 @@ function validateSetting(key, value) {
 async function getSettings(req, res) {
   const isAdmin = req.query?.admin === "1";
 
+  // ADMIN SETTINGS
   if (isAdmin) {
     const admin = await requireSuperAdmin(req, res);
 
@@ -167,6 +246,7 @@ async function getSettings(req, res) {
     });
   }
 
+  // PUBLIC SETTINGS
   const rows = await sql`
     SELECT key, value
     FROM settings
@@ -225,15 +305,10 @@ async function updateSettings(req, res) {
     });
   }
 
-  // Validate every setting before saving anything.
-  for (const [key, value] of entries) {
-    if (!ALLOWED_SETTINGS.includes(key)) {
-      return json(res, 400, {
-        success: false,
-        message: `Setting "${key}" is not allowed.`
-      });
-    }
+  // Validate ALL settings before saving any of them.
+  const validatedEntries = [];
 
+  for (const [key, value] of entries) {
     if (!validateSetting(key, value)) {
       return json(res, 400, {
         success: false,
@@ -244,32 +319,33 @@ async function updateSettings(req, res) {
     let serialized;
 
     try {
-      serialized = JSON.stringify(value);
-    } catch {
+      serialized = serializeSetting(key, value);
+    } catch (error) {
       return json(res, 400, {
         success: false,
-        message: `Could not serialize setting "${key}".`
+        message: error.message
       });
     }
 
-    if (
-      serialized === undefined ||
-      serialized.length > 100000
-    ) {
-      return json(res, 400, {
-        success: false,
-        message: `Setting "${key}" is too large or invalid.`
-      });
-    }
+    validatedEntries.push({
+      key,
+      serialized
+    });
   }
 
-  // Save settings using the existing key/value table.
-  for (const [key, value] of entries) {
-    const serialized = JSON.stringify(value);
-
+  // Save validated settings.
+  for (const item of validatedEntries) {
     await sql`
-      INSERT INTO settings (key, value, updated_at)
-      VALUES (${key}, ${serialized}, NOW())
+      INSERT INTO settings (
+        key,
+        value,
+        updated_at
+      )
+      VALUES (
+        ${item.key},
+        ${item.serialized},
+        NOW()
+      )
       ON CONFLICT (key)
       DO UPDATE SET
         value = EXCLUDED.value,
@@ -277,20 +353,21 @@ async function updateSettings(req, res) {
     `;
   }
 
+  // AUDIT LOG
   await audit(
     admin.id,
     "settings.update",
     "settings",
     null,
     {
-      keys: entries.map(([key]) => key)
+      keys: validatedEntries.map(item => item.key)
     }
   );
 
   return json(res, 200, {
     success: true,
     message: "Settings saved successfully.",
-    updated: entries.length
+    updated: validatedEntries.length
   });
 }
 
