@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -77,6 +78,12 @@
     .btn-primary:hover {
       background: #c8321d;
       transform: translateY(-2px);
+    }
+
+    .btn-primary:disabled {
+      opacity: .6;
+      cursor: not-allowed;
+      transform: none;
     }
 
     .btn-outline {
@@ -247,19 +254,19 @@
 <header class="site-header sticky top-0 z-50">
   <div class="max-w-7xl mx-auto px-5 lg:px-8 h-[76px] flex items-center justify-between">
 
-    <a href="#" class="flex items-center gap-3">
+    <a href="#" class="flex items-center gap-3" aria-label="Homepage">
       <div class="brand-mark"><i class="fa-solid fa-code"></i></div>
       <div>
         <div id="site-title" class="font-black text-lg tracking-tight">
-  DevStack<span style="color:#e4472e">Reads</span>
-</div>
-<div id="site-tagline" class="text-[9px] font-bold text-gray-400 tracking-[2px]">
-  LEARN • BUILD • GROW
-</div>
+          DevStack<span style="color:#e4472e">Reads</span>
+        </div>
+        <div id="site-tagline" class="text-[9px] font-bold text-gray-400 tracking-[2px]">
+          LEARN • BUILD • GROW
+        </div>
       </div>
     </a>
 
-    <nav class="desktop-nav flex items-center gap-7">
+    <nav class="desktop-nav flex items-center gap-7" aria-label="Main navigation">
       <a class="nav-link" href="#articles">Articles</a>
       <a class="nav-link" href="#shop">Book Store</a>
       <a class="nav-link" href="#events">Events</a>
@@ -269,37 +276,39 @@
 
     <div class="hidden md:flex items-center gap-3">
       <div id="user-auth-area" class="flex items-center gap-3">
-        <button onclick="openAuthModal('login')" class="text-xs font-bold text-gray-600">Log in</button>
-        <button onclick="openAuthModal('register')" class="btn-primary">Get Started</button>
+        <button type="button" onclick="openAuthModal('login')" class="text-xs font-bold text-gray-600">Log in</button>
+        <button type="button" onclick="openAuthModal('register')" class="btn-primary">Get Started</button>
       </div>
 
       <div id="user-profile-area" class="hidden flex items-center gap-3">
         <span id="logged-username" class="text-xs font-bold"></span>
-        <button onclick="logoutUser()" class="text-xs text-red-500 font-bold">Logout</button>
+        <button type="button" onclick="logoutUser()" class="text-xs text-red-500 font-bold">Logout</button>
       </div>
 
-      <button onclick="toggleCart()" class="relative w-10 h-10 rounded-xl border border-gray-200">
+      <button type="button" onclick="toggleCart()" class="relative w-10 h-10 rounded-xl border border-gray-200" aria-label="Open cart">
         <i class="fa-solid fa-bag-shopping"></i>
         <span id="cart-badge" class="absolute -top-2 -right-2 bg-red-600 text-white text-[10px] rounded-full w-5 h-5 grid place-items-center">0</span>
       </button>
     </div>
 
     <div class="md:hidden flex items-center gap-3">
-      <button onclick="toggleCart()" class="relative w-10 h-10 rounded-xl border border-gray-200">
+      <button type="button" onclick="toggleCart()" class="relative w-10 h-10 rounded-xl border border-gray-200" aria-label="Open cart">
         <i class="fa-solid fa-bag-shopping"></i>
         <span id="cart-badge-mobile" class="absolute -top-2 -right-2 bg-red-600 text-white text-[10px] rounded-full w-5 h-5 grid place-items-center">0</span>
       </button>
-      <button onclick="toggleMobileMenu()" class="text-xl p-2"><i class="fa-solid fa-bars"></i></button>
+      <button type="button" onclick="toggleMobileMenu()" class="text-xl p-2" aria-label="Open menu">
+        <i class="fa-solid fa-bars"></i>
+      </button>
     </div>
   </div>
 
-  <nav id="mobile-menu" class="mobile-menu flex-col gap-4 px-6 pb-6">
+  <nav id="mobile-menu" class="mobile-menu flex-col gap-4 px-6 pb-6" aria-label="Mobile navigation">
     <a class="nav-link" href="#articles">Articles</a>
     <a class="nav-link" href="#shop">Book Store</a>
     <a class="nav-link" href="#events">Events</a>
     <a class="nav-link" href="#membership">Membership</a>
     <a class="nav-link" href="#newsletter">Newsletter</a>
-    <button onclick="openAuthModal('login')" class="btn-primary">Log in / Sign up</button>
+    <button type="button" onclick="openAuthModal('login')" class="btn-primary">Log in / Sign up</button>
   </nav>
 </header>
 
@@ -314,20 +323,20 @@
         THE FUTURE OF WEB DEVELOPMENT
       </div>
 
-      <h1 class="hero-title mb-7">
+      <h1 id="hero-title" class="hero-title mb-7">
         Learn Skills.<br>
         Build Your <span>Future.</span>
       </h1>
 
-      <p class="text-gray-300 text-base md:text-lg leading-8 max-w-xl mb-9">
+      <p id="hero-subtitle" class="text-gray-300 text-base md:text-lg leading-8 max-w-xl mb-9">
         Discover practical knowledge, premium books, expert articles and learning resources designed for the next generation of developers and designers.
       </p>
 
       <div class="flex flex-wrap gap-3">
-        <a href="#shop" class="btn-primary">
+        <a id="hero-primary-button" href="#shop" class="btn-primary">
           Explore Books <i class="fa-solid fa-arrow-right"></i>
         </a>
-        <a href="#articles" class="btn-outline !border-white/30 !text-white">
+        <a id="hero-secondary-button" href="#articles" class="btn-outline !border-white/30 !text-white">
           Read Articles
         </a>
       </div>
@@ -365,10 +374,9 @@
 <!-- ARTICLES -->
 <section id="articles" class="py-24">
   <div class="max-w-7xl mx-auto px-6 lg:px-8">
-
     <div class="flex flex-wrap justify-between items-end gap-5 mb-12">
       <div>
-        <div class="section-label mb-3">Knowledge & Insights</div>
+        <div class="section-label mb-3">Knowledge &amp; Insights</div>
         <h2 class="section-title">Latest Articles</h2>
         <p class="text-gray-500 text-sm mt-3">Ideas and insights to help you become a better developer.</p>
       </div>
@@ -376,7 +384,6 @@
     </div>
 
     <div id="articles-grid" class="grid md:grid-cols-2 lg:grid-cols-3 gap-7">
-
       <article class="content-card overflow-hidden">
         <div class="h-48 bg-gradient-to-br from-slate-900 to-blue-800 flex items-center justify-center text-white text-6xl">
           <i class="fa-solid fa-universal-access"></i>
@@ -421,7 +428,6 @@
           </div>
         </div>
       </article>
-
     </div>
   </div>
 </section>
@@ -523,7 +529,7 @@
         <h3 class="font-extrabold text-xl">Free</h3>
         <div class="text-3xl font-black mt-5">0 <span class="text-sm text-gray-400">ETB</span></div>
         <p class="text-sm text-gray-500 mt-4">Access public articles and learning resources.</p>
-        <button onclick="openAuthModal('register')" class="btn-outline w-full mt-8">Join Free</button>
+        <button type="button" onclick="openAuthModal('register')" class="btn-outline w-full mt-8">Join Free</button>
       </div>
 
       <div class="content-card p-8 !border-red-200 shadow-xl relative">
@@ -531,14 +537,14 @@
         <h3 class="font-extrabold text-xl">Pro</h3>
         <div class="text-3xl font-black mt-5">Coming Soon</div>
         <p class="text-sm text-gray-500 mt-4">Premium resources and exclusive learning opportunities.</p>
-        <button onclick="openAuthModal('register')" class="btn-primary w-full mt-8">Get Started</button>
+        <button type="button" onclick="openAuthModal('register')" class="btn-primary w-full mt-8">Get Started</button>
       </div>
 
       <div class="content-card p-8">
         <h3 class="font-extrabold text-xl">Premium</h3>
         <div class="text-3xl font-black mt-5">Coming Soon</div>
         <p class="text-sm text-gray-500 mt-4">Explore advanced learning and member benefits.</p>
-        <button onclick="openAuthModal('register')" class="btn-outline w-full mt-8">Learn More</button>
+        <button type="button" onclick="openAuthModal('register')" class="btn-outline w-full mt-8">Learn More</button>
       </div>
     </div>
   </div>
@@ -552,7 +558,7 @@
     <p class="text-gray-300 text-sm leading-7 max-w-xl mx-auto mb-9">Subscribe to receive new articles, book updates and learning opportunities.</p>
 
     <form id="newsletter-form" class="flex flex-col sm:flex-row gap-3 max-w-xl mx-auto">
-      <input id="newsletter-email" type="email" required placeholder="Enter your email address" class="flex-1 px-5 py-4 rounded-xl text-sm text-gray-900 outline-none">
+      <input id="newsletter-email" name="email" type="email" required autocomplete="email" placeholder="Enter your email address" class="flex-1 px-5 py-4 rounded-xl text-sm text-gray-900 outline-none">
       <button type="submit" class="btn-primary">Subscribe <i class="fa-solid fa-arrow-right"></i></button>
     </form>
     <p id="newsletter-message" class="text-xs mt-4 text-gray-300" aria-live="polite"></p>
@@ -567,8 +573,8 @@
         <div class="flex items-center gap-3 mb-5">
           <div class="brand-mark"><i class="fa-solid fa-code"></i></div>
           <div id="footer-site-title" class="font-black text-xl">
-  DevStack<span class="text-red-500">Reads</span>
-</div>
+            DevStack<span class="text-red-500">Reads</span>
+          </div>
         </div>
         <p class="text-gray-400 text-sm leading-7 max-w-sm">A place for developers and designers to learn, build and grow through knowledge and practical resources.</p>
       </div>
@@ -585,7 +591,7 @@
 
       <div>
         <h4 class="font-extrabold text-sm mb-5">Connect</h4>
-        <div class="flex gap-4 text-gray-400 text-lg">
+        <div id="footer-social-links" class="flex gap-4 text-gray-400 text-lg">
           <a href="#" aria-label="Telegram"><i class="fa-brands fa-telegram"></i></a>
           <a href="#" aria-label="Facebook"><i class="fa-brands fa-facebook"></i></a>
           <a href="#" aria-label="Instagram"><i class="fa-brands fa-instagram"></i></a>
@@ -594,7 +600,7 @@
     </div>
 
     <div class="pt-7 flex flex-wrap justify-between gap-3 text-[11px] text-gray-500">
-      <span>© 2026 DevStackReads. All rights reserved.</span>
+      <span id="footer-copyright">© 2026 DevStackReads. All rights reserved.</span>
       <span>Built for the next generation of creators.</span>
     </div>
   </div>
@@ -603,7 +609,7 @@
 <!-- AUTH MODAL -->
 <div id="auth-modal" class="hidden fixed inset-0 z-[100] modal-backdrop flex items-center justify-center p-5">
   <div class="bg-white rounded-3xl p-8 w-full max-w-md relative">
-    <button onclick="closeAuthModal()" class="absolute top-5 right-5 text-gray-400 text-xl" aria-label="Close">&times;</button>
+    <button type="button" onclick="closeAuthModal()" class="absolute top-5 right-5 text-gray-400 text-xl" aria-label="Close">&times;</button>
     <div class="brand-mark mb-6"><i class="fa-solid fa-user-lock"></i></div>
     <h2 id="auth-title" class="text-2xl font-black mb-2">Log In to Your Account</h2>
     <p class="text-sm text-gray-500 mb-7">Continue your learning journey with DevStackReads.</p>
@@ -611,17 +617,17 @@
     <form id="auth-form" onsubmit="handleAuthSubmit(event)" class="space-y-4">
       <div id="name-field" class="hidden">
         <label for="auth-name" class="text-xs font-bold block mb-2">Full Name</label>
-        <input id="auth-name" type="text" class="w-full border border-gray-200 rounded-xl p-3 text-sm outline-none" placeholder="Your name">
+        <input id="auth-name" name="name" type="text" autocomplete="name" class="w-full border border-gray-200 rounded-xl p-3 text-sm outline-none" placeholder="Your name">
       </div>
 
       <div>
         <label for="auth-email" class="text-xs font-bold block mb-2">Email Address</label>
-        <input id="auth-email" type="email" required class="w-full border border-gray-200 rounded-xl p-3 text-sm outline-none" placeholder="you@example.com">
+        <input id="auth-email" name="email" type="email" required autocomplete="email" class="w-full border border-gray-200 rounded-xl p-3 text-sm outline-none" placeholder="you@example.com">
       </div>
 
       <div>
         <label for="auth-password" class="text-xs font-bold block mb-2">Password</label>
-        <input id="auth-password" type="password" required minlength="8" class="w-full border border-gray-200 rounded-xl p-3 text-sm outline-none" placeholder="At least 8 characters">
+        <input id="auth-password" name="password" type="password" required minlength="8" autocomplete="current-password" class="w-full border border-gray-200 rounded-xl p-3 text-sm outline-none" placeholder="At least 8 characters">
       </div>
 
       <button id="auth-btn" type="submit" class="btn-primary w-full">Log In</button>
@@ -631,13 +637,13 @@
 </div>
 
 <!-- CART DRAWER -->
-<div id="cart-drawer" class="fixed top-0 right-0 z-[110] h-full w-full max-w-md bg-white shadow-2xl translate-x-full flex flex-col">
+<div id="cart-drawer" class="fixed top-0 right-0 z-[110] h-full w-full max-w-md bg-white shadow-2xl translate-x-full flex flex-col" aria-label="Shopping cart">
   <div class="p-6 border-b flex items-center justify-between">
     <div>
       <h2 class="font-black text-xl">Your Cart</h2>
       <p class="text-xs text-gray-400 mt-1">Review your selected books</p>
     </div>
-    <button onclick="toggleCart()" class="text-2xl text-gray-400" aria-label="Close cart">&times;</button>
+    <button type="button" onclick="toggleCart()" class="text-2xl text-gray-400" aria-label="Close cart">&times;</button>
   </div>
 
   <div id="cart-items" class="flex-1 overflow-y-auto p-6">
@@ -649,7 +655,7 @@
       <span>Total</span>
       <span id="cart-total">0.00 ETB</span>
     </div>
-    <button onclick="openCheckout()" class="btn-primary w-full">Continue to Checkout <i class="fa-solid fa-arrow-right"></i></button>
+    <button type="button" onclick="openCheckout()" class="btn-primary w-full">Continue to Checkout <i class="fa-solid fa-arrow-right"></i></button>
   </div>
 </div>
 
@@ -657,12 +663,12 @@
 
 <script>
   function toggleMobileMenu() {
-    document.getElementById('mobile-menu').classList.toggle('open');
+    document.getElementById('mobile-menu')?.classList.toggle('open');
   }
 
   document.querySelectorAll('#mobile-menu a').forEach(link => {
     link.addEventListener('click', () => {
-      document.getElementById('mobile-menu').classList.remove('open');
+      document.getElementById('mobile-menu')?.classList.remove('open');
     });
   });
 
@@ -678,46 +684,49 @@
     const height = target.clientHeight;
     if (!width || !height) return;
 
-    scene = new THREE.Scene();
-    camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
-    camera.position.z = 17;
+    try {
+      scene = new THREE.Scene();
+      camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
+      camera.position.z = 17;
 
-    renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    renderer.setSize(width, height);
-    target.appendChild(renderer.domElement);
+      renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+      renderer.setSize(width, height);
+      target.appendChild(renderer.domElement);
 
-    posterGroup = new THREE.Group();
+      posterGroup = new THREE.Group();
 
-    const colors = [0xe4472e,0x315b8a,0x6d4acb,0x168b83,0x34445b];
-    const geometry = new THREE.BoxGeometry(1.15, 1.55, .12);
+      const colors = [0xe4472e,0x315b8a,0x6d4acb,0x168b83,0x34445b];
+      const geometry = new THREE.BoxGeometry(1.15, 1.55, .12);
 
-    for (let i = 0; i < 30; i++) {
-      const material = new THREE.MeshStandardMaterial({
-        color: colors[i % colors.length],
-        roughness: .65,
-        metalness: .1,
-        transparent: true,
-        opacity: .78
-      });
+      for (let i = 0; i < 30; i++) {
+        const material = new THREE.MeshStandardMaterial({
+          color: colors[i % colors.length],
+          roughness: .65,
+          metalness: .1,
+          transparent: true,
+          opacity: .78
+        });
 
-      const book = new THREE.Mesh(geometry, material);
-      book.position.x = (Math.random() - .5) * 19;
-      book.position.y = (Math.random() - .5) * 9;
-      book.position.z = (Math.random() - .5) * 5;
-      book.rotation.z = (Math.random() - .5) * .3;
-      posterGroup.add(book);
+        const book = new THREE.Mesh(geometry, material);
+        book.position.x = (Math.random() - .5) * 19;
+        book.position.y = (Math.random() - .5) * 9;
+        book.position.z = (Math.random() - .5) * 5;
+        book.rotation.z = (Math.random() - .5) * .3;
+        posterGroup.add(book);
+      }
+
+      scene.add(posterGroup);
+      scene.add(new THREE.AmbientLight(0xffffff, 1.5));
+
+      const light = new THREE.PointLight(0xff8069, 3, 100);
+      light.position.set(5, 5, 10);
+      scene.add(light);
+
+      animateThree();
+    } catch (error) {
+      console.warn('Three.js animation could not be initialized:', error);
     }
-
-    scene.add(posterGroup);
-
-    scene.add(new THREE.AmbientLight(0xffffff, 1.5));
-
-    const light = new THREE.PointLight(0xff8069, 3, 100);
-    light.position.set(5, 5, 10);
-    scene.add(light);
-
-    animateThree();
   }
 
   function animateThree() {
@@ -739,6 +748,7 @@
 
     const width = target.clientWidth;
     const height = target.clientHeight;
+    if (!width || !height) return;
 
     camera.aspect = width / height;
     camera.updateProjectionMatrix();
@@ -760,34 +770,57 @@
 
 <script>
   // Newsletter API integration
-  document.getElementById('newsletter-form').addEventListener('submit', async function(e) {
-    e.preventDefault();
+  (function () {
+    const form = document.getElementById('newsletter-form');
+    if (!form) return;
 
-    const email = document.getElementById('newsletter-email').value.trim();
-    const message = document.getElementById('newsletter-message');
-    const button = this.querySelector('button[type="submit"]');
+    form.addEventListener('submit', async function (e) {
+      e.preventDefault();
 
-    button.disabled = true;
-    message.textContent = 'Submitting...';
+      const emailInput = document.getElementById('newsletter-email');
+      const message = document.getElementById('newsletter-message');
+      const button = form.querySelector('button[type="submit"]');
 
-    try {
-      const response = await fetch('/api/newsletter', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email })
-      });
+      if (!emailInput || !message || !button) return;
 
-      const data = await response.json();
-      if (!response.ok || !data.success) throw new Error(data.message || 'Subscription failed');
+      const email = emailInput.value.trim();
+      if (!email) {
+        message.textContent = 'Please enter your email address.';
+        return;
+      }
 
-      message.textContent = 'Thank you for subscribing!';
-      this.reset();
-    } catch (error) {
-      message.textContent = 'Unable to subscribe right now. Please try again.';
-    } finally {
-      button.disabled = false;
-    }
-  });
+      button.disabled = true;
+      message.textContent = 'Submitting...';
+
+      try {
+        const response = await fetch('/api/newsletter', {
+          method: 'POST',
+          credentials: 'same-origin',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email })
+        });
+
+        let data = {};
+        try {
+          data = await response.json();
+        } catch {
+          throw new Error('Invalid server response.');
+        }
+
+        if (!response.ok || !data.success) {
+          throw new Error(data.message || 'Subscription failed');
+        }
+
+        message.textContent = 'Thank you for subscribing!';
+        form.reset();
+      } catch (error) {
+        console.error('Newsletter subscription error:', error);
+        message.textContent = error.message || 'Unable to subscribe right now. Please try again.';
+      } finally {
+        button.disabled = false;
+      }
+    });
+  })();
 </script>
 
 </body>
