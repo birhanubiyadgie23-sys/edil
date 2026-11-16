@@ -3296,7 +3296,11 @@ $("#content").addEventListener("click", async event => {
 
     const membershipArchive =
         event.target.closest("[data-membership-archive]");
+const paymentApprove =
+    event.target.closest("[data-payment-approve]");
 
+const paymentReject =
+    event.target.closest("[data-payment-reject]");
 
     try {
 
