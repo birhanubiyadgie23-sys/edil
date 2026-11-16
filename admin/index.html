@@ -3483,7 +3483,79 @@ const paymentReject =
                 await loadEvents();
             }
         }
+ // ==================================
+// APPROVE / REJECT MEMBERSHIP PAYMENT
+// ==================================
 
+if (paymentApprove || paymentReject) {
+
+    const button = paymentApprove || paymentReject;
+
+    const id = paymentApprove
+        ? paymentApprove.dataset.paymentApprove
+        : paymentReject.dataset.paymentReject;
+
+    const decision = paymentApprove
+        ? "approve"
+        : "reject";
+
+    const confirmed = confirm(
+        decision === "approve"
+            ? "Confirm that you have verified this payment and want to activate the membership?"
+            : "Are you sure you want to reject this payment request?"
+    );
+
+    if (!confirmed) return;
+
+    let adminNote = "";
+
+    if (decision === "reject") {
+        adminNote = prompt(
+            "Enter the reason for rejecting this payment:"
+        );
+
+        if (adminNote === null) return;
+
+        adminNote = adminNote.trim();
+
+        if (!adminNote) {
+            alert("Please enter a rejection reason.");
+            return;
+        }
+    }
+
+    button.disabled = true;
+
+    try {
+
+        const result = await api(API.memberships, {
+            method: "PATCH",
+
+            body: JSON.stringify({
+                id,
+                decision,
+                admin_note: adminNote
+            })
+        });
+
+        alert(
+            result.message ||
+            (
+                decision === "approve"
+                    ? "Membership payment approved."
+                    : "Membership payment rejected."
+            )
+        );
+
+        await loadMemberships();
+
+    } catch (error) {
+
+        button.disabled = false;
+
+        throw error;
+    }
+}
 
         // ==================================
         // ARCHIVE MEMBERSHIP PLAN
